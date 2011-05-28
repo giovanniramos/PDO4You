@@ -34,6 +34,8 @@ O padrão de projeto Singleton otimiza a conexão, garantido uma única instânc
 
 Carregando a interface
 ----------------------
+
+~~~ php
 	<?php
 	
 	// Carregando a interface
@@ -41,10 +43,11 @@ Carregando a interface
 	require '_inc/PDO4You.class.php';
 	
 	?>
+~~~ 
 
-__PDOConfig.class.php: contém os dados de conexão e uma biblioteca de funções relevantes.
+`PDOConfig.class.php`: contém os dados de conexão e uma biblioteca de funções relevantes.
 
-__PDO4You.class.php: é a classe de conexão singleton PDO4You, baseada na extensão PDO.
+`__PDO4You.class.php`: é a classe de conexão singleton PDO4You, baseada na extensão PDO.
 
 
 DSN ou Data Source Name, contém as informações necessárias para se conectar ao banco de dados.
@@ -54,17 +57,20 @@ DSN ou Data Source Name, contém as informações necessárias para se conectar 
 Conectando ao banco de dados via DSN (OPCIONAL). 
 ------------------------------------------------
 
+~~~ php
 	<?php
 
 	// Conexão direta via driver DSN
 	PDO4You::singleton('mysql:host=localhost;port=3306;dbname=pdo4you', 'root', '1234');
 
 	?>
+~~~ 
 
 
 
 Abaixo segue um exemplo de como selecionar os registros no banco de dados, e em seguida como realizar o CRUD.
 
+~~~ php
 	<?php
 	
 	// Conexão não-persistente
@@ -112,7 +118,7 @@ Abaixo segue um exemplo de como selecionar os registros no banco de dados, e em 
 	echo ' Nome: '.$dba_records[1]["name"].'<br />';
 
 	?>
-
+~~~ 
 
 
 O termo CRUD em inglês se refere as 4 operações básicas do banco de dados e significam: 
@@ -126,7 +132,7 @@ Se algo der errado, o bloco catch reverte todas as alterações feitas desde o i
 
 Inserindo um registro no banco de dados
 -----------------------------------------
-
+~~~ php
 	// Exemplo de um INSERT
 	PDO4You::insert( 'users', 
 		array(
@@ -138,11 +144,12 @@ Inserindo um registro no banco de dados
 			)
 		)
 	);
+~~~ 
 
 
 Atualizando os dados
 --------------------
-
+~~~ php
 	// Exemplo de um UPDATE
 	PDO4You::update( 'users', 
 		array( array(
@@ -154,11 +161,12 @@ Atualizando os dados
 			)
 		) )
 	);
+~~~ 
 
 
 Excluindo um registro
 ---------------------
-
+~~~ php
 	// Exemplo de um DELETE
 	PDO4You::delete( 'users', 
 		array(
@@ -167,3 +175,4 @@ Excluindo um registro
 			)
 		)
 	);
+~~~ 
