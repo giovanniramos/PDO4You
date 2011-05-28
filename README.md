@@ -15,6 +15,7 @@ Para verificar se o seu servidor tem suporte a um driver PDO de seu banco de dad
 Verificando os drivers PDO suportados
 -------------------------------------
 
+~~~ php
 	<?php
 
 	// O método getAvailableDrivers(), lista os drivers disponíveis que podem ser usados pelo DSN do PDO
@@ -23,7 +24,7 @@ Verificando os drivers PDO suportados
 	endforeach;
 
 	?>
-
+~~~
 
 O PDO provê uma camada abstrata de acesso a dados, que independentemente de qual banco de dados você esteja usando, você poderá usar as mesmas funções para emitir consultas e buscar dados.
 
