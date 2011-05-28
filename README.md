@@ -47,7 +47,7 @@ Carregando a interface
 
 `PDOConfig.class.php`: contém os dados de conexão e uma biblioteca de funções relevantes.
 
-`__PDO4You.class.php`: é a classe de conexão singleton PDO4You, baseada na extensão PDO.
+`PDO4You.class.php`: é a classe de conexão singleton PDO4You, baseada na extensão PDO.
 
 
 DSN ou Data Source Name, contém as informações necessárias para se conectar ao banco de dados.
