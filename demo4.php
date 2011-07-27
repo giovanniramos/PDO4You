@@ -20,7 +20,7 @@ require_once("PDO4You.class.php");
 // Invocamos a biblioteca de funções
 require_once("PDOLibrary.class.php");
 
-PDO4You::setPersistent(false);
+
 
 // Iniciando a instância de uma conexão
 PDO4You::getInstance();

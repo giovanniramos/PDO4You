@@ -36,7 +36,7 @@ $data['select1'] = Teste::executeSelect1();
 // Teste de consulta aplicando outra instância de conexão
 $data['select2'] = Teste::executeSelect2();
 
-//Teste de consulta, alternando entre instâncias de conexão
+// Teste de consulta, alternando entre instâncias de conexão
 $data['select3'] = Teste::executeSelect3();
 
 // Imprimindo o resultado 
