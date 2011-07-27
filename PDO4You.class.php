@@ -196,7 +196,7 @@ class PDO4You implements PDOConfig
 	 * @return void
 	 * 
 	 * */
-	public static function setPersistent(Boolean $connection)
+	public static function setPersistent($connection)
 	{
 		self::$connection = $connection;
 	}

@@ -4,25 +4,24 @@ PDO é uma extensão do PHP, que permite aos desenvolvedores criar um código po
 Sendo o MySQL, PostgreSQL, Oracle, SQLite.
 
 
-Vantagens no uso da classe PDO4You:
+Vantagens no uso da classe:
 ==========
 * Abstração de conexão
 * Proteção contra SQL Injection
-* Instrução SQL compacta
+* Instrução SQL compacta, usando notação JSON
+* Múltiplas instâncias de conexão com banco de dados
+* Controle e tratamento de exceções com stack trace
 
 
-
-Verificando os drivers PDO suportados
+Verificando os drivers suportados pelo servidor
 -------------------------------------
 Para verificar se o seu servidor tem suporte a um driver PDO de seu banco de dados, execute o seguinte método.
 
 ~~~ php
 <?php
 
-// O método getAvailableDrivers(), lista os drivers disponíveis que podem ser usados pelo DSN do PDO
-foreach(PDO::getAvailableDrivers() AS $driver):
-	echo $driver.'<br />';
-endforeach;
+// O método getAvailableDrivers(), exibe todos os drivers instalados e que são suportados pelo servidor
+PDO4You::getAvailableDrivers();
 
 ?>
 ~~~
@@ -33,147 +32,183 @@ O PDO provê uma camada abstrata de acesso a dados, que independentemente de qua
 
 O padrão de projeto Singleton otimiza a conexão, garantido uma única instância do objeto de conexão.
 
-Carregando a interface
+Carregando a interface, a classe PDO4You de conexão e o autoloader
 ----------------------
-
 ~~~ php
 <?php
 
-// Carregando a interface
-require '_inc/PDOConfig.class.php';
-require '_inc/PDO4You.class.php';
+// Nessa ordem são carregados
+require_once("PDOConfig.class.php");
+require_once("PDO4You.class.php");
+require_once("PDOLibrary.class.php");
 
 ?>
 ~~~ 
 
-`PDOConfig.class.php`: contém os dados de conexão e uma biblioteca de funções relevantes.
+`PDOConfig.class.php`: contém a interface de configuração do servidor.
 
-`PDO4You.class.php`: é a classe de conexão singleton PDO4You, baseada na extensão PDO.
+`PDO4You.class.php`: possue a implementação da classe PDO4You de conexão singleton, baseada na extensão PDO.
 
-
-DSN ou Data Source Name, contém as informações necessárias para se conectar ao banco de dados.
-
+`PDOLibrary.class.php`: possue um autoloading de classes e será uma biblioteca de funções
 
 
-Conectando ao banco de dados via DSN (OPCIONAL). 
+DSN ou Data Source Name, contém as informações necessárias para se iniciar a comunicação com um banco de dados.
+
+
+
+Conectando ao banco de dados. DSN (Opcional)
 ------------------------------------------------
-
 ~~~ php
 <?php
 
-// Conexão direta via driver DSN
-PDO4You::singleton('mysql:host=localhost;port=3306;dbname=pdo4you', 'root', '1234');
+// Formas de se iniciar uma instância de conexão 
+PDO4You::getInstance();
+PDO4You::getInstance('database');
+PDO4You::getInstance('database', 'mysql:host=localhost;port=3306;');
+PDO4You::getInstance('database', 'mysql:host=localhost;port=3306;', 'root', 'pass');
 
 ?>
 ~~~ 
 
 
-
-Abaixo segue um exemplo de como selecionar os registros no banco de dados, e em seguida como realizar o CRUD.
-
-~~~ php
-<?php
-
-// Conexão não-persistente
-PDO4You::singleton('mysql:host=localhost;port=3306;dbname=pdo4you', 'root', '1234',
-	array(
-		PDO :: ATTR_PERSISTENT => false 
-	)
-);
-
-
-// Instânciando a conexão
-$pdo = PDO4You::getInstance();
-
-try {
-	$sql = '
-		SELECT
-			u.* 
-		FROM
-			users u
-	';
-	$pre = $pdo->prepare($sql);
-	$pre->execute();
-	$dba_records = $pre->fetchAll(PDO::FETCH_ASSOC);
-	$has_records = $pre->rowCount();
-} catch (PDOException $e) {
-	echo 'Error: '.$e->getMessage().'<br /><br />';
-}
-
-// Encerrando a conexão
-$pdo = null;
-
-
-// Imprimindo o total de registros
-echo ' Total: '.$has_records.'<br />';
-
-
-// Percorrendo o vetor com foreach e imprimindo os dados
-foreach($dba_records as $dba):
-	echo 'Nome: '.$dba["name"].'<br />';
-enforeach;
-
-
-// Outra forma de exibir os dados
-echo ' Nome: '.$dba_records[0]["name"].'<br />';
-echo ' Nome: '.$dba_records[1]["name"].'<br />';
-
-?>
-~~~ 
 
 
 O termo CRUD em inglês se refere as 4 operações básicas do banco de dados e significam: 
 Create(INSERT), Retrieve(SELECT), Update(UPDATE) e Destroy(DELETE)
 
+Abaixo segue um exemplo de como realizar operações CRUD no banco de dados.
 
-Os métodos "insert" , "update" e "delete" estão dentro das chamadas beginTransaction() e commit(), garantindo que ninguém veja as mudanças até que sejam concluídas. 
-Se algo der errado, o bloco catch reverte todas as alterações feitas desde o início da transação e em seguida, imprime uma mensagem de erro.
-
-
-
-Inserindo um registro no banco de dados
------------------------------------------
 ~~~ php
-// Exemplo de um INSERT
-PDO4You::insert( 'users', 
-	array(
-		array(
-			'name'		=> $_POST["name"],
-			'lastname'	=> $_POST["lastname"],
-			'mail'		=> $_POST["mail"],
-			'status'	=> 1
-		)
-	)
-);
+<?php
+
+// Iniciando uma instância de conexão. Por default, a conexão iniciada será persistente.
+PDO4You::getInstance();
+
+// Para definir o tipo de comunicação com o banco de dados, utilize o método abaixo passando um valor booleano.
+PDO4You::setPersistent(false);
+
+// Selecionando registros no banco de dados
+PDO4You::select('SELECT * FROM books LIMIT 2');
+
+// Selecionando registros e definindo a instância de banco que será utilizada
+PDO4You::select('SELECT * FROM books LIMIT 2', 'bookstore');
+
+
+// Query de consulta
+$sql = 'SELECT * FROM books LIMIT 2';
+
+// Obtendo registros como um array indexado pelo nome da coluna. Equivale a FETCH_ASSOC
+$result = PDO4You::select($sql);
+
+// Obtendo registros como um array indexado pelo número da coluna. Equivale a FETCH_NUM
+$result = PDO4You::selectNum($sql);
+
+// Obtendo registros como um objeto com nomes de coluna como propriedades. Equivale a FETCH_OBJ
+$result = PDO4You::selectObj($sql);
+
+// Obtendo registros como um array indexado tanto pelo nome como pelo número da coluna. Equivale a FETCH_BOTH
+$result = PDO4You::selectAll($sql);
+
+// Obtendo o total de registros afetados.
+$result = PDO4You::rowCount($sql);
+
+
+// Imprimindo o resultado 
+echo "<pre><h3>Resultado:</h3> ",print_r($result, true),"</pre>";
+
+?>
 ~~~ 
 
 
-Atualizando os dados
---------------------
-~~~ php
-// Exemplo de um UPDATE
-PDO4You::update( 'users', 
-	array( array(
-		array(
-			'id' 		=> $_POST["id"]
-		),
-		array(
-			'status'	=> 0
-		)
-	) )
-);
-~~~ 
+Os métodos insert, update e delete da classe PDO4You estão aninhadas entre transações, sendo elas beginTransaction() e commit(). 
+Isto garante que o sistema consiga reverter uma operação mal sucedida e todas as alterações feitas desde o início da transação, 
+assegurando o banco dados do risco de instabilidade, e dessa forma lançando uma exceção para análise.
+
+As instruções de SQL ( insert, update e delete ), possuem a capacidade de operar ao mesmo tempo, em tabelas distintas do mesmo banco de dados
 
 
-Excluindo um registro
+Inserindo múltiplos registros no banco de dados
 ---------------------
 ~~~ php
-// Exemplo de um DELETE
-PDO4You::delete( 'users', 
-	array(
-		array(
-			'id'		=> $_POST["id"]
-		)
-	)
-);
+<?php
+
+$sql = '
+{
+	query : [
+		{
+			table: "users" ,
+			values: { mail: "email1@gmail.com" }
+		},{
+			table: "users" ,
+			values: { mail: "email2@gmail.com" }
+		},{
+			table: "books" ,
+			values: { title: "titulo", author: "autor" }
+		}
+	] 
+}
+';
+$result = PDO4You::insert($sql);
+
+?>
+~~~ 
+
+
+Atualizando múltiplos registros
+---------------------
+~~~ php
+<?php
+
+$sql = '
+{
+	query : [
+		{
+			table: "users" ,
+			values: { mail: "novo-email1@gmail.com" } ,
+			where: { id: 2 }
+		},{
+			table: "users" ,
+			values: { mail: "novo-email2@gmail.com" } ,
+			where: { id: 3 }
+		},{
+			table: "books" ,
+			values: { title: "novo-titulo", author: "novo-autor" } ,
+			where: { id: 1 }
+		}
+	] 
+}
+';
+$result = PDO4You::update($sql);
+
+?>
+~~~ 
+
+
+Excluindo múltiplos registros
+---------------------
+~~~ php
+<?php
+
+$sql = '
+{
+	query : [
+		{
+			table: "users" ,
+			where: { id: 2 }
+		},{
+			table: "users" ,
+			where: { id: 5 }
+		},{
+			table: "users" ,
+			where: { id: 10 }
+		},{
+			table: "books" ,
+			where: { id: 10 }
+		}
+	] 
+}
+';
+$result = PDO4You::delete($sql);
+
+?>
 ~~~ 
