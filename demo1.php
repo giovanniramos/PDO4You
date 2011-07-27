@@ -55,9 +55,5 @@ $users->init();
 	
 	<?=$users->getMessage();?>
 
-	<?
-	echo (!isset($ultimoId)) ? NULL : 'Registro #'.$ultimoId.', adicionado com sucesso!';
-	?>
-
 </body>
 </html>
