@@ -3,6 +3,10 @@
 Esta classe é baseada no PDO, que é uma extensão do PHP que permite aos desenvolvedores criar um código portável, de modo a atender a maioria das bases de dados mais populares. 
 Sendo o MySQL, PostgreSQL, MS SQL Server, Sybase, Oracle.
 
+O PDO provê uma camada abstrata de acesso a dados, que independentemente de qual base de dados você esteja utilizando, sempre poderá usar os mesmos métodos para emitir consultas e buscar dados.
+
+O padrão de projeto Singleton foi adotado para otimizar a conexão, garantindo uma única instância do objeto de conexão por base de dados.
+
 
 Vantagens no uso da classe:
 ==========
@@ -12,6 +16,7 @@ Vantagens no uso da classe:
 * Múltiplas instâncias de conexão distinta
 * Instrução SQL compacta, usando notação JSON
 * Tratamento de erros com Stack Trace
+
 
 
 Verificando os drivers suportados pelo servidor
@@ -27,10 +32,16 @@ PDO4You::getAvailableDrivers();
 ?>
 ~~~
 
+Para habilitar os drivers basta editar o arquivo php.ini e descomentar as seguintes linhas:
 
-O PDO provê uma camada abstrata de acesso a dados, que independentemente de qual base de dados você esteja utilizando, sempre poderá usar as mesmas funções para emitir consultas e buscar dados.
+extension=php_pdo.dll
+extension=php_pdo_mysql.dll
+extension=php_pdo_pgsql.dll
+extension=php_pdo_mssql.dll
+extension=php_pdo_oci.dll
+extension=php_pdo_oci8.dll
+extension=php_pdo_sqlite.dll
 
-O padrão de projeto Singleton otimiza a conexão em PDO4You, garantindo uma única instância do objeto de conexão por base de dados.
 
 
 Carregando a interface, a classe PDO4You de conexão e o autoloader
@@ -54,6 +65,7 @@ require_once("PDOLibrary.class.php");
 
 
 Um DSN ou Data Source Name (Nome de Fonte de Dados), armazena as informações necessárias para se iniciar uma comunicação com outras fontes de dados, tais como: tipo de tecnologia, nome do servidor ou localização, nome da base de dados, usuário, senha  e outras configurações adicionais. Isso facilita a troca de acesso a base de dados que sofrerem migração.
+
 
 
 Conectando-se a uma base de dados
@@ -96,15 +108,15 @@ Create(INSERT), Retrieve(SELECT), Update(UPDATE) e Destroy(DELETE)
 
 Instruções SQL de consulta:
 
-`PDO4You::select():` Obtém registros como um array indexado pelo nome da coluna. Equivale a PDO::FETCH_ASSOC
+`PDO4You::select()`: Obtém registros como um array indexado pelo nome da coluna. Equivale a PDO::FETCH_ASSOC
 
-`PDO4You::selectNum():` Obtém registros como um array indexado pelo número da coluna. Equivale a PDO::FETCH_NUM
+`PDO4You::selectNum()`: Obtém registros como um array indexado pelo número da coluna. Equivale a PDO::FETCH_NUM
 
-`PDO4You::selectObj():` Obtém registros como um objeto com nomes de coluna como propriedades. Equivale a PDO::FETCH_OBJ
+`PDO4You::selectObj()`: Obtém registros como um objeto com nomes de coluna como propriedades. Equivale a PDO::FETCH_OBJ
 
-`PDO4You::selectAll():` Obtém registros como um array indexado tanto pelo nome como pelo número da coluna. Equivale a PDO::FETCH_BOTH
+`PDO4You::selectAll()`: Obtém registros como um array indexado tanto pelo nome como pelo número da coluna. Equivale a PDO::FETCH_BOTH
 
-`PDO4You::rowCount():` Obtém o total de registros afetados em uma operação de SELECT.
+`PDO4You::rowCount()`: Obtém o total de registros afetados em uma operação de SELECT.
 
 Nota: Em determinadas base de dados, o rowCount() com SELECT pode retornar o número de linhas afetadas pela instrução. No entanto, este comportamento não é garantido.
 
@@ -142,7 +154,7 @@ $result = PDO4You::selectObj($sql);
 // Selecionando registros com FETCH_BOTH
 $result = PDO4You::selectAll($sql);
 
-// Selecionando o total de registros com ROWCOUNT
+// Selecionando o total de registros
 $result = PDO4You::rowCount($sql);
 
 
@@ -159,6 +171,7 @@ assegurando a base de dados do risco de instabilidade, e quando isso ocorrer, um
 No MySQL o suporte a transações está disponível em tabelas do tipo InnoDB.
 
 As instruções de SQL do PDO4You (insert, update e delete), possuem a capacidade de operar ao mesmo tempo, em diferentes tabelas da mesma base de dados. Veja abaixo alguns exemplos.
+
 
 
 Inserindo múltiplos registros na base de dados
@@ -189,6 +202,7 @@ $result = PDO4You::insert($sql);
 
 ?>
 ~~~ 
+
 
 
 Atualizando múltiplos registros
@@ -222,6 +236,7 @@ $result = PDO4You::update($sql);
 
 ?>
 ~~~ 
+
 
 
 Excluindo múltiplos registros
