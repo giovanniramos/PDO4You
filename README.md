@@ -3,7 +3,7 @@
 Esta classe é baseada no PDO, que é uma extensão do PHP que permite aos desenvolvedores criar um código portável, de modo a atender a maioria das bases de dados mais populares. 
 Sendo o MySQL, PostgreSQL, MS SQL Server, Sybase, Oracle.
 
-O PDO provê uma camada abstrata de acesso a dados, que independentemente de qual base de dados você esteja utilizando, sempre poderá usar os mesmos métodos para emitir consultas e buscar dados.
+O PDO4You provê uma camada abstrata de acesso a dados, que independentemente de qual base de dados você esteja utilizando, sempre poderá usar os mesmos métodos para emitir consultas e buscar dados.
 
 O padrão de projeto Singleton foi adotado para otimizar a conexão, garantindo uma única instância do objeto de conexão por base de dados.
 
@@ -34,6 +34,7 @@ PDO4You::getAvailableDrivers();
 
 Para habilitar os drivers basta editar o arquivo php.ini e descomentar as seguintes linhas:
 
+~~~ html
 extension=php_pdo.dll
 extension=php_pdo_mysql.dll
 extension=php_pdo_pgsql.dll
@@ -41,7 +42,7 @@ extension=php_pdo_mssql.dll
 extension=php_pdo_oci.dll
 extension=php_pdo_oci8.dll
 extension=php_pdo_sqlite.dll
-
+~~~
 
 
 Carregando a interface, a classe PDO4You de conexão e o autoloader
