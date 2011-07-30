@@ -67,12 +67,12 @@ extension=php_pdo_pgsql.dll
 ;extension=php_pdo_sqlite.dll
 ~~~
 
-Um DSN ou Data Source Name (Nome de Fonte de Dados), armazena as informações necessárias para se iniciar uma comunicação com outras fontes de dados, tais como: tipo de tecnologia, nome do servidor ou localização, nome da base de dados, usuário, senha e outras configurações adicionais. Isso facilita a troca de acesso à uma base de dados que sofrer migração.
-
 
 
 Estabelecendo conexão com a base de dados
 --------------------------------------------------
+
+Para abstrair nossos mecanismos de acesso aos dados, usamos um DSN ou Data Source Name (Nome de Fonte de Dados), que armazena as informações necessárias para se iniciar uma comunicação com outras fontes de dados, tais como: tipo de tecnologia, nome do servidor ou localização, nome da base de dados, usuário, senha e outras configurações adicionais. Isso facilita a troca de acesso à base de dados que sofrerem migração.
 
 ~~~ php
 <?php
@@ -80,12 +80,11 @@ Estabelecendo conexão com a base de dados
 // Principais meios de se iniciar uma instância de conexão. O uso do DSN é opcional.
 
 # MySQL 
-PDO4You::getInstance(); // PADRÃO - Pois já foi definido anteriormente na interface, os dados de acesso
-PDO4You::getInstance('database');
-PDO4You::getInstance('database', 'mysql:host=localhost;');
+PDO4You::getInstance(); // PADRÃO - Os dados de acesso já foram definidos na interface
+PDO4You::getInstance('database'); // Instanciando e definindo uma outra base de dados que será utilizada
 
 
-// Conectando-se a outras base de dados, através de um DSN.
+// Conectando-se a outras fontes de dados, através de um DSN.
 
 # MySQL
 PDO4You::getInstance('database', 'mysql:host=localhost;port=3306;', 'root', 'pass');
@@ -189,7 +188,33 @@ As instruções SQL da classe PDO4You (insert, update e delete) fazem agora o us
 Abaixo seguem trechos de exemplo na prática.
 
 
-Inserindo múltiplos registros na base de dados
+Inserindo um simples registro na base de dados
+--------------------------------------------------
+
+~~~ php
+<?php
+
+// SQL query
+$sql = '
+{
+	query : [
+		{
+			table: "users" ,
+			values: { mail: "teste@gmail.com" }
+		}
+	] 
+}
+';
+
+// A variável $result armazena, como retorno do método, um array com o ID de cada operação de inserção
+$result = PDO4You::insert($sql);
+
+?>
+~~~ 
+
+
+
+Inserindo múltiplos registros
 --------------------------------------------------
 
 ~~~ php
@@ -213,7 +238,7 @@ $sql = '
 }
 ';
 
-// A variável $result armazena como retorno do método, um array com o ID de cada operação de inserção
+// A variável $result armazena um array com o ID de cada operação de inserção
 $result = PDO4You::insert($sql);
 
 ?>
