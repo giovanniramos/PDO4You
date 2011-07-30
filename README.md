@@ -107,7 +107,7 @@ PDO4You::getInstance('database', 'OCI:dbname=database;charset=UTF-8', 'root', 'p
 
 
 
-Selecionando registros na base de dados
+Realizando operações CRUD em sua base de dados
 --------------------------------------------------
 
 O termo CRUD em inglês se refere as 4 operações básicas em uma base de dados e significam: 
@@ -128,8 +128,11 @@ Instruções SQL de consulta:
 Nota: Em determinadas base de dados, o rowCount() com SELECT pode retornar o número de linhas afetadas pela instrução. No entanto, este comportamento não é garantido.
 
 
-Abaixo seguem exemplos de como realizar estas operações em sua base de dados.
+Abaixo seguem exemplos de como realizar estas operações.
 
+
+Selecionando registros na base de dados
+--------------------------------------------------
 
 ~~~ php
 <?php
@@ -173,6 +176,7 @@ echo "<pre><h3>Resultado:</h3> ",print_r($result, true),"</pre>";
 ~~~ 
 
 
+
 Os métodos insert(), update() e delete() da classe PDO4You estão aninhadas entre transações, sendo elas beginTransaction() e commit(). Isto garante que o sistema consiga reverter uma operação mal sucedida e todas as alterações feitas desde o início de uma transação.
 
 Um erro grave na execução resulta em invocar o rollBack(), desfazendo toda a operação. Consequentemente será lançada uma Exception, rastreando o caminho de todas as classes e métodos envolvidos na operação, agilizando em ambiente de "produção" o processo de debug e com isso, assegurando a base de dados do risco de se tornar instável.
@@ -181,8 +185,8 @@ No MySQL o suporte a transações está disponível em tabelas do tipo InnoDB.
 
 As instruções SQL da classe PDO4You (insert, update e delete) fazem agora o uso de notação JSON, um novo formato de se escrever querys que por sua vez possui convenções muito semelhante às linguagens como Python, Ruby, C++, Java, JavaScript. A nova sintaxe adotada pela classe é bem mais bonita e concisa, que a usada por Arrays. Além de compacta, as instruções possuem a capacidade de operar ao mesmo tempo, em diferentes tabelas da mesma base de dados. 
 
-Abaixo seguem trechos de exemplo na prática.
 
+Abaixo seguem trechos de exemplo na prática.
 
 
 Inserindo múltiplos registros na base de dados
