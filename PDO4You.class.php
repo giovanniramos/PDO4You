@@ -728,7 +728,7 @@ class PDO4You implements PDOConfig
 		try {
 			try {
 				$json = preg_replace('~[\n\r\t]~', '', $json);
-				$json = preg_replace('~([{,])[[:space:]]*([^"]+?)[[:space:]]*:~','$1"$2":',$json);
+				$json = preg_replace('~(,?[{,])[[:space:]]*([^"]+?)[[:space:]]*:~','$1"$2":',$json);
 				$jarr = json_decode($json, true);
 				
 				if(is_null($jarr))
