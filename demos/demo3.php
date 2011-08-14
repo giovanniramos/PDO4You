@@ -10,7 +10,7 @@
  * 
  * */
 //Load of all necessary classes
-require_once('../classes/PDO4You.load.php');
+require_once('../PDOYou.load.php');
 
 
 // Iniciando a instância de uma conexão

@@ -12,11 +12,11 @@
           
 
 // Load of all necessary classes
-require_once('../classes/PDOYou.load.php');
+require_once('../PDOYou.load.php');
                                 
 
 // Load the User test case
-require_once('tests/Users.class.php');
+require_once('../tests/Users.class.php');
 
 // Instânciando a classe Users
 $users = new Users();

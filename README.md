@@ -25,7 +25,7 @@ Introdução: carregando a Interface, a DAO e o Autoloader respectivamente
 ~~~ php
 <?php
 
-// Apenas um arquivo é necessário para carregar toda a biblioteca PDO4You
+// Apenas um arquivo é necessário para carregar toda a biblioteca (dependendo do diretório onde você instalar o PDO4You, pode ser necessário inserí-lo antes do nome do arquivo PDO4You.load.php )
 require_once("PDO4You.load.php");
 
 ?>
