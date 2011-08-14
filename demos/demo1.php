@@ -9,18 +9,14 @@
  * @version 1.0
  * 
  * */
+          
 
+// Load of all necessary classes
+require_once('../classes/PDOYou.load.php');
+                                
 
-// Invocamos o arquivo de configuração 
-require_once("PDOConfig.class.php");
-
-// Invocamos a classe PDO4You
-require_once("PDO4You.class.php");
-
-// Invocamos a biblioteca de funções
-require_once("PDOLibrary.class.php");
-
-
+// Load the User test case
+require_once('tests/Users.class.php');
 
 // Instânciando a classe Users
 $users = new Users();
