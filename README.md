@@ -25,13 +25,14 @@ Introdução: carregando a Interface, a DAO e o Autoloader respectivamente
 ~~~ php
 <?php
 
-// São apenas 3 arquivos necessários para serem incluídas em sua aplicação
-require_once("PDOConfig.class.php");
-require_once("PDO4You.class.php");
-require_once("PDOLibrary.class.php");
+// Apenas um arquivo é necessário para carregar toda a biblioteca.
+// (dependendo do diretório onde você instalar o PDO4You, 
+// pode ser necessário inserí-lo antes do nome do arquivo PDO4You.load.php )
+require_once("PDO4You.load.php");
 
 ?>
 ~~~ 
+`PDO4You.load.php`: contém a função para carregamento inteligente de todos os arquivos necessários para o funcionamento da lib PDO4You.
 
 `PDOConfig.class.php`: contém a interface de configuração inicial, de acesso ao servidor e a base de dados.
 

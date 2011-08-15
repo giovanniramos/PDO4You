@@ -10,16 +10,8 @@
  * 
  * */
 
-
-// Invocamos o arquivo de configuração 
-require_once("PDOConfig.class.php");
-
-// Invocamos a classe PDO4You
-require_once("PDO4You.class.php");
-
-// Invocamos a biblioteca de funções
-require_once("PDOLibrary.class.php");
-
+//Load of all necessary classes
+require_once('../PDOYou.load.php');
 
 
 // Iniciando a instância de uma conexão
