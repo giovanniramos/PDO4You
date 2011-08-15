@@ -19,25 +19,27 @@ Vantagens no uso da classe:
 
 
 
-Introdução: carregando a Interface, a DAO e o Autoloader respectivamente
+Introdução: carregando toda a biblioteca necessária
 ==================================================
 
 ~~~ php
 <?php
 
-// São apenas 3 arquivos necessários para serem incluídas em sua aplicação
-require_once("PDOConfig.class.php");
-require_once("PDO4You.class.php");
-require_once("PDOLibrary.class.php");
+// Apenas um arquivo é necessário para carregar toda a biblioteca.
+// (dependendo do diretório onde você instalar o PDO4You, 
+// pode ser necessário inserí-lo antes do nome do arquivo PDO4You.load.php )
+require_once("PDO4You.load.php");
 
 ?>
 ~~~ 
 
-`PDOConfig.class.php`: contém a interface de configuração inicial, de acesso ao servidor e a base de dados.
+`PDO4You.load.php`: contém a função para carregamento inteligente de todos os arquivos necessários para o funcionamento da lib PDO4You.
+
+`PDOConfig.class.php`: contém a interface de configuração inicial, de acesso ao servidor e base de dados.
 
 `PDO4You.class.php`: possui a implementação do objeto PDO4You de conexão Singleton, estendendo a extensão PDO do PHP.
 
-`PDOLibrary.class.php`: possui um autoloading de classes e pode ser usado como biblioteca de funções úteis ao sistema.
+`PDOLibrary.php`: possui um autoloading de classes e pode ser usado como biblioteca de funções úteis ao sistema.
 
 
 
@@ -95,12 +97,6 @@ PDO4You::getInstance('database', 'pgsql:host=localhost;', 'root', 'pass');
 # MS SQL
 PDO4You::getInstance('database', 'mssql:host=localhost;', 'root', 'pass');
 
-# Sybase  
-PDO4You::getInstance('database', 'sybase:host=localhost;', 'root', 'pass');
-
-# Oracle
-PDO4You::getInstance('database', 'OCI:dbname=database;charset=UTF-8', 'root', 'pass');
-
 ?>
 ~~~ 
 
@@ -121,10 +117,6 @@ Instruções SQL de consulta:
 `PDO4You::selectObj()`: Obtém registros como um objeto com nomes de coluna como propriedades. Equivale a PDO::FETCH_OBJ
 
 `PDO4You::selectAll()`: Obtém registros como um array indexado tanto pelo nome como pelo número da coluna. Equivale a PDO::FETCH_BOTH
-
-`PDO4You::rowCount()`: Obtém o total de registros afetados em uma operação de SELECT.
-
-Nota: Em determinadas base de dados, o rowCount() com SELECT pode retornar o número de linhas afetadas pela instrução. No entanto, este comportamento não é garantido.
 
 
 Abaixo seguem exemplos de como realizar estas operações.
@@ -164,12 +156,15 @@ $result = PDO4You::selectObj($sql);
 // Selecionando registros com FETCH_BOTH
 $result = PDO4You::selectAll($sql);
 
-// Selecionando o total de registros
-$result = PDO4You::rowCount($sql);
 
+// Selecionando todos os registros
+$result = PDO4You::select("SELECT * FROM books");
 
-// Imprimindo o resultado 
-echo "<pre><h3>Resultado:</h3> ",print_r($result, true),"</pre>";
+// Obtendo o total de linhas afetadas pela operação
+$total = PDO4You::rowCount();
+
+// Exibindo o resultado da consulta
+echo "<pre><h3>Resultado da consulta:</h3> ",print_r($result, true),"</pre>";
 
 ?>
 ~~~ 
@@ -206,8 +201,14 @@ $sql = '
 }
 ';
 
-// A variável $result armazena, como retorno do método, um array com o ID de cada operação de inserção
+// A variável $result armazena como retorno do método, um array com o número de linhas afetadas por operação de inserção
 $result = PDO4You::insert($sql);
+
+// Logo após a inserção, utilize o método lastId(), para recuperar o ID da última operação de inserção na base de dados
+$lastInsertId = PDO4You::lastId();
+
+// Se estiver usando o driver pgsql(Postgres), será necessário informar o nome da seqüência para obter o ID, que por padrão foi definido como "_id_seq"
+$lastInsertId = PDO4You::lastId('_id_seq');
 
 ?>
 ~~~ 
@@ -226,19 +227,19 @@ $sql = '
 	query : [
 		{
 			table: "users" ,
-			values: { mail: "email1@gmail.com" }
+			values: { mail: "mail_1@domain.com" }
 		},{
 			table: "users" ,
-			values: { mail: "email2@gmail.com" }
+			values: { mail: "mail_2@domain.com" }
 		},{
 			table: "books" ,
-			values: { title: "titulo", author: "autor" }
+			values: { title: "title", author: "author" }
 		}
 	] 
 }
 ';
 
-// A variável $result armazena um array com o ID de cada operação de inserção
+// A variável $result armazena um array com o número de linhas afetadas por operação de inserção
 $result = PDO4You::insert($sql);
 
 ?>
@@ -258,15 +259,15 @@ $sql = '
 	query : [
 		{
 			table: "users" ,
-			values: { mail: "novo-email1@gmail.com" } ,
+			values: { mail: "mail_1@domain.com" } ,
 			where: { id: 2 }
 		},{
 			table: "users" ,
-			values: { mail: "novo-email2@gmail.com" } ,
+			values: { mail: "mail_2@domain.com" } ,
 			where: { id: 3 }
 		},{
 			table: "books" ,
-			values: { title: "novo-titulo", author: "novo-autor" } ,
+			values: { title: "new-title", author: "new-author" } ,
 			where: { id: 1 }
 		}
 	] 
