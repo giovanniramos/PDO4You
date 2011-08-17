@@ -815,7 +815,7 @@ class PDO4You implements PDOConfig
 	/**
 	 * Método que converte uma string no formato JSON para Array 
 	 * 
-	 * @access private static	 	 
+	 * @access private static
 	 * @param string $json String no formato de notação json
 	 * @return array Retorna o array convertido
 	 * 
@@ -824,8 +824,9 @@ class PDO4You implements PDOConfig
 	{
 		try {
 			try {
+				$json = mb_detect_encoding($json, 'UTF-8', true) ? $json : utf8_encode($json);
 				$json = preg_replace('~[\n\r\t]~', '', $json);
-				$json = preg_replace('~(,?[{,])[[:space:]]*([^"]+?)[[:space:]]*:~','$1"$2":',$json);
+				$json = preg_replace('~(,?[{,])[[:space:]]*([^"]+?)[[:space:]]*:~', '$1"$2":', $json);
 				$jarr = json_decode($json, true);
 				
 				if(is_null($jarr))
