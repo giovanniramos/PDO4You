@@ -3,16 +3,14 @@
 /**
  * Biblioteca de funções
  * 
- * PHP version 5
- * 
- * @category PHP
+ * @category Library
  * @package PDO4You
  * @author Giovanni Ramos <giovannilauro@gmail.com>
- * @copyright Giovanni Ramos
- * @since 2010-09-07 
+ * @copyright 2010-2012, Giovanni Ramos
+ * @since 2010-09-07
  * @version 2.1
- * @license http://opensource.org/licenses/gpl-license.php GNU Public License
- * @link https://github.com/giovanniramos/PDO4YOU
+ * @license http://opensource.org/licenses/gpl-3.0.html GNU Public License
+ * @link https://github.com/giovanniramos/PDO4You
  *
  * */
 
@@ -44,6 +42,7 @@ function __autoload($class)
  * @param string $expr2 Operador de avaliação
  * @param string $expr3 Atribuição condicional
  * @return integer Retorna o total de ocorrências
+ * @link https://gist.github.com/3100679
  * @see PDO4You::rowCount()
  * 
  * */
@@ -92,4 +91,3 @@ function htmlColon($str)
 
     return $str;
 }
-
