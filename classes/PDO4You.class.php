@@ -369,7 +369,7 @@ class PDO4You implements PDOConfig
 		if(isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest'){
 			$jarr['timer'] = '15000';
 			$jarr['status'] = 'no';
-			$jarr['info']['stack'][$i=0] = "</strong>Exception:</strong> ".$e->getMessage()."<br />";
+			$jarr['info']['stack'][$i=0] = "<strong>Exception:</strong> ".$e->getMessage()."<br />";
 			foreach ($e->getTrace() as $t)
 			$jarr['info']['stack'][$i] = "#".$i++." ".basename($t['file']).":".$t['line'];
 			$json = json_encode($jarr, true);
@@ -383,9 +383,9 @@ class PDO4You implements PDOConfig
 			
 			$count = 0;
 			$stack = '<div id="pdo4you">';
-			$stack.= '</strong>Exception:</strong> '.$e->getMessage().'<br /><br />';
+            $stack.= '<strong>Exception:</strong> ' . $e->getMessage() . '<br />';
 			foreach ($e->getTrace() as $t)
-			$stack.= '<div class="source">&nbsp;<strong>#'.$count++.'</strong> '.$t['file'].':'.$t['line'].'</div><div class="source bottom">'.self::highlightSource($t['file'], $t['line']).'</div>';
+                $stack.= '<code>&nbsp;<strong>#' . $count++ . '</strong> ' . $t['file'] . ':' . $t['line'] . '</code><code class="trace">' . self::highlightSource($t['file'], $t['line']) . '</code>';
 			$stack.= '</div>';
 			
 			exit($stack);
