@@ -83,15 +83,15 @@ class Test_CRUD
     public function multipleInsert()
     {
         $sql = '
-		{ query : [
-			{
-				table: "users" ,
-				values: { firstname: "' . $this->genFakeName() . '", lastname: "' . $this->genFakeName() . '" }
-			},{
-				table: "users" ,
-				values: { firstname: "' . $this->genFakeName() . '", lastname: "' . $this->genFakeName() . '" }
-			}
-		] }
+        { query : [
+            {
+                table: "users" ,
+                values: { firstname: "' . $this->genFakeName() . '", lastname: "' . $this->genFakeName() . '" }
+            },{
+                table: "users" ,
+                values: { firstname: "' . $this->genFakeName() . '", lastname: "' . $this->genFakeName() . '" }
+            }
+        ] }
 		';
 
         // Store the result
@@ -109,25 +109,25 @@ class Test_CRUD
     public function multipleUpdate()
     {
         $sql = '
-		{ query : [
-			{
-				table: "users" ,
-				values: { lastname: "' . strtoupper($this->genFakeName()) . '" } ,
-				where: { id: 2 }
-			},{
-				table: "users" ,
-				values: { lastname: "' . strtoupper($this->genFakeName()) . '" } ,
-				where: { id: 12 }
-			},{
-				table: "users" ,
-				values: { lastname: "' . strtoupper($this->genFakeName()) . '" } ,
-				where: { id: 30 }
-			},{
-				table: "users" ,
-				values: { lastname: "' . strtoupper($this->genFakeName()) . '" } ,
-				where: { id: 1 }
-			}
-		] }
+        { query : [
+            {
+                table: "users" ,
+                values: { lastname: "' . strtoupper($this->genFakeName()) . '" } ,
+                where: { id: 2 }
+            },{
+                table: "users" ,
+                values: { lastname: "' . strtoupper($this->genFakeName()) . '" } ,
+                where: { id: 12 }
+            },{
+                table: "users" ,
+                values: { lastname: "' . strtoupper($this->genFakeName()) . '" } ,
+                where: { id: 30 }
+            },{
+                table: "users" ,
+                values: { lastname: "' . strtoupper($this->genFakeName()) . '" } ,
+                where: { id: 1 }
+            }
+        ] }
 		';
 
         // Store the result
@@ -145,21 +145,21 @@ class Test_CRUD
     public function multipleDelete()
     {
         $sql = '
-		{ query : [
-			{
-				table: "users" , 
-				where: { id: 4 }
-			},{
-				table: "users" ,
-				where: { id: 20 }
-			},{
-				table: "users" ,
-				where: { id: 30 }
-			},{
-				table: "books" ,
-				where: { id: 10 }
-			}
-		] }
+        { query : [
+            {
+                table: "users" , 
+                where: { id: 4 }
+            },{
+                table: "users" ,
+                where: { id: 20 }
+            },{
+                table: "users" ,
+                where: { id: 30 }
+            },{
+                table: "books" ,
+                where: { id: 10 }
+            }
+        ] }
 		';
 
         // Store the result
@@ -177,13 +177,13 @@ class Test_CRUD
     public function updateWhere($s)
     {
         $sql = '
-		{ query : [
-			{
-				table: "users" ,
-				values: { description: "' . $s . '" } ,
-				where: { id: 1 }
-			}
-		] }
+        { query : [
+            {
+                table: "books" ,
+                values: { description: "' . $s . '" } ,
+                where: { id: 1 }
+            }
+        ] }
 		';
 
         // Store the result

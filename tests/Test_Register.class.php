@@ -53,12 +53,12 @@ class Test_Register
                     self::$message = '<i>' . $error . '</i><br />';
                 } else {
                     $sql = '
-					{ query : [
-						{
-							table: "users" ,
-							values: { firstname: "' . $firstName . '", lastname: "' . $lastName . '", mail: "' . $mail . '"  }
-						}
-					] }
+                    { query : [
+                        {
+                            table: "users" ,
+                            values: { firstname: "' . $firstName . '", lastname: "' . $lastName . '", mail: "' . $mail . '"  }
+                        }
+                    ] }
 					';
 
                     // Performs the new record

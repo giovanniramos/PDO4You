@@ -280,55 +280,54 @@ class PDO4You implements PDOConfig
 	}
 	
 	
-	/**
-	 * Método para exibir os drivers PDO instalados e suportados pelo servidor
-	 * 
-	 * @access public static 
-	 * @param void
-	 * @return void
-	 * 
-	 * */
-	public static function getAvailableDrivers()
-	{
-		try {
-			if(self::$handle instanceof PDO):
-				self::setStyle();
-				
-				$driver = self::$handle->getAvailableDrivers();
-				$driver = '<b>Drivers suportados:</b> '. implode(", ", $driver);
-				echo '<div class="inline">'.$driver.'</div>';
-			else:
-				throw new PDOFatalError('N&atilde;o existe uma inst&acirc;ncia do objeto PDO4You dispon&iacute;vel. Imposs&iacute;vel acessar os m&eacute;todos.');
-			endif;
-		} catch (PDOFatalError $e) {
-			self::stackTrace($e);
-		}
-	}
+    /**
+     * Método para exibir os drivers PDO instalados e suportados pelo servidor
+     * 
+     * @access public static 
+     * @param void
+     * @return void
+     * 
+     * */
+    public static function getAvailableDrivers()
+    {
+        try {
+            if (self::$handle instanceof PDO):
+                self::setStyle();
+
+                $info = self::$handle->getAvailableDrivers();
+                echo '<h7>Available Drivers: ' , implode(', ', $info) , '</h7>';
+            else:
+                throw new PDOFatalError('N&atilde;o existe uma inst&acirc;ncia do objeto PDO4You dispon&iacute;vel. Imposs&iacute;vel acessar os m&eacute;todos.');
+            endif;
+        } catch (PDOFatalError $e) {
+            self::stackTrace($e);
+        }
+    }
 	
 	
-	/**
-	 * Método para exibir detalhes sobre a meta do servidor da base de dados conectada
-	 * 
-	 * @access public static 
-	 * @param void
-	 * @return void 
-	 * 
-	 * */
-	public static function getServerInfo()
-	{
-		try {
-			if(self::$handle instanceof PDO):
-				self::setStyle();
-				
-				$server = self::$handle->getAttribute(constant("PDO::ATTR_SERVER_INFO")) . '</ br>';
-				echo '<div class="inline">'.$server.'</div>';  	
-			else:
-				throw new PDOFatalError('N&atilde;o existe uma inst&acirc;ncia do objeto PDO4You dispon&iacute;vel. Imposs&iacute;vel acessar os m&eacute;todos.');
-			endif;
-		} catch (PDOFatalError $e) {
-			self::stackTrace($e);
-		}
-	}
+    /**
+     * Método para exibir detalhes sobre a meta do servidor da base de dados conectada
+     * 
+     * @access public static
+     * @param void
+     * @return void
+     * 
+     * */
+    public static function getServerInfo()
+    {
+        try {
+            if (self::$handle instanceof PDO):
+                self::setStyle();
+
+                $info = self::$handle->getAttribute(constant("PDO::ATTR_SERVER_INFO"));
+                echo '<h7>' . $info . '</h7>';
+            else:
+                throw new PDOFatalError('N&atilde;o existe uma inst&acirc;ncia do objeto PDO4You dispon&iacute;vel. Imposs&iacute;vel acessar os m&eacute;todos.');
+            endif;
+        } catch (PDOFatalError $e) {
+            self::stackTrace($e);
+        }
+    }
 	
 	
 	/**
@@ -341,16 +340,17 @@ class PDO4You implements PDOConfig
 	 * */
 	public static function setStyle()
 	{
-		$style = '<style type="text/css">';
-		$style.= 'body       { background:#FAFAFA; font:normal 12px/1.7em Bitstream Vera Sans Mono,Courier New,Monospace; margin:0; }';
-		$style.= '#pdo4you   { margin:8px; padding:0; }';
-		$style.= '.inline    { background:#000000; color:#FFF; padding:2px 5px; }';
-		$style.= '.source    { background:#EFEFEF; border:solid 1px #DDD; border-bottom:none; border-right:solid 1px #BBB; overflow:auto; }';
-		$style.= '.bottom    { background:#FFFFFF; border-top:none; border-bottom:solid 1px #BBB; border-right:solid 1px #BBB; margin-bottom:15px; }';
-		$style.= '.number    { background:#EFEFEF; color:#AAA; min-width:40px; padding:0 5px; margin-right:5px; float:left; text-align:right; cursor:default; }';
-		$style.= '.margin    { padding: 5px; }';
-		$style.= '.highlight { background:#FFFFCC; }';
-		$style.= '</style>';
+        $style = '<style type="text/css">';
+        $style.= 'body, code    { background:#FAFAFA; font:normal 12px/1.7em Bitstream Vera Sans Mono,Courier New,Monospace; margin:0; padding:0; }';
+        $style.= '#pdo4you      { margin:8px; padding:0; }';
+        $style.= 'h2            { display:block; color:#000; background:#FFF; padding:10px; margin:0; #000; font-size:20px; border-bottom:solid 1px #999; }';
+        $style.= 'h7            { display:block; color:#FFF; background:#000; padding:2px 5px; margin:0; font-size:12px; }';
+        $style.= 'code          { display:block; font:inherit; background:#EFEFEF; border:solid 1px #DDD; border-right-color:#BBB; border-bottom:none; margin:10px 10px 0 10px; overflow:auto; }';
+        $style.= '.trace,.debug { background:#FFF; border:solid 1px #BBB; border-left-color:#DDD; border-top:none; margin:0 10px 15px 10px; }';
+        $style.= '.debug        { padding:5px; }';
+        $style.= '.number       { color:#AAA; background:#EFEFEF; min-width:40px; padding:0 5px; margin-right:5px; float:left; text-align:right; cursor:default; }';
+        $style.= '.highlight    { background:#FFC; }';
+        $style.= '</style>';
 		
 		print $style;
 	}
