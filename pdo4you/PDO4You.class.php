@@ -394,11 +394,9 @@ class PDO4You
             self::setStyle();
 
             $count = 0;
-            $query = self::getQuery();
 
             $stack = '<div id="pdo4you">';
             $stack.= '<strong>Exception:</strong> ' . $e->getMessage() . '<br />';
-            $stack.= (!empty($query) ? '<strong>Query:</strong> ' . $query . '<br />' : null) . '<br />';
 
             foreach ($e->getTrace() as $t)
                 $stack.= '<code>&nbsp;<strong>#' . $count++ . '</strong> ' . $t['file'] . ':' . $t['line'] . '</code><code class="trace">' . self::highlightSource($t['file'], $t['line']) . '</code>';
@@ -601,18 +599,6 @@ class PDO4You
     public static function select($sql, $use = null)
     {
         return self::selectRecords($sql, null, $use);
-    }
-
-    private static $query = null;
-
-    public static function setQuery($query)
-    {
-        self::$query = $query;
-    }
-
-    public static function getQuery()
-    {
-        return self::$query;
     }
 
     /**
