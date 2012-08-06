@@ -15,10 +15,10 @@
  * */
 
 /**
- * Autoloading de classes
+ * O Autoloader permite o carregamento automático de classes
  * 
- * @param string $class Nome da classe invocada durante a instância
- * @throws Dispara uma exceção em caso de erro
+ * @param string $class Nome da classe invocada durante o processo
+ * @throws Gera uma exceção em caso de erro
  * 
  * */
 function __autoload($class)
@@ -28,11 +28,29 @@ function __autoload($class)
             spl_autoload_extensions('.class.php');
             spl_autoload($class);
         } catch (Exception $e) {
-            throw new Exception("O Autoloader n&atilde;o conseguiu localizar a classe '<i>Test.class.php</i>', impedindo a inst&acirc;ncia autom&aacute;tica.");
+            throw new Exception("O Autoloader n&atilde;o conseguiu localizar a classe '<i>" . $class . ".class.php</i>', impedindo a sua inst&acirc;ncia autom&aacute;tica.");
         }
     } catch (Exception $e) {
         PDO4You::stackTrace($e);
     }
+}
+
+/**
+ * Conta o total de vezes que os valores de um array não estão vazias
+ * 
+ * @param array $arr Array que será avaliado
+ * @return integer Retorna o total
+ * 
+ * */
+function countValues($arr)
+{
+    $count = 0;
+
+    foreach ($arr as $k => $v)
+        if (!empty($v))
+            $count++;
+
+    return $count;
 }
 
 /**
@@ -41,7 +59,7 @@ function __autoload($class)
  * @param mixed $expr1 Valor que será avaliado
  * @param string $expr2 Operador de avaliação
  * @param string $expr3 Atribuição condicional
- * @return integer Retorna o total de ocorrências
+ * @return integer Retorna o total
  * @link https://gist.github.com/3100679
  * @see PDO4You::rowCount()
  * 
@@ -63,7 +81,7 @@ function countWhere($expr1 = 1, $expr2 = '==', $expr3 = 1)
 }
 
 /**
- * Remove a marcação de estilo em tags html, oriundas de um editor de texto por exemplo
+ * Remove a marcação de estilo em tags html oriundas de um editor de texto
  * 
  * @param string $str A string de entrada
  * @return string
@@ -78,7 +96,7 @@ function clearStyle($str)
 }
 
 /**
- * Converte o caracter de 'Dois Pontos' em uma string
+ * Converte o caracter de 'dois pontos' em uma string
  * 
  * @param string $str A string de entrada
  * @return string
