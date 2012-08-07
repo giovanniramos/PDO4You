@@ -26,20 +26,18 @@ Introdução: carregando toda a biblioteca necessária
 <?php
 
 // Apenas um arquivo é necessário para carregar toda a biblioteca.
-// (dependendo do diretório onde você instalar o PDO4You, 
-// pode ser necessário inserí-lo antes do nome do arquivo PDO4You.load.php )
 require_once("PDO4You.load.php");
 
 ?>
 ~~~ 
 
-`PDO4You.load.php`: contém a função para carregamento inteligente de todos os arquivos necessários para o funcionamento da lib PDO4You.
+`PDO4You.load.php`: arquivo responsável pelo carregamento dos arquivos necessários ao funcionamento da lib PDO4You.
 
-`PDOConfig.class.php`: contém a interface de configuração inicial, de acesso ao servidor e base de dados.
+`PDO4You.class.php`: contém a implementação do objeto PDO4You de conexão, estendendo a extensão PDO.
 
-`PDO4You.class.php`: possui a implementação do objeto PDO4You de conexão Singleton, estendendo a extensão PDO do PHP.
+`PDO4You.config.php`: arquivo de configuração inicial, de acesso ao servidor e base de dados.
 
-`PDOLibrary.php`: possui um autoloading de classes e pode ser usado como biblioteca de funções úteis ao sistema.
+`PDO4You.library.php`: contém um autoloading de classes e pode ser usado como biblioteca de funções úteis ao sistema.
 
 
 
@@ -89,9 +87,9 @@ PDO4You::getInstance('database'); // Instanciando e definindo uma outra base de 
 // Conectando-se a outras fontes de dados, através de um DSN.
 
 # MySQL
-PDO4You::getInstance('database', 'mysql:host=localhost;port=3306;', 'root', 'pass');
+PDO4You::getInstance('database', 'mysql:host=localhost;', 'root', 'pass');
 
-# PgSQL
+# PostgreSQL
 PDO4You::getInstance('database', 'pgsql:host=localhost;', 'root', 'pass');
 
 # MS SQL
@@ -110,13 +108,13 @@ Create(INSERT), Retrieve(SELECT), Update(UPDATE) e Destroy(DELETE)
 
 Instruções SQL de consulta:
 
-`PDO4You::select()`: Obtém registros como um array indexado pelo nome da coluna. Equivale a PDO::FETCH_ASSOC
+`PDO4You::select()`: obtém registros como um array indexado pelo nome da coluna. Equivale a PDO::FETCH_ASSOC
 
-`PDO4You::selectNum()`: Obtém registros como um array indexado pelo número da coluna. Equivale a PDO::FETCH_NUM
+`PDO4You::selectNum()`: obtém registros como um array indexado pelo número da coluna. Equivale a PDO::FETCH_NUM
 
-`PDO4You::selectObj()`: Obtém registros como um objeto com nomes de coluna como propriedades. Equivale a PDO::FETCH_OBJ
+`PDO4You::selectObj()`: obtém registros como um objeto com nomes de coluna como propriedades. Equivale a PDO::FETCH_OBJ
 
-`PDO4You::selectAll()`: Obtém registros como um array indexado tanto pelo nome como pelo número da coluna. Equivale a PDO::FETCH_BOTH
+`PDO4You::selectAll()`: obtém registros como um array indexado tanto pelo nome como pelo número da coluna. Equivale a PDO::FETCH_BOTH
 
 
 Abaixo seguem exemplos de como realizar estas operações.
@@ -158,13 +156,13 @@ $result = PDO4You::selectAll($sql);
 
 
 // Selecionando todos os registros
-$result = PDO4You::select("SELECT * FROM books");
+$result = PDO4You::select('SELECT * FROM books');
 
 // Obtendo o total de linhas afetadas pela operação
 $total = PDO4You::rowCount();
 
 // Exibindo o resultado da consulta
-echo "<pre><h3>Resultado da consulta:</h3> ",print_r($result, true),"</pre>";
+echo '<pre><h3>Resultado da consulta:</h3> ' , print_r($result, true) , '</pre>';
 
 ?>
 ~~~ 
@@ -195,7 +193,7 @@ $sql = '
 	query : [
 		{
 			table: "users" ,
-			values: { mail: "teste@gmail.com" }
+			values: { mail: "pdo4you@gmail.com" }
 		}
 	] 
 }
