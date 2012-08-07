@@ -98,7 +98,7 @@ class Test_CRUD
         $rs = PDO4You::insert($sql, 'pdo4you');
 
         echo '<code>&nbsp;<strong>Test with PDO4You::insert()</strong></code>';
-        echo '<code class="debug">PDO4You::insert(' . $this->formatSql($sql) . ', ' . $this->formatDB() . ');' . $this->formatRS($rs, true) . '</code>';
+        echo '<code class="debug">PDO4You::insert(' . $this->formatSql($sql) . ', ' . $this->formatDB() . ');' . $this->formatRS($rs, true, true) . '</code>';
     }
 
     /**
@@ -112,19 +112,19 @@ class Test_CRUD
         { query : [
             {
                 table: "users" ,
-                values: { lastname: "' . strtoupper($this->genFakeName()) . '" } ,
+                values: { mail: "' . strtolower($this->genFakeName()) . '@gmail.com" } ,
                 where: { id: 2 }
             },{
                 table: "users" ,
-                values: { lastname: "' . strtoupper($this->genFakeName()) . '" } ,
+                values: { mail: "' . strtolower($this->genFakeName()) . '@gmail.com" } ,
                 where: { id: 12 }
             },{
                 table: "users" ,
-                values: { lastname: "' . strtoupper($this->genFakeName()) . '" } ,
+                values: { mail: "' . strtolower($this->genFakeName()) . '@gmail.com" } ,
                 where: { id: 30 }
             },{
                 table: "users" ,
-                values: { lastname: "' . strtoupper($this->genFakeName()) . '" } ,
+                values: { mail: "' . strtolower($this->genFakeName()) . '@gmail.com" } ,
                 where: { id: 1 }
             }
         ] }
@@ -134,7 +134,7 @@ class Test_CRUD
         $rs = PDO4You::update($sql, 'pdo4you');
 
         echo '<code>&nbsp;<strong>Test with PDO4You::update()</strong></code>';
-        echo '<code class="debug">PDO4You::update(' . $this->formatSql($sql) . ', ' . $this->formatDB() . ');' . $this->formatRS($rs, true) . '</code>';
+        echo '<code class="debug">PDO4You::update(' . $this->formatSql($sql) . ', ' . $this->formatDB() . ');' . $this->formatRS($rs, true, true) . '</code>';
     }
 
     /**
@@ -166,7 +166,7 @@ class Test_CRUD
         $rs = PDO4You::delete($sql, 'pdo4you');
 
         echo '<code>&nbsp;<strong>Test with PDO4You::delete()</strong></code>';
-        echo '<code class="debug">PDO4You::delete(' . $this->formatSql($sql) . ', ' . $this->formatDB() . ');' . $this->formatRS($rs, true) . '</code>';
+        echo '<code class="debug">PDO4You::delete(' . $this->formatSql($sql) . ', ' . $this->formatDB() . ');' . $this->formatRS($rs, true, true) . '</code>';
     }
 
     /**
@@ -174,14 +174,14 @@ class Test_CRUD
      * Usage: PDO4You::update()
      * 
      * */
-    public function updateWhere($s)
+    public function updateWhere($s, $i)
     {
         $sql = '
         { query : [
             {
                 table: "books" ,
                 values: { description: "' . $s . '" } ,
-                where: { id: 1 }
+                where: { id: ' . $i . ' }
             }
         ] }
 		';
@@ -190,7 +190,7 @@ class Test_CRUD
         $rs = PDO4You::update($sql, 'pdo4you');
 
         echo '<code>&nbsp;<strong>Test with PDO4You::update()</strong></code>';
-        echo '<code class="debug">PDO4You::update(' . $this->formatSql($sql) . ', ' . $this->formatDB() . ');' . $this->formatRS($rs, true) . '</code>';
+        echo '<code class="debug">PDO4You::update(' . $this->formatSql($sql) . ', ' . $this->formatDB() . ');' . $this->formatRS($rs, false, true) . '</code>';
     }
 
     /**
@@ -219,14 +219,18 @@ class Test_CRUD
      * Format the Result
      * 
      */
-    private function formatRS($rs, $extra = false)
+    private function formatRS($rs, $show_id = false, $show_total = false)
     {
         $s = '<br /><br />- The code above will output: ';
         $s.= '<pre style="color:blue;">' . print_r($rs, true) . '</pre>';
 
-        if ($extra) {
-            $s.= 'Id of the last iteration: <strong style="color:red;">' . PDO4You::lastId() . '</strong> &nbsp;|&nbsp; ';
-            $s.= 'Total records affected: <strong style="color:red;">' . PDO4You::rowCount() . '</strong><br />';
+        if ($show_id) 
+            $s.= 'Id of the last iteration: <strong style="color:red;">' . PDO4You::lastId() . '</strong>';
+
+        if ($show_total) {
+            if ($show_id)
+                $s.= ' &nbsp;|&nbsp;';
+            $s.= 'Total records affected: <strong style="color:red;">' . PDO4You::rowCount() . '</strong>';
         }
 
         return $s;

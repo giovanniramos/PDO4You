@@ -16,7 +16,7 @@ PDO4You::getServerInfo();
 <title>PDO4You</title>
 <style>a {color: #069; text-decoration: none;} b {color: #ccc;}</style>
 <html>
-    <body>
+    <body id="pdo4you">
         <?php
         $pag = isset($_GET['p']) ? $_GET['p'] : null;
 

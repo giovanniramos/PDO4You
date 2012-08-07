@@ -12,7 +12,7 @@ $test->init();
 echo '<h2><a href=".">TEST</a> &rsaquo; READ RECORDS</h2>';
 ?>
 
-<div id="pdo4you">
+<div class="pdo4you">
     <form method="post">
         <h3><?php echo $test::ADD_NEW_USER; ?></h3>
 
