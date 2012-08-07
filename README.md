@@ -26,7 +26,6 @@ Introdução: carregando toda a biblioteca necessária
 <?php
 
 // Apenas um arquivo é necessário para carregar toda a biblioteca.
-// (dependendo do diretório onde você instalar o PDO4You, pode ser necessário inserí-lo antes do nome do arquivo PDO4You.load.php )
 require_once("PDO4You.load.php");
 
 ?>
@@ -90,7 +89,7 @@ PDO4You::getInstance('database'); // Instanciando e definindo uma outra base de 
 # MySQL
 PDO4You::getInstance('database', 'mysql:host=localhost;', 'root', 'pass');
 
-# PgSQL
+# PostgreSQL
 PDO4You::getInstance('database', 'pgsql:host=localhost;', 'root', 'pass');
 
 # MS SQL
@@ -157,13 +156,13 @@ $result = PDO4You::selectAll($sql);
 
 
 // Selecionando todos os registros
-$result = PDO4You::select("SELECT * FROM books");
+$result = PDO4You::select('SELECT * FROM books');
 
 // Obtendo o total de linhas afetadas pela operação
 $total = PDO4You::rowCount();
 
 // Exibindo o resultado da consulta
-echo "<pre><h3>Resultado da consulta:</h3> ",print_r($result, true),"</pre>";
+echo '<pre><h3>Resultado da consulta:</h3> ' , print_r($result, true) , '</pre>';
 
 ?>
 ~~~ 
