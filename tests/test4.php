@@ -21,9 +21,9 @@ echo '<h2><a href=".">TEST</a> &rsaquo; READ RECORDS</h2>';
         <div><?php echo $test::MAIL; ?>: <input type="text" name="mail" /></div>
         <div><input type="submit" value="Register" /></div>
     </form>
-    
+
     <?php echo $test->getMessage(); ?>
-    
+
     <br />
 
     <?php echo $test::TOTAL_USERS; ?>: <?php echo $test->getTotalRecords(); ?>

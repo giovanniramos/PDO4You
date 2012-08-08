@@ -19,3 +19,5 @@ $sample_text = htmlColon($sample_text);
 
 // UPDATE books SET description = ? WHERE id = 1
 $test->updateWhere($sample_text, 1);
+
+?>

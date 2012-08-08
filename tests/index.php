@@ -10,6 +10,9 @@ PDO4You::setStyle();
 
 // Displaying details on the target server's database connected
 PDO4You::getServerInfo();
+
+// Displays all available drivers
+#PDO4You::getAvailableDrivers();
 ?>
 <!DOCTYPE html>
 <meta charset="utf-8" />

@@ -34,7 +34,7 @@ class Test_CRUD
         $rs = PDO4You::select($this->sql, $db);
 
         echo '<code>&nbsp;<strong>Test with PDO4You::select()</strong></code>';
-        echo '<code class="debug">PDO4You::select(' . $this->formatSql() . ', ' . $this->formatDB($db) . ');' . $this->formatRS($rs) . '</code>';
+        echo '<code class="debug">PDO4You::select(' . $this->formatSql() . ', ' . $this->formatDB($db) . ');' . $this->formatRS($rs, false, true) . '</code>';
     }
 
     /**
@@ -54,16 +54,16 @@ class Test_CRUD
         $rs = PDO4You::select($this->sql);
 
         echo '<code>&nbsp;<strong>Test with PDO4You::selectNum()</strong></code>';
-        echo '<code class="debug">PDO4You::selectNum(' . $this->formatSql() . ', ' . $this->formatDB() . ');' . $this->formatRS($rs_num) . '</code>';
+        echo '<code class="debug">PDO4You::selectNum(' . $this->formatSql() . ', ' . $this->formatDB() . ');' . $this->formatRS($rs_num, false, true) . '</code>';
 
         echo '<code>&nbsp;<strong>Test with PDO4You::selectObj()</strong></code>';
-        echo '<code class="debug">PDO4You::selectObj(' . $this->formatSql() . ', ' . $this->formatDB() . ');' . $this->formatRS($rs_obj) . '</code>';
+        echo '<code class="debug">PDO4You::selectObj(' . $this->formatSql() . ', ' . $this->formatDB() . ');' . $this->formatRS($rs_obj, false, true) . '</code>';
 
         echo '<code>&nbsp;<strong>Test with PDO4You::selectAll()</strong></code>';
-        echo '<code class="debug">PDO4You::selectAll(' . $this->formatSql() . ', ' . $this->formatDB() . ');' . $this->formatRS($rs_all) . '</code>';
+        echo '<code class="debug">PDO4You::selectAll(' . $this->formatSql() . ', ' . $this->formatDB() . ');' . $this->formatRS($rs_all, false, true) . '</code>';
 
         echo '<code>&nbsp;<strong>Test with PDO4You::select()</strong></code>';
-        echo '<code class="debug">PDO4You::select(' . $this->formatSql() . ', ' . $this->formatDB() . ');' . $this->formatRS($rs) . '</code>';
+        echo '<code class="debug">PDO4You::select(' . $this->formatSql() . ', ' . $this->formatDB() . ');' . $this->formatRS($rs, false, true) . '</code>';
 
         // Sets another instance
         PDO4You::setInstance('pdo4you');
@@ -72,7 +72,7 @@ class Test_CRUD
         $rs = PDO4You::select($this->sql);
 
         echo '<code>&nbsp;<strong>Test with PDO4You::select() in another instance of the database</strong></code>';
-        echo '<code class="debug">PDO4You::select(' . $this->formatSql() . ', ' . $this->formatDB() . ');' . $this->formatRS($rs) . '</code>';
+        echo '<code class="debug">PDO4You::select(' . $this->formatSql() . ', ' . $this->formatDB() . ');' . $this->formatRS($rs, false, true) . '</code>';
     }
 
     /**
@@ -134,7 +134,7 @@ class Test_CRUD
         $rs = PDO4You::update($sql, 'pdo4you');
 
         echo '<code>&nbsp;<strong>Test with PDO4You::update()</strong></code>';
-        echo '<code class="debug">PDO4You::update(' . $this->formatSql($sql) . ', ' . $this->formatDB() . ');' . $this->formatRS($rs, true, true) . '</code>';
+        echo '<code class="debug">PDO4You::update(' . $this->formatSql($sql) . ', ' . $this->formatDB() . ');' . $this->formatRS($rs, false, true) . '</code>';
     }
 
     /**
@@ -166,7 +166,7 @@ class Test_CRUD
         $rs = PDO4You::delete($sql, 'pdo4you');
 
         echo '<code>&nbsp;<strong>Test with PDO4You::delete()</strong></code>';
-        echo '<code class="debug">PDO4You::delete(' . $this->formatSql($sql) . ', ' . $this->formatDB() . ');' . $this->formatRS($rs, true, true) . '</code>';
+        echo '<code class="debug">PDO4You::delete(' . $this->formatSql($sql) . ', ' . $this->formatDB() . ');' . $this->formatRS($rs, false, true) . '</code>';
     }
 
     /**
@@ -219,7 +219,7 @@ class Test_CRUD
      * Format the Result
      * 
      */
-    private function formatRS($rs, $show_id = false, $show_total = false)
+    private function formatRS($rs, $show_id = false, $show_count = false)
     {
         $s = '<br /><br />- The code above will output: ';
         $s.= '<pre style="color:blue;">' . print_r($rs, true) . '</pre>';
@@ -227,7 +227,7 @@ class Test_CRUD
         if ($show_id) 
             $s.= 'Id of the last iteration: <strong style="color:red;">' . PDO4You::lastId() . '</strong>';
 
-        if ($show_total) {
+        if ($show_count) {
             if ($show_id)
                 $s.= ' &nbsp;|&nbsp;';
             $s.= 'Total records affected: <strong style="color:red;">' . PDO4You::rowCount() . '</strong>';
