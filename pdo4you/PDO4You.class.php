@@ -13,7 +13,7 @@
  * @link https://github.com/giovanniramos/PDO4You
  * 
  * */
-class PDO4You
+class PDO4You 
 {
     /**
      * Armazena o nome da máquina na qual o servidor da base de dados reside
@@ -293,30 +293,6 @@ class PDO4You
     }
 
     /**
-     * Método para exibir os drivers PDO instalados e suportados pelo servidor
-     * 
-     * @access public static 
-     * @param void
-     * @return void
-     * 
-     * */
-    public static function getAvailableDrivers()
-    {
-        try {
-            if (self::$handle instanceof PDO):
-                self::setStyle();
-
-                $info = self::$handle->getAvailableDrivers();
-                echo '<h7>Available Drivers: ', implode(', ', $info), '</h7>';
-            else:
-                throw new PDOFatalError('N&atilde;o existe uma inst&acirc;ncia do objeto PDO4You dispon&iacute;vel. Imposs&iacute;vel acessar os m&eacute;todos.');
-            endif;
-        } catch (PDOFatalError $e) {
-            self::stackTrace($e);
-        }
-    }
-
-    /**
      * Método para exibir detalhes sobre a meta do servidor da base de dados conectada
      * 
      * @access public static
@@ -341,6 +317,30 @@ class PDO4You
     }
 
     /**
+     * Método para exibir os drivers PDO instalados e suportados pelo servidor
+     * 
+     * @access public static 
+     * @param void
+     * @return void
+     * 
+     * */
+    public static function getAvailableDrivers()
+    {
+        try {
+            if (self::$handle instanceof PDO):
+                self::setStyle();
+
+                $info = self::$handle->getAvailableDrivers();
+                echo '<h7>Available Drivers: ' , implode(', ', $info) , '</h7>';
+            else:
+                throw new PDOFatalError('N&atilde;o existe uma inst&acirc;ncia do objeto PDO4You dispon&iacute;vel. Imposs&iacute;vel acessar os m&eacute;todos.');
+            endif;
+        } catch (PDOFatalError $e) {
+            self::stackTrace($e);
+        }
+    }
+
+    /**
      * PDO4You Style
      * 
      * @access public static
@@ -350,19 +350,19 @@ class PDO4You
      * */
     public static function setStyle()
     {
-        $style = '<style type="text/css">';
-        $style.= 'body, code    { background:#FAFAFA; font:normal 12px/1.7em Bitstream Vera Sans Mono,Courier New,Monospace; margin:0; padding:0; }';
-        $style.= '#pdo4you      { margin:8px; padding:0; }';
-        $style.= 'h2            { display:block; color:#000; background:#FFF; padding:10px; margin:0; #000; font-size:20px; border-bottom:solid 1px #999; }';
-        $style.= 'h7            { display:block; color:#FFF; background:#000; padding:2px 5px; margin:0; font-size:12px; }';
-        $style.= 'code          { display:block; font:inherit; background:#EFEFEF; border:solid 1px #DDD; border-right-color:#BBB; border-bottom:none; margin:10px 10px 0 10px; overflow:auto; }';
-        $style.= '.trace,.debug { background:#FFF; border:solid 1px #BBB; border-left-color:#DDD; border-top:none; margin:0 10px 15px 10px; }';
-        $style.= '.debug        { padding:5px; }';
-        $style.= '.number       { color:#AAA; background:#EFEFEF; min-width:40px; padding:0 5px; margin-right:5px; float:left; text-align:right; cursor:default; }';
-        $style.= '.highlight    { background:#FFC; }';
-        $style.= '</style>';
+        $css = '<style type="text/css">';
+        $css.= 'body, code    { background:#FAFAFA; font:normal 12px/1.7em Bitstream Vera Sans Mono,Courier New,Monospace; margin:0; padding:0; }';
+        $css.= '#pdo4you h2   { display:block; color:#000; background:#FFF; font-size:20px; margin:0; padding:10px; border-bottom:solid 1px #999; }';
+        $css.= '#pdo4you h7   { display:block; color:#FFF; background:#000; font-size:12px; margin:0; padding:2px 5px; }';
+        $css.= '.pdo4you      { margin:8px; padding:0; }';
+        $css.= 'code          { display:block; font:inherit; background:#EFEFEF; border:solid 1px #DDD; border-right-color:#BBB; border-bottom:none; margin:10px 10px 0 10px; overflow:auto; }';
+        $css.= '.trace,.debug { background:#FFF; border:solid 1px #BBB; border-left-color:#DDD; border-top:none; margin:0 10px 15px 10px; }';
+        $css.= '.debug        { padding:5px; }';
+        $css.= '.number       { color:#AAA; background:#EFEFEF; min-width:40px; padding:0 5px; margin-right:5px; float:left; text-align:right; cursor:default; }';
+        $css.= '.highlight    { background:#FFC; }';
+        $css.= '</style>';
 
-        print $style;
+        print $css;
     }
 
     /**
@@ -395,7 +395,7 @@ class PDO4You
 
             $count = 0;
 
-            $stack = '<div id="pdo4you">';
+            $stack = '<div class="pdo4you">';
             $stack.= '<strong>Exception:</strong> ' . $e->getMessage() . '<br />';
 
             foreach ($e->getTrace() as $t)
@@ -435,42 +435,6 @@ class PDO4You
     }
 
     /**
-     * Método para exibir e descrever as tabelas da base de dados
-     * 
-     * @access public static
-     * @param void 
-     * @return void
-     * 
-     * */
-    public static function showTables()
-    {
-        self::setStyle();
-
-        $tables = self::select("SHOW TABLES;");
-        $index = array_keys($tables[0]);
-        $baseName = preg_replace('~tables_in_~', '', $index[0]);
-
-        $html = '<div id="pdo4you">';
-        $html.= '<strong>Base de dados:</strong> ' . $baseName . ' &nbsp; <strong>N&uacute;mero de tabelas:</strong> ' . count($tables) . '<br /><br />';
-        foreach ($tables as $k1 => $v1):
-            foreach ($v1 as $k2 => $v2):
-                $info = self::select("DESCRIBE " . $baseName . "." . $v2);
-
-                $html.= '<code>&nbsp;<strong>Tabela</strong>: ' . $v2 . '</code>';
-                $html.= '<code class="trace">';
-                foreach ($info as $k3 => $v3):
-                    $html.= '<div class="number">&nbsp;</div> ';
-                    $html.= '<span><i style="color:#0000BB;">' . $v3['field'] . "</i> - " . $v3['type'] . '</span><br />';
-                endforeach;
-                $html.= '</code>';
-            endforeach;
-        endforeach;
-        $html.= '</div>';
-
-        exit($html);
-    }
-
-    /**
      * Método para exibir na tela uma query de consulta
      * 
      * @access public static
@@ -485,7 +449,7 @@ class PDO4You
         } else {
             self::setStyle();
 
-            $html = '<div id="pdo4you">';
+            $html = '<div class="pdo4you">';
             $html.= '<strong>Instru&ccedil;&atilde;o SQL de consulta</strong> <br /><br />';
             $html.= '<code>&nbsp;<strong>Debug</strong></code>';
             $html.= '<code class="trace"><span><pre><i style="color:#0000BB;">' . print_r($query, true) . '</pre></span><br /></code>';
@@ -502,11 +466,13 @@ class PDO4You
      * @param string $query Instrução SQL de consulta
      * @param string $type Tipo de retorno da consulta
      * @param string $use Nome da base de dados instanciada
+     * @param boolean $count Conta o número de linhas afetadas
      * @return mixed Retorna todos os registros afetados
      * 
      * */
-    private static function selectRecords($query, $type = null, $use = null)
+    private static function selectRecords($query, $type = null, $use = null, $count = true)
     {
+        $total = null;
         try {
             if (!is_null($use))
                 self::setInstance($use);
@@ -521,7 +487,8 @@ class PDO4You
                 $pre->execute();
                 $total = $pre->rowCount();
 
-                self::$rowCount = $total;
+                if ($count)
+                    self::$rowCount = $total;
 
                 switch ($type):
                     case 'num' : $result = $pre->fetchAll(PDO::FETCH_NUM);
@@ -602,16 +569,18 @@ class PDO4You
     }
 
     /**
-     * Método para inserir um novo registro na base de dados
+     * Método para manipulação de registros na base de dados
      * 
-     * @access public static
-     * @param string $json Instrução SQL de inserção, no formato JSON
-     * @param string $use Nome da base de dados definida como nova instância de conexão (OPCIONAL)
-     * @return array Retorna um array com o número de linhas afetadas por operação de inserção
+     * @access private static
+     * @param string $json Instrução SQL no formato JSON
+     * @param string $type Tipo de operação na base de dados
+     * @param string $use Nome da base de dados instanciada
+     * @return array Retorna um array com o número de linhas afetadas por operação
      * 
      * */
-    public static function insert($json, $use = null)
+    private static function executeQuery($json, $type, $use = null)
     {
+        $total = null;
         try {
             if (!is_null($use))
                 self::setInstance($use);
@@ -626,24 +595,69 @@ class PDO4You
             try {
                 $jarr = self::parseJSON($json);
 
-                foreach ($jarr['query'] as $field):
-                    $sql = 'INSERT INTO ' . $field['table'] . ' (';
-                    foreach ($field['values'] as $key => $val)
-                        $sql.= ', ' . $key;
-                    $sql = preg_replace('/, /', '', $sql, 1);
-                    $sql.= ') VALUES (';
-                    foreach ($field['values'] as $key => $val)
-                        $sql.= ', :' . $key;
-                    $sql.= ')';
-                    $sql = preg_replace('/, :/', ':', $sql, 1);
+                if ($type == 'insert') {
+                    foreach ($jarr['query'] as $field):
+                        $sql = 'INSERT INTO ' . $field['table'] . ' (';
+                        foreach ($field['values'] as $key => $val)
+                            $sql.= ', ' . $key;
+                        $sql = preg_replace('/, /', '', $sql, 1);
+                        $sql.= ') VALUES (';
+                        foreach ($field['values'] as $key => $val)
+                            $sql.= ', ?';
+                        $sql.= ')';
+                        $sql = preg_replace('/\(, /', '(', $sql, 1);
 
-                    $pre = $pdo->prepare($sql);
-                    foreach ($field['values'] as $key => $val)
-                        $pre->bindValue(':' . $key, $val);
+                        $pre = $pdo->prepare($sql);
+                        $k = 1;
+                        foreach ($field['values'] as $key => $val)
+                            $pre->bindValue($k++, $val);
 
-                    $pre->execute();
-                    $total[] = $pre->rowCount();
-                endforeach;
+                        $pre->execute();
+                        $total[] = $pre->rowCount();
+                    endforeach;
+                }
+
+                if ($type == 'update') {
+                    foreach ($jarr['query'] as $index => $field):
+                        $sql = 'UPDATE ' . $field['table'] . ' SET ';
+                        foreach ($field['values'] as $key => $val)
+                            $sql.= ', ' . $key . ' = ?';
+                        $sql = preg_replace('/, /', '', $sql, 1);
+                        $sql.= ' WHERE ';
+                        foreach ($field['where'] as $key => $val)
+                            $sql.= ' AND ' . $key . ' = ?';
+                        $sql = preg_replace('/ AND /', '', $sql, 1);
+
+                        $pre = $pdo->prepare($sql);
+                        $k = 1;
+                        foreach ($field['values'] as $key => $val)
+                            $pre->bindValue($k++, $val);
+                        $j = $k;
+                        foreach ($field['where'] as $key => $val)
+                            $pre->bindValue($j++, $val);
+
+                        $pre->execute();
+                        $total[] = $pre->rowCount();
+                    endforeach;
+                }
+
+                if ($type == 'delete') {
+                    foreach ($jarr['query'] as $index => $field):
+                        $sql = 'DELETE FROM ' . $field['table'] . ' WHERE ';
+                        foreach ($field['where'] as $key => $val)
+                            $sql.= ' AND ' . $key . ' = ?';
+                        $sql = preg_replace('/ AND /', '', $sql, 1);
+
+                        $pre = $pdo->prepare($sql);
+                        $k = 1;
+                        foreach ($field['where'] as $key => $val)
+                            $pre->bindValue($k++, $val);
+
+                        $pre->execute();
+                        $total[] = $pre->rowCount();
+                    endforeach;
+                }
+
                 self::$rowCount = $total;
             } catch (PDOException $e) {
                 $pdo->rollback();
@@ -657,7 +671,21 @@ class PDO4You
         $pdo->commit();
         $pdo = null;
 
-        return self::$rowCount;
+        return $total;
+    }
+
+    /**
+     * Método para inserir um novo registro na base de dados
+     * 
+     * @access public static
+     * @param string $json Instrução SQL de inserção, no formato JSON
+     * @param string $use Nome da base de dados definida como nova instância de conexão (OPCIONAL)
+     * @return array Retorna um array com o número de linhas afetadas por operação de inserção
+     * 
+     * */
+    public static function insert($json, $use = null)
+    {
+        return self::executeQuery($json, 'insert', $use);
     }
 
     /**
@@ -671,54 +699,7 @@ class PDO4You
      * */
     public static function update($json, $use = null)
     {
-        try {
-            if (!is_null($use))
-                self::setInstance($use);
-
-            if (self::$handle instanceof PDO):
-                $pdo = self::$handle;
-                $pdo->beginTransaction();
-            else:
-                throw new PDOFatalError('N&atilde;o existe uma inst&acirc;ncia do objeto PDO4You dispon&iacute;vel. Imposs&iacute;vel acessar os m&eacute;todos.');
-            endif;
-
-            try {
-                $jarr = self::parseJSON($json);
-
-                foreach ($jarr['query'] as $index => $field):
-                    $sql = 'UPDATE ' . $field['table'] . ' SET ';
-                    foreach ($field['values'] as $key => $val)
-                        $sql.= ', ' . $key . '=:' . $key;
-                    $sql = preg_replace('/, /', '', $sql, 1);
-                    $sql.= ' WHERE ';
-                    foreach ($field['where'] as $key => $val)
-                        $sql.= ' AND ' . $key . '=:' . $key;
-                    $sql = preg_replace('/ AND /', '', $sql, 1);
-
-                    $pre = $pdo->prepare($sql);
-                    foreach ($field['values'] as $key => $val)
-                        $pre->bindValue(':' . $key, $val);
-
-                    foreach ($field['where'] as $key => $val)
-                        $pre->bindValue(':' . $key, $val);
-
-                    $pre->execute();
-                    $total[] = $pre->rowCount();
-                endforeach;
-                self::$rowCount = $total;
-            } catch (PDOException $e) {
-                $pdo->rollback();
-
-                self::getErrorInfo($e);
-                self::stackTrace($e);
-            }
-        } catch (PDOFatalError $e) {
-            self::stackTrace($e);
-        }
-        $pdo->commit();
-        $pdo = null;
-
-        return self::$rowCount;
+        return self::executeQuery($json, 'update', $use);
     }
 
     /**
@@ -732,54 +713,14 @@ class PDO4You
      * */
     public static function delete($json, $use = null)
     {
-        try {
-            if (!is_null($use))
-                self::setInstance($use);
-
-            if (self::$handle instanceof PDO):
-                $pdo = self::$handle;
-                $pdo->beginTransaction();
-            else:
-                throw new PDOFatalError('N&atilde;o existe uma inst&acirc;ncia do objeto PDO4You dispon&iacute;vel. Imposs&iacute;vel acessar os m&eacute;todos.');
-            endif;
-
-            try {
-                $jarr = self::parseJSON($json);
-
-                foreach ($jarr['query'] as $index => $field):
-                    $sql = 'DELETE FROM ' . $field['table'] . ' WHERE ';
-                    foreach ($field['where'] as $key => $val)
-                        $sql.= ' AND ' . $key . '=:' . $key;
-                    $sql = preg_replace('/ AND /', '', $sql, 1);
-
-                    $pre = $pdo->prepare($sql);
-                    foreach ($field['where'] as $key => $val)
-                        $pre->bindValue(':' . $key, $val);
-
-                    $pre->execute();
-                    $total[] = $pre->rowCount();
-                endforeach;
-                self::$rowCount = $total;
-            } catch (PDOException $e) {
-                $pdo->rollback();
-
-                self::getErrorInfo($e);
-                self::stackTrace($e);
-            }
-        } catch (PDOFatalError $e) {
-            self::stackTrace($e);
-        }
-        $pdo->commit();
-        $pdo = null;
-
-        return self::$rowCount;
+        return self::executeQuery($json, 'delete', $use);
     }
 
     /**
      * Método que retorna o ID do último registro inserido ou o valor de seqüência
      * 
      * @access public static
-     * @param string $name Nome da seqüência a partir do qual o ID deve ser devolvido, se estiver usando o driver pgsql(Postgres). Se não especificado assume-se "_id_seq"
+     * @param string $name Nome da variável de sequência solicitado em algumas base de dados. O valor padrão é "_id_seq"
      * @return array Retorna o ID do último registro
      * 
      * */
@@ -793,7 +734,8 @@ class PDO4You
                 break;
             case 'mysql': default: $sql = "SELECT LAST_INSERT_ID() AS lastId;";
         endswitch;
-        self::$lastId = self::select($sql);
+
+        self::$lastId = self::selectRecords($sql, null, null, false);
 
         return self::$lastId[0]['lastid'];
     }
