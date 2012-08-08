@@ -30,6 +30,7 @@ require_once("PDO4You.load.php");
 
 ?>
 ~~~ 
+`PDO4You.load.php`: contém a função para carregamento inteligente de todos os arquivos necessários para o funcionamento da lib PDO4You.
 
 `PDO4You.load.php`: arquivo responsável pelo carregamento dos arquivos necessários ao funcionamento da lib PDO4You.
 
