@@ -4,7 +4,7 @@ require_once '../PDO4You.load.php';
 
 // Connection instance started and available
 PDO4You::getInstance();
-
+#PDO4You::showMySqlTables();
 // Applying styling on the page
 PDO4You::setStyle();
 
@@ -13,6 +13,7 @@ PDO4You::getServerInfo();
 
 // Displays all available drivers
 #PDO4You::getAvailableDrivers();
+
 ?>
 <!DOCTYPE html>
 <meta charset="utf-8" />

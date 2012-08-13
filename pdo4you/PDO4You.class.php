@@ -79,13 +79,33 @@ class PDO4You
     private static $lastId;
 
     /**
-     * Armazena o total de linhas afetadas na última operação de INSERT, UPDATE ou DELETE
+     * Armazena o total de linhas afetadas na última operação CRUD
      * 
      * @access private
      * @var string
      * 
      * */
     private static $rowCount;
+
+    /**
+     * Armazena as mensagens de Exception lançadas
+     * 
+     * @access private
+     * @var array
+     * 
+     * */
+    private static $exception = array(
+        'code-1045' => 'Houve uma falha de comunica&ccedil;&atilde;o com a base de dados usando: \'%1$s\'@\'%2$s\'',
+        'code-2002' => 'Nenhuma conex&atilde;o p&ocirc;de ser feita porque a m&aacute;quina de destino as recusou ativamente. Este host n&atilde;o &eacute; conhecido.',
+        'code-2005' => 'N&atilde;o houve comunica&ccedil;&atilde;o com o host fornecido. Verifique as suas configura&ccedil;&otilde;es.',
+        'no-database' => 'Base de dados desconhecida. Verifique as suas configura&ccedil;&otilde;es.',
+        'no-instance' => 'N&atilde;o existe uma inst&acirc;ncia do objeto PDO4You dispon&iacute;vel. Imposs&iacute;vel acessar os m&eacute;todos.',
+        'no-argument-sql' => 'O argumento SQL de consulta est&aacute; ausente.',
+        'no-instruction-json' => 'A instrução SQL no formato JSON est&aacute; ausente.',
+        'duplicate-key' => 'N&atilde;o foi poss&iacute;vel gravar o registro. Existe uma chave duplicada na tabela.<br />\'%1$s',
+        'critical-error' => 'Erro crítico detectado no sistema.',
+        'error-badly-json' => 'A query JSON fornecida est&aacute; mal formatada.',
+    );
 
     /**
      * O construtor é definido como privado, impedindo a instância direta da classe
@@ -119,16 +139,17 @@ class PDO4You
                 self::$instance[$alias]->setAttribute(PDO::ATTR_ERRMODE, ($_SERVER['SERVER_ADDR'] == '127.0.0.1') ? PDO::ERRMODE_EXCEPTION : PDO::ERRMODE_SILENT);
             } catch (PDOException $e) {
                 $error = self::getErrorInfo($e);
+
                 if ($error['code'] == '2005')
-                    throw new PDOFatalError('N&atilde;o houve comunica&ccedil;&atilde;o com o host fornecido. Verifique as suas configura&ccedil;&otilde;es.');
-                elseif ($error['code'] == '1045')
-                    throw new PDOFatalError('Houve uma falha de comunica&ccedil;&atilde;o com a base de dados usando: ' . $user . '@' . $pass);
+                    throw new PDOException(self::$exception['code-2005']);
                 elseif ($error['code'] == '2002')
-                    throw new PDOFatalError('Nenhuma conex&atilde;o p&ocirc;de ser feita porque a m&aacute;quina de destino as recusou ativamente. Este host n&atilde;o &eacute; conhecido.');
+                    throw new PDOException(self::$exception['code-2002']);
+                elseif ($error['code'] == '1045')
+                    throw new PDOException(sprintf(self::$exception['code-1045'], $user, $pass));
                 else
-                    self::stackTrace($e);
+                    throw $e;
             }
-        } catch (PDOFatalError $e) {
+        } catch (PDOException $e) {
             self::stackTrace($e);
         }
     }
@@ -168,6 +189,7 @@ class PDO4You
 
                 if (!array_key_exists(self::$database, self::$instance)):
                     $type = !(empty($type)) ? strtolower($type) : 'mysql';
+
                     switch ($type):
                         case 'mysql':
                         case 'pgsql': $driver = $type . ':dbname=' . self::$database . ';host=' . self::$datahost . ';port=' . self::$dataport . ';';
@@ -194,12 +216,13 @@ class PDO4You
                 #self::setDatabase(self::$database);
             } catch (PDOException $e) {
                 $error = self::getErrorInfo($e);
+
                 if ($error['state'] == '42000')
-                    throw new PDOFatalError('Base de dados desconhecida. Verifique as suas configura&ccedil;&otilde;es.');
+                    throw new PDOException(self::$exception['no-database']);
                 else
-                    self::stackTrace($e);
+                    throw $e;
             }
-        } catch (PDOFatalError $e) {
+        } catch (PDOException $e) {
             self::stackTrace($e);
         }
 
@@ -219,9 +242,9 @@ class PDO4You
         $driver = self::$handle->getAttribute(PDO::ATTR_DRIVER_NAME);
 
         switch ($driver):
-            case 'mysql': self::$handle->exec("USE " . $base);
+            case 'mysql': self::$handle->exec('USE ' . $base);
                 break;
-            case 'pgsql': self::$handle->exec("SET search_path TO " . $base);
+            case 'pgsql': self::$handle->exec('SET search_path TO ' . $base);
                 break;
         endswitch;
     }
@@ -265,7 +288,7 @@ class PDO4You
     public static function getErrorInfo(Exception $e, $show = false)
     {
         if (defined(WEBMASTER))
-            self::fireAlert('Foi detectado um erro crítico no sistema!', $e);
+            self::fireAlert(self::$exception['critical-error'], $e);
 
         $info = null;
         $errorInfo = null;
@@ -277,14 +300,12 @@ class PDO4You
         $info['message'] = isset($errorInfo[3]) ? $errorInfo[3] : null;
 
         if ($show)
-            echo "<pre>", print_r($info), "</pre>";
+            echo '<pre>', print_r($info), '</pre>';
 
         try {
             if ($info['state'] == '23000')
-                throw new PDOFatalError('N&atilde;o foi poss&iacute;vel gravar o registro. Existe uma chave duplicada na tabela.<br />' . $info['message']);
+                throw new PDOException(sprintf(self::$exception['duplicate-key'], $info['message']));
             return $info;
-        } catch (PDOFatalError $e) {
-            self::stackTrace($e);
         } catch (PDOException $e) {
             self::stackTrace($e);
         }
@@ -309,9 +330,9 @@ class PDO4You
                 $info = self::$handle->getAttribute(constant("PDO::ATTR_SERVER_INFO"));
                 echo '<h7>' . $info . '</h7>';
             else:
-                throw new PDOFatalError('N&atilde;o existe uma inst&acirc;ncia do objeto PDO4You dispon&iacute;vel. Imposs&iacute;vel acessar os m&eacute;todos.');
+                throw new PDOException(self::$exception['no-instance']);
             endif;
-        } catch (PDOFatalError $e) {
+        } catch (PDOException $e) {
             self::stackTrace($e);
         }
     }
@@ -333,9 +354,9 @@ class PDO4You
                 $info = self::$handle->getAvailableDrivers();
                 echo '<h7>Available Drivers: ' , implode(', ', $info) , '</h7>';
             else:
-                throw new PDOFatalError('N&atilde;o existe uma inst&acirc;ncia do objeto PDO4You dispon&iacute;vel. Imposs&iacute;vel acessar os m&eacute;todos.');
+                throw new PDOException(self::$exception['no-instance']);
             endif;
-        } catch (PDOFatalError $e) {
+        } catch (PDOException $e) {
             self::stackTrace($e);
         }
     }
@@ -378,26 +399,24 @@ class PDO4You
         if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
             $jarr['timer'] = '15000';
             $jarr['status'] = 'no';
-            $jarr['info']['stack'][$i = 0] = "<strong>Exception:</strong> " . $e->getMessage() . "<br />";
+            $jarr['info']['stack'][$i = 0] = '<strong>Exception:</strong> ' . $e->getMessage() . '<br />';
             foreach ($e->getTrace() as $t)
-                $jarr['info']['stack'][$i] = "#" . $i++ . " " . basename($t['file']) . ":" . $t['line'];
+                $jarr['info']['stack'][$i] = '#' . $i++ . ' ' . basename($t['file']) . ':' . $t['line'];
             $json = json_encode($jarr, true);
 
             exit($json);
         } else {
+            self::setStyle();
+
             if (!FIREDEBUG)
                 return;
 
             if (defined(WEBMASTER))
-                self::fireAlert('Erro crítico detectado no sistema!', $e);
-
-            self::setStyle();
+                self::fireAlert(self::$exception['critical-error'], $e);
 
             $count = 0;
-
             $stack = '<div class="pdo4you">';
             $stack.= '<strong>Exception:</strong> ' . $e->getMessage() . '<br />';
-
             foreach ($e->getTrace() as $t)
                 $stack.= '<code>&nbsp;<strong>#' . $count++ . '</strong> ' . $t['file'] . ':' . $t['line'] . '</code><code class="trace">' . self::highlightSource($t['file'], $t['line']) . '</code>';
             $stack.= '</div>';
@@ -419,44 +438,19 @@ class PDO4You
      * */
     public static function highlightSource($fileName, $lineNumber, $showLines = 5)
     {
-        $trace = null;
+        $offset = max(0, $lineNumber - ceil($showLines / 2));
         $lines = file_get_contents($fileName);
         $lines = highlight_string($lines, true);
-        $offset = max(0, $lineNumber - ceil($showLines / 2));
         $lines = array_slice(explode('<br />', $lines), $offset, $showLines);
+        $trace = null;
 
         foreach ($lines as $l):
             $offset++;
-            $line = '<div class="number">' . sprintf('%4d', $offset) . '</div>' . $l . ' <br />';
+            $line = '<div class="number">' . sprintf('%4d', $offset) . '</div>' . $l . '<br />';
             $trace.= ($offset == $lineNumber) ? '<div class="highlight">' . $line . '</div>' : $line;
         endforeach;
 
         return $trace;
-    }
-
-    /**
-     * Método para exibir na tela uma query de consulta
-     * 
-     * @access public static
-     * @param string $query Instrução SQL
-     * @return void
-     * 
-     * */
-    public static function showQuery($query = null)
-    {
-        if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
-            exit($query);
-        } else {
-            self::setStyle();
-
-            $html = '<div class="pdo4you">';
-            $html.= '<strong>Instru&ccedil;&atilde;o SQL de consulta</strong> <br /><br />';
-            $html.= '<code>&nbsp;<strong>Debug</strong></code>';
-            $html.= '<code class="trace"><span><pre><i style="color:#0000BB;">' . print_r($query, true) . '</pre></span><br /></code>';
-            $html.= '</div>';
-
-            exit($html);
-        }
     }
 
     /**
@@ -470,19 +464,21 @@ class PDO4You
      * @return mixed Retorna todos os registros afetados
      * 
      * */
-    private static function selectRecords($query, $type = null, $use = null, $count = true)
+    private static function selectRecords($query, $type, $use = null, $count = true)
     {
         $total = null;
+
+        $pdo = self::$handle;
         try {
+            if (is_null($query))
+                throw new PDOException(self::$exception['no-argument-sql']);
+ 
             if (!is_null($use))
                 self::setInstance($use);
 
-            if (self::$handle instanceof PDO):
-                $pdo = self::$handle;
-
-                if (is_null($query))
-                    throw new PDOFatalError('O argumento SQL de consulta est&aacute; ausente.');
-
+            if (!self::$handle instanceof PDO):
+                throw new PDOException(self::$exception['no-instance']);
+            else:
                 $pre = $pdo->prepare($query);
                 $pre->execute();
                 $total = $pre->rowCount();
@@ -499,11 +495,7 @@ class PDO4You
                         break;
                     default : $result = $pre->fetchAll(PDO::FETCH_ASSOC);
                 endswitch;
-            else:
-                throw new PDOFatalError('N&atilde;o existe uma inst&acirc;ncia do objeto PDO4You dispon&iacute;vel. Imposs&iacute;vel acessar os m&eacute;todos.');
             endif;
-        } catch (PDOFatalError $e) {
-            self::stackTrace($e);
         } catch (PDOException $e) {
             self::stackTrace($e);
         }
@@ -581,16 +573,16 @@ class PDO4You
     private static function executeQuery($json, $type, $use = null)
     {
         $total = null;
+
+        $pdo = self::$handle;
         try {
+            if (is_null($json))
+                throw new PDOException(self::$exception['no-instruction-json']);
+
             if (!is_null($use))
                 self::setInstance($use);
 
-            if (self::$handle instanceof PDO):
-                $pdo = self::$handle;
-                $pdo->beginTransaction();
-            else:
-                throw new PDOFatalError('N&atilde;o existe uma inst&acirc;ncia do objeto PDO4You dispon&iacute;vel. Imposs&iacute;vel acessar os m&eacute;todos.');
-            endif;
+            $pdo->beginTransaction();
 
             try {
                 $jarr = self::parseJSON($json);
@@ -662,13 +654,14 @@ class PDO4You
             } catch (PDOException $e) {
                 $pdo->rollback();
 
-                self::getErrorInfo($e);
-                self::stackTrace($e);
+                throw $e;
             }
-        } catch (PDOFatalError $e) {
+
+            $pdo->commit();
+         } catch (PDOException $e) {
+            self::getErrorInfo($e);
             self::stackTrace($e);
         }
-        $pdo->commit();
         $pdo = null;
 
         return $total;
@@ -766,22 +759,118 @@ class PDO4You
     private static function parseJSON($json)
     {
         try {
-            try {
-                $json = mb_detect_encoding($json, 'UTF-8', true) ? $json : utf8_encode($json);
-                $json = preg_replace('~[\n\r\t]~', '', $json);
-                $json = preg_replace('~(,?[{,])[[:space:]]*([^"]+?)[[:space:]]*:~', '$1"$2":', $json);
-                $jarr = json_decode($json, true);
+            $json = mb_detect_encoding($json, 'UTF-8', true) ? $json : utf8_encode($json);
+            $json = preg_replace('~[\n\r\t]~', '', $json);
+            $json = preg_replace('~(,?[{,])[[:space:]]*([^"]+?)[[:space:]]*:~', '$1"$2":', $json);
+            $jarr = json_decode($json, true);
 
-                if (is_null($jarr))
-                    throw new PDOFatalError('A query JSON fornecida est&aacute; mal formatada.');
-            } catch (PDOException $e) {
-                throw $e;
-            }
-        } catch (PDOFatalError $e) {
+            if (is_null($jarr))
+                throw new PDOException(self::$exception['error-badly-json']);
+        } catch (PDOException $e) {
             self::stackTrace($e);
         }
 
         return $jarr;
+    }
+
+	/**
+	 * Método do MySQL, para exibir e descrever as tabelas da base de dados
+	 * 
+	 * @access public static
+	 * @param void 
+	 * @return void
+	 * 
+	 * */
+    public static function showMySqlTables()
+    {
+        self::setStyle();
+
+        $tables = self::select("SHOW TABLES;");
+        $index = array_keys($tables[0]);
+        $baseName = preg_replace('~tables_in_~', '', $index[0]);
+
+        $html = '<div class="pdo4you">';
+        $html.= '<strong>Database:</strong> ' . $baseName . ' &nbsp;<strong>Total of tables:</strong> ' . count($tables) . '<br /><br />';
+        foreach ($tables as $k1 => $v1):
+            foreach ($v1 as $k2 => $v2):
+                $desc = self::select("DESCRIBE " . $baseName . "." . $v2);
+
+                $html.= '<code>&nbsp;<strong>Table</strong>: ' . $v2 . '</code>';
+                $html.= '<code class="trace">';
+                foreach ($desc as $k3 => $v3):
+                    $html.= '<div class="number">&nbsp;</div> ';
+                    $html.= '<span><i style="color:#00B;">' . $v3['field'] . "</i> - " . strtoupper($v3['type']) . '</span><br />';
+                endforeach;
+                $html.= '</code>';
+            endforeach;
+        endforeach;
+        $html.= '</div>';
+
+        exit($html);
+    }
+
+    /**
+    * Método do PostgreSQL, para exibir e descrever as tabelas da base de dados
+    * 
+    * @access public static
+    * @Param void 
+    * @return void
+    * 
+    * */
+    public static function showPgSqlTables()
+    {
+        self::setStyle();
+
+        $tables = self::select("SELECT table_name FROM information_schema.tables WHERE table_type = 'BASE TABLE' AND table_schema NOT IN ('pg_catalog', 'information_schema');");
+        $baseName = DATA_BASE;
+
+        $html = '<div class="pdo4you">';
+        $html.= '<strong>Database:</strong> ' . $baseName . ' &nbsp;<strong>Total of tables:</strong> ' . count($tables) . '<br /><br />';
+        foreach ($tables as $k1 => $v1):
+            foreach ($v1 as $k2 => $v2):
+                $desc = self::select("SELECT a.attname AS field, t.typname AS type FROM pg_class c, pg_attribute a, pg_type t WHERE c.relname = '" . $v2 . "' AND a.attnum > 0 AND a.attrelid = c.oid AND a.atttypid = t.oid ORDER BY a.attnum");
+
+                $html.= '<code>&nbsp;<strong>Table</strong>: ' . $v2 . '</code>';
+                $html.= '<code class="trace">';
+                foreach ($desc as $k3 => $v3):
+                    $html.= '<div class="number">&nbsp;</div> ';
+                    $html.= '<span><i style="color:#00B;">' . $v3['field'] . "</i> - " . strtoupper($v3['type']) . '</span><br />';
+                endforeach;
+                $html.= '</code>';
+            endforeach;
+        endforeach;
+        $html.= '</div>';
+
+        exit($html);
+    }
+
+    /**
+    * Método para exibir e descrever as Views da base de dados POSTGRE
+    * 
+    * @access public static
+    * @Param void 
+    * @return void
+    * 
+    * */
+    public static function showPgSqlViews()
+    {
+        self::setStyle();
+
+        $tables = self::select("SELECT table_name, view_definition FROM information_schema.views WHERE view_definition IS NOT NULL AND table_schema NOT IN ('pg_catalog', 'information_schema');");
+        $baseName = DATA_BASE;
+
+        $html = '<div class="pdo4you">';
+        $html.= '<strong>Database:</strong> ' . $baseName . ' &nbsp;<strong>Total of views:</strong> ' . count($tables) . '<br /><br />';
+        foreach ($tables as $k1 => $v1):
+            $html.= '<code>&nbsp;<strong>View</strong>: <i style="color:#00B;">' . $v1['table_name'] . '</i></code>';
+            $html.= '<code class="trace">';
+            $html.= '<div class="number">&nbsp;</div> ';
+            $html.= '<span>' . $v1['view_definition'] . '</span><br />';
+            $html.= '</code>';
+        endforeach;
+        $html.= '</div>';
+
+        exit($html);
     }
 
     /**
@@ -820,45 +909,88 @@ class PDO4You
 
     public function beginTransaction()
     {
-        if (!self::$handle->beginTransaction())
-            throw new Error(self::$handle->errorInfo());
+        try {
+            if (!self::$handle instanceof PDO):
+                throw new PDOException(self::$exception['no-instance']);
+            endif;
+
+            if (!self::$handle->beginTransaction())
+                throw new PDOException(current(self::$handle->errorInfo()) . ' ' . end(self::$handle->errorInfo()));
+        } catch (PDOException $e) {
+            self::stackTrace($e);
+        }
     }
 
     public function commit()
     {
-        if (!self::$handle->commit())
-            throw new Error(self::$handle->errorInfo());
+        try {
+            if (!self::$handle instanceof PDO):
+                throw new PDOException(self::$exception['no-instance']);
+            endif;
+
+            if (!self::$handle->commit())
+                throw new PDOException(current(self::$handle->errorInfo()) . ' ' . end(self::$handle->errorInfo()));
+        } catch (PDOException $e) {
+            self::stackTrace($e);
+        }
     }
 
     public function exec($query)
     {
-        if (!self::$handle->exec($query))
-            throw new Error(self::$handle->errorInfo());
+        try {
+            if (!self::$handle instanceof PDO):
+                throw new PDOException(self::$exception['no-instance']);
+            endif;
+
+            if (!self::$handle->exec($query))
+                throw new PDOException(current(self::$handle->errorInfo()) . ' ' . end(self::$handle->errorInfo()));
+        } catch (PDOException $e) {
+            self::stackTrace($e);
+        }
     }
 
     public function query($query)
     {
-        if (!self::$handle->query($query))
-            throw new Error(self::$handle->errorInfo());
+        try {
+            if (!self::$handle instanceof PDO):
+                throw new PDOException(self::$exception['no-instance']);
+            endif;
+
+            if (!self::$handle->query($query))
+                throw new PDOException(current(self::$handle->errorInfo()) . ' ' . end(self::$handle->errorInfo()));
+        } catch (PDOException $e) {
+            self::stackTrace($e);
+        }
     }
 
     public function rollBack()
     {
-        if (!self::$handle->rollBack())
-            throw new Error(self::$handle->errorInfo());
+        try {
+            if (!self::$handle instanceof PDO):
+                throw new PDOException(self::$exception['no-instance']);
+            endif;
+
+            if (!self::$handle->rollBack())
+                throw new PDOException(current(self::$handle->errorInfo()) . ' ' . end(self::$handle->errorInfo()));
+        } catch (PDOException $e) {
+            self::stackTrace($e);
+        }
     }
 
     public function lastInsertId($name)
     {
-        if (!self::$handle->lastInsertId($name))
-            throw new Error(self::$handle->errorInfo());
+        try {
+            if (!self::$handle instanceof PDO):
+                throw new PDOException(self::$exception['no-instance']);
+            endif;
+
+            if (!self::$handle->lastInsertId($name))
+                throw new PDOException(current(self::$handle->errorInfo()) . ' ' . end(self::$handle->errorInfo()));
+        } catch (PDOException $e) {
+            self::stackTrace($e);
+        }
     }
 
-}
-
-class PDOFatalError extends Exception
-{
-    
 }
 
 ?>
