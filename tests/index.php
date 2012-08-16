@@ -13,13 +13,14 @@ PDO4You::getServerInfo();
 
 // Displays all available drivers
 #PDO4You::getAvailableDrivers();
-
 ?>
 <!DOCTYPE html>
-<meta charset="utf-8" />
-<title>PDO4You</title>
-<style>a {color: #069; text-decoration: none;} b {color: #ccc;}</style>
 <html>
+    <head>
+        <meta charset="UTF-8" />
+        <title>PDO4You</title>
+        <style>a {color: #069; text-decoration: none;} b {color: #ccc;}</style>
+    </head>
     <body id="pdo4you">
         <?php
         $pag = isset($_GET['p']) ? $_GET['p'] : null;
