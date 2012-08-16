@@ -4,7 +4,7 @@ require_once '../PDO4You.load.php';
 
 // Connection instance started and available
 PDO4You::getInstance();
-#PDO4You::showMySqlTables();
+
 // Applying styling on the page
 PDO4You::setStyle();
 

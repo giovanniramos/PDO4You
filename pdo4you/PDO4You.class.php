@@ -845,7 +845,7 @@ class PDO4You
     }
 
     /**
-    * Método para exibir e descrever as Views da base de dados POSTGRE
+    * Método do PostgreSQL, para exibir e descrever as tabelas da base de dados
     * 
     * @access public static
     * @Param void 
