@@ -1,108 +1,116 @@
 <!doctype html>
 <html>
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <title>PDO4You by giovanniramos</title>
-    <link rel="stylesheet" href="stylesheets/styles.css">
-    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
-    <script src="javascripts/main.js"></script>
-    <!--[if lt IE 9]>
-      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="chrome=1">
+        <title>PDO4You by giovanniramos</title>
+        <link rel="stylesheet" href="stylesheets/styles.css">
+        <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+        <script src="javascripts/main.js"></script>
+        <!--[if lt IE 9]>
+          <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+        <![endif]-->
+        <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
 
-  </head>
-  <body>
+    </head>
+    <body>
+        <header>
+            <h1>PDO4You</h1>
+            <p>Esta classe implementa o padrão de projeto Singleton para conexão de banco de dados usando a extensão PDO (PHP Data Objects)</p>
+        </header>
 
-      <header>
-        <h1>PDO4You</h1>
-        <p>Esta classe implementa o padrão de projeto Singleton para conexão de banco de dados usando a extensão PDO (PHP Data Objects)</p>
-      </header>
+        <div id="banner">
+            <span id="logo"></span>
 
-      <div id="banner">
-        <span id="logo"></span>
+            <a href="https://github.com/giovanniramos/PDO4YOU" class="button fork"><strong>View On GitHub</strong></a>
+            <div class="downloads">
+                <span>Downloads:</span>
+                <ul>
+                    <li><a href="https://github.com/giovanniramos/PDO4YOU/zipball/master" class="button">ZIP</a></li>
+                    <li><a href="https://github.com/giovanniramos/PDO4YOU/tarball/master" class="button">TAR</a></li>
+                </ul>
+            </div>
+        </div><!-- end banner -->
 
-        <a href="https://github.com/giovanniramos/PDO4YOU" class="button fork"><strong>View On GitHub</strong></a>
-        <div class="downloads">
-          <span>Downloads:</span>
-          <ul>
-            <li><a href="https://github.com/giovanniramos/PDO4YOU/zipball/master" class="button">ZIP</a></li>
-            <li><a href="https://github.com/giovanniramos/PDO4YOU/tarball/master" class="button">TAR</a></li>
-          </ul>
-        </div>
-      </div><!-- end banner -->
+        <div class="wrapper">
+            <nav>
+                <ul></ul>
+            </nav>
+            <section>
+                <h1>PDO4You</h1>
 
-    <div class="wrapper">
-      <nav>
-        <ul></ul>
-      </nav>
-      <section>
-        <h1>PDO4You</h1>
+                <p>Esta classe é baseada no PDO, que é uma extensão do PHP que permite aos desenvolvedores criar um código portável, de modo a atender a maioria das bases de dados mais populares.
+                    Sendo o MySQL, PostgreSQL, MS SQL Server, Sybase, Oracle.</p>
 
-<p>Esta classe é baseada no PDO, que é uma extensão do PHP que permite aos desenvolvedores criar um código portável, de modo a atender a maioria das bases de dados mais populares.
-Sendo o MySQL, PostgreSQL, MS SQL Server, Sybase, Oracle.</p>
+                <p>O PDO4You provê uma camada abstrata de acesso a dados, que independentemente de qual base de dados você esteja utilizando, sempre poderá usar os mesmos métodos para emitir consultas e buscar dados.</p>
 
-<p>O PDO4You provê uma camada abstrata de acesso a dados, que independentemente de qual base de dados você esteja utilizando, sempre poderá usar os mesmos métodos para emitir consultas e buscar dados.</p>
+                <p>O padrão de projeto Singleton foi adotado para otimizar a conexão, garantindo uma única instância do objeto de conexão por base de dados.</p>
 
-<p>O padrão de projeto Singleton foi adotado para otimizar a conexão, garantindo uma única instância do objeto de conexão por base de dados.</p>
+                <p><strong>Vantagens em sua utilização:</strong></p>
 
-<h2>Vantagens no uso da classe:</h2>
+                <ul>
+                    <li>Abstração de conexão</li>
+                    <li>Proteção contra SQL Injection</li>
+                    <li>Métodos CRUD pré-definidos</li>
+                    <li>Múltiplas conexões por base de dados</li>
+                    <li>Instrução SQL compacta, usando notação JSON</li>
+                    <li>Tratamento de erros com Stack Trace</li>
+                </ul>
 
-<ul>
-<li>Abstração de conexão</li>
-<li>Proteção contra SQL Injection</li>
-<li>Métodos CRUD pré-definidos</li>
-<li>Múltiplas conexões por base de dados</li>
-<li>Instrução SQL compacta, usando notação JSON</li>
-<li>Tratamento de erros com Stack Trace</li>
-</ul><h1>Introdução: carregando toda a biblioteca necessária</h1>
+                <h2>Introdução: carregando a biblioteca necessária</h2>
 
-<div class="highlight"><pre><span class="o">&lt;?</span><span class="nx">php</span>
+                <div class="highlight">
+                    <pre><span class="o">&lt;?</span><span class="nx">php</span>
 
 <span class="c1">// Apenas um arquivo é necessário para carregar toda a biblioteca.</span>
-<span class="k">require_once</span><span class="p">(</span><span class="s2">"PDO4You.load.php"</span><span class="p">);</span>
+<span class="k">require_once</span><span class="p">(</span><span class="s2">'PDO4You.load.php'</span><span class="p">);</span>
 
 <span class="cp">?&gt;</span><span class="x"></span>
-</pre></div>
+</pre>
+                </div>
 
-<p><code>PDO4You.load.php</code>: arquivo responsável pelo carregamento dos arquivos necessários ao funcionamento da lib PDO4You.</p>
+                <p><code>PDO4You.load.php</code>: arquivo responsável pelo carregamento dos arquivos necessários ao funcionamento da lib PDO4You.</p>
 
-<p><code>PDO4You.class.php</code>: contém a implementação do objeto PDO4You de conexão, estendendo a extensão PDO.</p>
+                <p><code>PDO4You.class.php</code>: contém a implementação do objeto PDO4You de conexão, estendendo a extensão PDO.</p>
 
-<p><code>PDO4You.config.php</code>: arquivo de configuração inicial, de acesso ao servidor e base de dados.</p>
+                <p><code>PDO4You.config.php</code>: arquivo de configuração inicial, de acesso ao servidor e base de dados.</p>
 
-<p><code>PDO4You.library.php</code>: contém um autoloading de classes e pode ser usado como biblioteca de funções úteis ao sistema.</p>
+                <p><code>PDO4You.library.php</code>: contém um autoloading de classes e pode ser usado como biblioteca de funções úteis ao sistema.</p>
 
-<h2>Verificando os drivers suportados pelo servidor</h2>
+                <h2>Verificando os drivers suportados pelo servidor</h2>
 
-<p>Execute o método abaixo para verificar se o servidor tem suporte a um driver PDO específico de sua base de dados. Os drivers suportados serão exibidos na tela.</p>
+                <p>Execute o método abaixo para verificar se o servidor tem suporte a um driver PDO específico de sua base de dados. Os drivers suportados serão exibidos na tela.</p>
 
-<div class="highlight"><pre><span class="o">&lt;?</span><span class="nx">php</span>
+                <div class="highlight">
+                    <pre><span class="o">&lt;?</span><span class="nx">php</span>
 
 <span class="c1">// O método getAvailableDrivers, exibe todos os drivers instalados e que são suportados pelo servidor.</span>
 <span class="nx">PDO4You</span><span class="o">::</span><span class="na">getAvailableDrivers</span><span class="p">();</span>
 
 <span class="cp">?&gt;</span><span class="x"></span>
-</pre></div>
+</pre>
+                </div>
 
-<p>Para habilitar algum driver não instalado, localize o arquivo php.ini, abra e procure por "extension=" sem as aspas, depois descomente as linhas a seguir conforme sua base de dados de preferência, removendo no início de cada linha o "ponto-e-vírgula" e após mudanças, reinicie o servidor.</p>
+                <p>Para habilitar algum driver não instalado, localize o arquivo php.ini, abra e procure por "extension=" sem as aspas, depois descomente as linhas a seguir conforme sua base de dados de preferência, removendo no início de cada linha o "ponto-e-vírgula" e após mudanças, reinicie o servidor.</p>
 
-<div class="highlight"><pre>extension=php_pdo.dll
+                <div class="highlight">
+                    <pre>extension=php_pdo.dll
 extension=php_pdo_mysql.dll
 extension=php_pdo_pgsql.dll
 ;extension=php_pdo_mssql.dll
 ;extension=php_pdo_oci.dll
 ;extension=php_pdo_oci8.dll
 ;extension=php_pdo_sqlite.dll
-</pre></div>
+</pre>
+                </div>
 
-<h2>Estabelecendo conexão com a base de dados</h2>
+                <h2>Estabelecendo conexão com a base de dados</h2>
 
-<p>Para abstrair nossos mecanismos de acesso aos dados, usamos um DSN ou Data Source Name (Nome de Fonte de Dados), que armazena as informações necessárias para se iniciar uma comunicação com outras fontes de dados, tais como: tipo de tecnologia, nome do servidor ou localização, nome da base de dados, usuário, senha e outras configurações adicionais. Isso facilita a troca de acesso à base de dados que sofrerem migração.</p>
+                <p>Para abstrair nossos mecanismos de acesso aos dados, usamos um DSN ou Data Source Name (Nome de Fonte de Dados), que armazena as informações necessárias para se iniciar uma comunicação com outras fontes de dados, tais como: tipo de tecnologia, nome do servidor ou localização, nome da base de dados, usuário, senha e outras configurações adicionais. Isso facilita a troca de acesso à base de dados que sofrerem migração.</p>
 
-<div class="highlight"><pre><span class="o">&lt;?</span><span class="nx">php</span>
+                <div class="highlight">
+                    <pre><span class="o">&lt;?</span><span class="nx">php</span>
 
 <span class="c1">// Principais meios de se iniciar uma instância de conexão. O uso do DSN é opcional.</span>
 
@@ -123,28 +131,30 @@ extension=php_pdo_pgsql.dll
 <span class="nx">PDO4You</span><span class="o">::</span><span class="na">getInstance</span><span class="p">(</span><span class="s1">'database'</span><span class="p">,</span> <span class="s1">'mssql:host=localhost;'</span><span class="p">,</span> <span class="s1">'root'</span><span class="p">,</span> <span class="s1">'pass'</span><span class="p">);</span>
 
 <span class="cp">?&gt;</span><span class="x"></span>
-</pre></div>
+</pre>
+                </div>
 
-<h2>Realizando operações CRUD em sua base de dados</h2>
+                <h2>Realizando operações CRUD em sua base de dados</h2>
 
-<p>O termo CRUD em inglês se refere as 4 operações básicas em uma base de dados e significam: 
-Create(INSERT), Retrieve(SELECT), Update(UPDATE) e Destroy(DELETE)</p>
+                <p>O termo CRUD em inglês se refere as 4 operações básicas em uma base de dados e significam: 
+                    Create(INSERT), Retrieve(SELECT), Update(UPDATE) e Destroy(DELETE)</p>
 
-<p>Instruções SQL de consulta:</p>
+                <p>Instruções SQL de consulta:</p>
 
-<p><code>PDO4You::select()</code>: obtém registros como um array indexado pelo nome da coluna. Equivale a PDO::FETCH_ASSOC</p>
+                <p><code>PDO4You::select()</code>: obtém registros como um array indexado pelo nome da coluna. Equivale a PDO::FETCH_ASSOC</p>
 
-<p><code>PDO4You::selectNum()</code>: obtém registros como um array indexado pelo número da coluna. Equivale a PDO::FETCH_NUM</p>
+                <p><code>PDO4You::selectNum()</code>: obtém registros como um array indexado pelo número da coluna. Equivale a PDO::FETCH_NUM</p>
 
-<p><code>PDO4You::selectObj()</code>: obtém registros como um objeto com nomes de coluna como propriedades. Equivale a PDO::FETCH_OBJ</p>
+                <p><code>PDO4You::selectObj()</code>: obtém registros como um objeto com nomes de coluna como propriedades. Equivale a PDO::FETCH_OBJ</p>
 
-<p><code>PDO4You::selectAll()</code>: obtém registros como um array indexado tanto pelo nome como pelo número da coluna. Equivale a PDO::FETCH_BOTH</p>
+                <p><code>PDO4You::selectAll()</code>: obtém registros como um array indexado tanto pelo nome como pelo número da coluna. Equivale a PDO::FETCH_BOTH</p>
 
-<p>Abaixo seguem exemplos de como realizar estas operações.</p>
+                <p>Abaixo seguem exemplos de como realizar estas operações.</p>
 
-<h2>Selecionando registros na base de dados</h2>
+                <h2>Selecionando registros na base de dados</h2>
 
-<div class="highlight"><pre><span class="o">&lt;?</span><span class="nx">php</span>
+                <div class="highlight">
+                    <pre><span class="o">&lt;?</span><span class="nx">php</span>
 
 <span class="c1">// Iniciando uma instância de conexão. O padrão de conexão é persistente.</span>
 <span class="nx">PDO4You</span><span class="o">::</span><span class="na">getInstance</span><span class="p">();</span>
@@ -185,21 +195,23 @@ Create(INSERT), Retrieve(SELECT), Update(UPDATE) e Destroy(DELETE)</p>
 <span class="k">echo</span> <span class="s1">'&lt;pre&gt;&lt;h3&gt;Resultado da consulta:&lt;/h3&gt; '</span> <span class="p">,</span> <span class="nb">print_r</span><span class="p">(</span><span class="nv">$result</span><span class="p">,</span> <span class="k">true</span><span class="p">)</span> <span class="p">,</span> <span class="s1">'&lt;/pre&gt;'</span><span class="p">;</span>
 
 <span class="cp">?&gt;</span><span class="x"></span>
-</pre></div>
+</pre>
+                </div>
 
-<p>Os métodos insert(), update() e delete() da classe PDO4You estão aninhadas entre transações, sendo elas beginTransaction() e commit(). Isto garante que o sistema consiga reverter uma operação mal sucedida e todas as alterações feitas desde o início de uma transação.</p>
+                <p>Os métodos insert(), update() e delete() da classe PDO4You estão aninhadas entre transações, sendo elas beginTransaction() e commit(). Isto garante que o sistema consiga reverter uma operação mal sucedida e todas as alterações feitas desde o início de uma transação.</p>
 
-<p>Um erro grave na execução resulta em invocar o rollBack(), desfazendo toda a operação. Consequentemente será lançada uma Exception, rastreando o caminho de todas as classes e métodos envolvidos na operação, agilizando em ambiente de "produção" o processo de debug e com isso, assegurando a base de dados do risco de se tornar instável.</p>
+                <p>Um erro grave na execução resulta em invocar o rollBack(), desfazendo toda a operação. Consequentemente será lançada uma Exception, rastreando o caminho de todas as classes e métodos envolvidos na operação, agilizando em ambiente de "produção" o processo de debug e com isso, assegurando a base de dados do risco de se tornar instável.</p>
 
-<p>No MySQL o suporte a transações está disponível em tabelas do tipo InnoDB.</p>
+                <p>No MySQL o suporte a transações está disponível em tabelas do tipo InnoDB.</p>
 
-<p>As instruções SQL da classe PDO4You (insert, update e delete) fazem agora o uso de notação JSON, um novo formato de se escrever querys que por sua vez possui convenções muito semelhante às linguagens como Python, Ruby, C++, Java, JavaScript. A nova sintaxe adotada pela classe é bem mais bonita e concisa, que a usada por Arrays. Além de compacta, as instruções possuem a capacidade de operar ao mesmo tempo, em diferentes tabelas da mesma base de dados. </p>
+                <p>As instruções SQL da classe PDO4You (insert, update e delete) fazem agora o uso de notação JSON, um novo formato de se escrever querys que por sua vez possui convenções muito semelhante às linguagens como Python, Ruby, C++, Java, JavaScript. A nova sintaxe adotada pela classe é bem mais bonita e concisa, que a usada por Arrays. Além de compacta, as instruções possuem a capacidade de operar ao mesmo tempo, em diferentes tabelas da mesma base de dados. </p>
 
-<p>Abaixo seguem trechos de exemplo na prática.</p>
+                <p>Abaixo seguem trechos de exemplo na prática.</p>
 
-<h2>Inserindo um simples registro na base de dados</h2>
+                <h2>Inserindo um simples registro na base de dados</h2>
 
-<div class="highlight"><pre><span class="o">&lt;?</span><span class="nx">php</span>
+                <div class="highlight">
+                    <pre><span class="o">&lt;?</span><span class="nx">php</span>
 
 <span class="c1">// SQL query</span>
 <span class="nv">$sql</span> <span class="o">=</span> <span class="s1">'</span>
@@ -223,11 +235,13 @@ Create(INSERT), Retrieve(SELECT), Update(UPDATE) e Destroy(DELETE)</p>
 <span class="nv">$lastInsertId</span> <span class="o">=</span> <span class="nx">PDO4You</span><span class="o">::</span><span class="na">lastId</span><span class="p">(</span><span class="s1">'_id_seq'</span><span class="p">);</span>
 
 <span class="cp">?&gt;</span><span class="x"></span>
-</pre></div>
+</pre>
+                </div>
 
-<h2>Inserindo múltiplos registros</h2>
+                <h2>Inserindo múltiplos registros</h2>
 
-<div class="highlight"><pre><span class="o">&lt;?</span><span class="nx">php</span>
+                <div class="highlight">
+                    <pre><span class="o">&lt;?</span><span class="nx">php</span>
 
 <span class="c1">// SQL query</span>
 <span class="nv">$sql</span> <span class="o">=</span> <span class="s1">'</span>
@@ -251,11 +265,13 @@ Create(INSERT), Retrieve(SELECT), Update(UPDATE) e Destroy(DELETE)</p>
 <span class="nv">$result</span> <span class="o">=</span> <span class="nx">PDO4You</span><span class="o">::</span><span class="na">insert</span><span class="p">(</span><span class="nv">$sql</span><span class="p">);</span>
 
 <span class="cp">?&gt;</span><span class="x"></span>
-</pre></div>
+</pre>
+                </div>
 
-<h2>Atualizando múltiplos registros</h2>
+                <h2>Atualizando múltiplos registros</h2>
 
-<div class="highlight"><pre><span class="o">&lt;?</span><span class="nx">php</span>
+                <div class="highlight">
+                    <pre><span class="o">&lt;?</span><span class="nx">php</span>
 
 <span class="c1">// SQL query</span>
 <span class="nv">$sql</span> <span class="o">=</span> <span class="s1">'</span>
@@ -282,11 +298,13 @@ Create(INSERT), Retrieve(SELECT), Update(UPDATE) e Destroy(DELETE)</p>
 <span class="nv">$result</span> <span class="o">=</span> <span class="nx">PDO4You</span><span class="o">::</span><span class="na">update</span><span class="p">(</span><span class="nv">$sql</span><span class="p">);</span>
 
 <span class="cp">?&gt;</span><span class="x"></span>
-</pre></div>
+</pre>
+                </div>
 
-<h2>Excluindo múltiplos registros</h2>
+                <h2>Excluindo múltiplos registros</h2>
 
-<div class="highlight"><pre><span class="o">&lt;?</span><span class="nx">php</span>
+                <div class="highlight">
+                    <pre><span class="o">&lt;?</span><span class="nx">php</span>
 
 <span class="c1">// SQL query</span>
 <span class="nv">$sql</span> <span class="o">=</span> <span class="s1">'</span>
@@ -313,24 +331,24 @@ Create(INSERT), Retrieve(SELECT), Update(UPDATE) e Destroy(DELETE)</p>
 <span class="nv">$result</span> <span class="o">=</span> <span class="nx">PDO4You</span><span class="o">::</span><span class="na">delete</span><span class="p">(</span><span class="nv">$sql</span><span class="p">);</span>
 
 <span class="cp">?&gt;</span><span class="x"></span>
-</pre></div>
-      </section>
-      <footer>
-        <p>Project maintained by <a href="https://github.com/giovanniramos">giovanniramos</a></p>
-        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="http://twitter.com/#!/michigangraham">mattgraham</a></small></p>
-      </footer>
-    </div>
-    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
-              <script type="text/javascript">
+</pre>
+                </div>
+            </section>
+            <footer>
+                <p>Project maintained by <a href="https://github.com/giovanniramos">giovanniramos</a></p>
+            </footer>
+        </div>
+        <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+        <script type="text/javascript">
             var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
             document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
-          </script>
-          <script type="text/javascript">
+        </script>
+        <script type="text/javascript">
             try {
-              var pageTracker = _gat._getTracker("UA-5376735-7");
-            pageTracker._trackPageview();
+                var pageTracker = _gat._getTracker("UA-5376735-7");
+                pageTracker._trackPageview();
             } catch(err) {}
-          </script>
+        </script>
 
-  </body>
+    </body>
 </html>
