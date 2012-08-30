@@ -1,15 +1,15 @@
-# PDO4You
+PDO4You
+==================================================
 
 Esta classe é baseada no PDO, que é uma extensão do PHP que permite aos desenvolvedores criar um código portável, de modo a atender a maioria das bases de dados mais populares.
-Sendo o MySQL, PostgreSQL, MS SQL Server, Sybase, Oracle.
+Sendo o MySQL, PostgreSQL, Oracle, MS SQL Server, Sybase.
 
 O PDO4You provê uma camada abstrata de acesso a dados, que independentemente de qual base de dados você esteja utilizando, sempre poderá usar os mesmos métodos para emitir consultas e buscar dados.
 
 O padrão de projeto Singleton foi adotado para otimizar a conexão, garantindo uma única instância do objeto de conexão por base de dados.
 
 
-Vantagens no uso da classe:
---------------------------------------------------
+**Vantagens em sua utilização:**
 * Abstração de conexão
 * Proteção contra SQL Injection
 * Métodos CRUD pré-definidos
@@ -19,14 +19,14 @@ Vantagens no uso da classe:
 
 
 
-Introdução: carregando toda a biblioteca necessária
-==================================================
+Introdução: carregando a biblioteca necessária
+--------------------------------------------------
 
 ~~~ php
 <?php
 
 // Apenas um arquivo é necessário para carregar toda a biblioteca.
-require_once("PDO4You.load.php");
+require_once('PDO4You.load.php');
 
 ?>
 ~~~ 
@@ -179,6 +179,7 @@ As instruções SQL da classe PDO4You (insert, update e delete) fazem agora o us
 
 
 Abaixo seguem trechos de exemplo na prática.
+
 
 
 Inserindo um simples registro na base de dados
