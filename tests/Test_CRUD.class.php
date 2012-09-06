@@ -30,6 +30,10 @@ class Test_CRUD
      * */
     public function select($db = null)
     {
+        // Sets the instance of the database
+        if (!is_null($db))
+            PDO4You::setInstance($db);
+
         // Execute SQL query and Store the result
         $rs = PDO4You::select($this->sql, $db);
 
@@ -224,7 +228,7 @@ class Test_CRUD
         $s = '<br /><br />- The code above will output: ';
         $s.= '<pre style="color:blue;">' . print_r($rs, true) . '</pre>';
 
-        if ($show_id) 
+        if ($show_id)
             $s.= 'Id of the last iteration: <strong style="color:red;">' . PDO4You::lastId() . '</strong>';
 
         if ($show_count) {
