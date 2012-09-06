@@ -104,7 +104,10 @@ class PDO4You
         'no-instruction-json' => 'A instrução SQL no formato JSON est&aacute; ausente.',
         'duplicate-key' => 'N&atilde;o foi poss&iacute;vel gravar o registro. Existe uma chave duplicada na tabela.<br />\'%1$s',
         'critical-error' => 'Erro crítico detectado no sistema.',
-        'error-badly-json' => 'A query JSON fornecida est&aacute; mal formatada.',
+        'json-error-depth' => 'Profundidade máxima da pilha excedida.',
+        'json-error-state-mismatch' => 'Incompatibilidade de modos ou operação aritmética impossível de ser representado.',
+        'json-error-ctrl-char' => 'Atributo de controle inesperado foi encontrado.',
+        'json-error-syntax' => 'A query JSON fornecida est&aacute; mal formatada.'
     );
 
     /**
@@ -764,8 +767,23 @@ class PDO4You
             $json = preg_replace('~(,?[{,])[[:space:]]*([^"]+?)[[:space:]]*:~', '$1"$2":', $json);
             $jarr = json_decode($json, true);
 
+            if (version_compare(PHP_VERSION, '5.3.5') >= 0):
+                switch (json_last_error()):
+                    case JSON_ERROR_DEPTH: $json_error = self::$exception['json-error-depth'];
+                        break;
+                    case JSON_ERROR_STATE_MISMATCH: $json_error = self::$exception['json-error-state-mismatch'];
+                        break;
+                    case JSON_ERROR_CTRL_CHAR: $json_error = self::$exception['json-error-ctrl-char'];
+                        break;
+                    case JSON_ERROR_SYNTAX: $json_error = self::$exception['json-error-syntax'];
+                        break;
+                endswitch;
+            else:
+                $json_error = self::$exception['json-error-syntax'];
+            endif;
+
             if (is_null($jarr))
-                throw new PDOException(self::$exception['error-badly-json']);
+                throw new PDOException($json_error);
         } catch (PDOException $e) {
             self::stackTrace($e);
         }
