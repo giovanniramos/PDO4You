@@ -13,7 +13,7 @@
  * @link https://github.com/giovanniramos/PDO4You
  * 
  * */
-class PDO4You 
+class PDO4You
 {
     /**
      * Armazena o nome da máquina na qual o servidor da base de dados reside
@@ -101,11 +101,12 @@ class PDO4You
         'no-database' => 'Base de dados desconhecida. Verifique as suas configura&ccedil;&otilde;es.',
         'no-instance' => 'N&atilde;o existe uma inst&acirc;ncia do objeto PDO4You dispon&iacute;vel. Imposs&iacute;vel acessar os m&eacute;todos.',
         'no-argument-sql' => 'O argumento SQL de consulta est&aacute; ausente.',
-        'no-instruction-json' => 'A instrução SQL no formato JSON est&aacute; ausente.',
+        'no-instruction-json' => 'A instru&ccedil;&atilde;o SQL no formato JSON est&aacute; ausente.',
+        'not-implemented' => 'N&atilde;o implementado.',
         'duplicate-key' => 'N&atilde;o foi poss&iacute;vel gravar o registro. Existe uma chave duplicada na tabela.<br />\'%1$s',
-        'critical-error' => 'Erro crítico detectado no sistema.',
-        'json-error-depth' => 'Profundidade máxima da pilha excedida.',
-        'json-error-state-mismatch' => 'Incompatibilidade de modos ou operação aritmética impossível de ser representado.',
+        'critical-error' => 'Erro cr&iacute;tico detectado no sistema.',
+        'json-error-depth' => 'Profundidade m&aacute;xima da pilha excedida.',
+        'json-error-state-mismatch' => 'Incompatibilidade de modos ou opera&ccedil;&atilde;o aritm&eacute;tica imposs&iacute;vel de ser representado.',
         'json-error-ctrl-char' => 'Atributo de controle inesperado foi encontrado.',
         'json-error-syntax' => 'A query JSON fornecida est&aacute; mal formatada.'
     );
@@ -180,6 +181,7 @@ class PDO4You
      * @param string $pass Senha da base de dados
      * @param string $option Configuração adicional do driver
      * @return object O objeto retornado é uma instância da conexão estabelecida
+     * @throws Exception Dispara uma exceção em caso de falhas na conexão
      * 
      * */
     public static function getInstance($base = DATA_BASE, $type = DATA_TYPE, $user = DATA_USER, $pass = DATA_PASS, Array $option = null)
@@ -233,7 +235,7 @@ class PDO4You
     }
 
     /**
-     * Método para mudar o Schema padrão do banco de dados
+     * Método para mudar o Schema padrão da base de dados
      * 
      * @access private static
      * @param string $base Nome da base de dados
@@ -242,13 +244,15 @@ class PDO4You
      * */
     private static function setDatabase($base)
     {
-        $driver = self::$handle->getAttribute(PDO::ATTR_DRIVER_NAME);
+        $driver = self::getDriver();
 
         switch ($driver):
             case 'mysql': self::$handle->exec('USE ' . $base);
                 break;
             case 'pgsql': self::$handle->exec('SET search_path TO ' . $base);
                 break;
+            default:
+                throw new PDOException(self::$exception['not-implemented']);
         endswitch;
     }
 
@@ -263,6 +267,19 @@ class PDO4You
     public static function getDatabase()
     {
         return self::$database;
+    }
+
+    /**
+     * Método para recuperar o nome do driver corrente
+     * 
+     * @access public static
+     * @param void
+     * @return string Retorna o nome do driver
+     * 
+     * */
+    public static function getDriver()
+    {
+        return self::$handle->getAttribute(PDO::ATTR_DRIVER_NAME);
     }
 
     /**
@@ -355,7 +372,7 @@ class PDO4You
                 self::setStyle();
 
                 $info = self::$handle->getAvailableDrivers();
-                echo '<h7>Available Drivers: ' , implode(', ', $info) , '</h7>';
+                echo '<h7>Available Drivers: ', implode(', ', $info), '</h7>';
             else:
                 throw new PDOException(self::$exception['no-instance']);
             endif;
@@ -475,7 +492,7 @@ class PDO4You
         try {
             if (is_null($query))
                 throw new PDOException(self::$exception['no-argument-sql']);
- 
+
             if (!is_null($use))
                 self::setInstance($use);
 
@@ -661,7 +678,7 @@ class PDO4You
             }
 
             $pdo->commit();
-         } catch (PDOException $e) {
+        } catch (PDOException $e) {
             self::getErrorInfo($e);
             self::stackTrace($e);
         }
@@ -791,14 +808,14 @@ class PDO4You
         return $jarr;
     }
 
-	/**
-	 * Método do MySQL, para exibir e descrever as tabelas da base de dados
-	 * 
-	 * @access public static
-	 * @param void 
-	 * @return void
-	 * 
-	 * */
+    /**
+     * Método do MySQL, para exibir e descrever as tabelas da base de dados
+     * 
+     * @access public static
+     * @param void 
+     * @return void
+     * 
+     * */
     public static function showMySqlTables()
     {
         self::setStyle();
@@ -828,13 +845,13 @@ class PDO4You
     }
 
     /**
-    * Método do PostgreSQL, para exibir e descrever as tabelas da base de dados
-    * 
-    * @access public static
-    * @Param void 
-    * @return void
-    * 
-    * */
+     * Método do PostgreSQL, para exibir e descrever as tabelas da base de dados
+     * 
+     * @access public static
+     * @Param void 
+     * @return void
+     * 
+     * */
     public static function showPgSqlTables()
     {
         self::setStyle();
@@ -863,13 +880,13 @@ class PDO4You
     }
 
     /**
-    * Método do PostgreSQL, para exibir e descrever as tabelas da base de dados
-    * 
-    * @access public static
-    * @Param void 
-    * @return void
-    * 
-    * */
+     * Método do PostgreSQL, para exibir e descrever as tabelas da base de dados
+     * 
+     * @access public static
+     * @Param void 
+     * @return void
+     * 
+     * */
     public static function showPgSqlViews()
     {
         self::setStyle();
