@@ -733,19 +733,30 @@ class PDO4You
      * Método que retorna o ID do último registro inserido ou o valor de seqüência
      * 
      * @access public static
-     * @param string $name Nome da variável de sequência solicitado em algumas base de dados. O valor padrão é "_id_seq"
+     * @param string $sequence Nome da variável de sequência solicitado em algumas base de dados
      * @return array Retorna o ID do último registro
      * 
      * */
-    public static function lastId($name = '_id_seq')
+    public static function lastId($sequence = 'table_id_seq')
     {
-        $drive = 'mysql';
-        switch ($drive):
-            case 'pgsql': $sql = "SELECT CURRVAL('" . self::$database . $name . "') AS lastId;";
+        $driver = self::getDriver();
+
+        switch ($driver):
+            case 'mysql': $sql = "SELECT LAST_INSERT_ID() AS lastId;";
                 break;
-            case 'mssql': $sql = "SELECT @@IDENTITY AS lastId';";
+            #case 'pgsql': $sql = "SELECT CURRVAL('" . $sequence . "') AS lastId;";
+            case 'pgsql': $sql = "SELECT LASTVAL() AS lastId;";
                 break;
-            case 'mysql': default: $sql = "SELECT LAST_INSERT_ID() AS lastId;";
+            case 'mssql': $sql = "SELECT @@IDENTITY AS lastId;";
+                break;
+            #case 'oracle': $sql = "SELECT " . $sequence . ".CURRVAL AS lastId FROM DUAL;";
+            case 'oracle': $sql = "SELECT last_number AS lastId FROM user_sequences WHERE sequence_name = '" . $sequence . "';";
+                break;
+            #case 'sqlsrv': $sql = "SELECT current_value AS lastId FROM sys.sequences WHERE name = '" . $sequence . "';";
+            case 'sqlsrv': $sql = "SELECT SCOPE_IDENTITY() AS lastId;";
+                break;
+            default:
+                throw new PDOException(self::$exception['not-implemented']);
         endswitch;
 
         self::$lastId = self::selectRecords($sql, null, null, false);
