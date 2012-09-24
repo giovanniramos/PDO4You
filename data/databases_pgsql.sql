@@ -8,11 +8,11 @@ CREATE TABLE users (
 	id SERIAL NOT NULL,
 	firstname VARCHAR(20) NOT NULL,
 	lastname VARCHAR(20) NOT NULL,
-	mail VARCHAR(30) NOT NULL,
+	mail VARCHAR(30) NULL,
 	PRIMARY KEY (id)
 );
 
-INSERT INTO users (firstname, lastname, mail) VALUES
+INSERT INTO users (firstname, lastname, mail) VALUES 
 ('Giovanni', 'Ramos', 'pdo4you@gmail.com');
 
 SELECT setval('public."users_id_seq"', max("id") ) FROM users;
@@ -27,7 +27,7 @@ CREATE TABLE books (
 	PRIMARY KEY (id)
 );
 
-INSERT INTO books VALUES
+INSERT INTO books VALUES 
 (1, 'Lorem ipsum dolor sit amet.', 'Giovanni Ramos', NULL);
 
 SELECT setval('public."books_id_seq"', max("id") ) FROM books;
@@ -46,6 +46,7 @@ CREATE TABLE books (
 	PRIMARY KEY (id)
 );
 
-INSERT INTO books VALUES (1, 'PostgreSQL: Up and Running', 'Regina Obe, Leo Hsu', NULL);
+INSERT INTO books VALUES 
+(1, 'PostgreSQL: Up and Running', 'Regina Obe, Leo Hsu', NULL);
 
 SELECT setval('public."books_id_seq"', max("id") ) FROM books;
