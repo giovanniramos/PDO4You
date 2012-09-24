@@ -8,7 +8,7 @@
  * @author Giovanni Ramos <giovannilauro@gmail.com>
  * @copyright 2010-2012, Giovanni Ramos
  * @since 2010-09-07
- * @version 2.3
+ * @version 2.4
  * @license http://opensource.org/licenses/gpl-3.0.html GNU Public License
  * @link https://github.com/giovanniramos/PDO4You
  * 
