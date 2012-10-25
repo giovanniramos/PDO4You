@@ -16,11 +16,14 @@ echo '<h2><a href=".">TEST</a> &rsaquo; MULTIPLE INSTANCES</h2>';
 
 // Displaying records from the last data instance set
 $test->select();
+#PDO4You::showTables();
 
 // Displaying records from the database: bookstore
 $test->select('bookstore');
+#PDO4You::showTables();
 
 // Displaying records from the database: pdo4you
 $test->select('pdo4you');
+#PDO4You::showTables();
 
 ?>
