@@ -176,7 +176,7 @@ class PDO4You
      * 
      * @access public static
      * @param string $base O nome da base de dados que será usada como instância de conexão
-     * @param string $type Tipo do driver DSN utilizado na conexão
+     * @param string $type Tipo de conexão usando o nome da fonte de dados ou o DSN completo
      * @param string $user Usuário da base de dados
      * @param string $pass Senha da base de dados
      * @param string $option Configuração adicional do driver
@@ -190,35 +190,34 @@ class PDO4You
             try {
                 self::$datahost = DATA_HOST;
                 self::$dataport = DATA_PORT;
-                self::$database = $base;
 
-                if (!array_key_exists(self::$database, self::$instance)):
+                if (!array_key_exists($base, self::$instance)):
                     $type = !(empty($type)) ? strtolower($type) : 'mysql';
 
                     switch ($type):
                         case 'mysql':
-                        case 'pgsql': $driver = $type . ':dbname=' . self::$database . ';host=' . self::$datahost . ';port=' . self::$dataport . ';';
+                        case 'pgsql': $driver = $type . ':dbname=' . $base . ';host=' . self::$datahost . ';port=' . self::$dataport . ';';
                             break;
                         case 'mssql':
                         case 'sybase':
-                        case 'dblib': $driver = $type . ':dbname=' . self::$database . ';host=' . self::$datahost . ';';
+                        case 'dblib': $driver = $type . ':dbname=' . $base . ';host=' . self::$datahost . ';';
                             break;
                         case 'oracle':
-                        case 'oci': $driver = 'oci:dbname=' . self::$database . ';';
+                        case 'oci': $driver = 'oci:dbname=' . $base . ';';
                             break;
-                        case 'sqlsrv': $driver = 'sqlsrv:Database=' . self::$database . ';Server=' . self::$datahost . ';';
+                        case 'sqlsrv': $driver = 'sqlsrv:Database=' . $base . ';Server=' . self::$datahost . ';';
                             break;
                         default: $driver = $type;
                     endswitch;
 
                     $option = !is_null($option) ? $option : array(PDO::ATTR_PERSISTENT => self::$connection, PDO::ATTR_CASE => PDO::CASE_LOWER);
 
-                    self::singleton(self::$database, $driver, $user, $pass, $option);
+                    self::singleton($base, $driver, $user, $pass, $option);
                 endif;
 
-                self::$handle = self::$instance[self::$database];
+                self::$handle = self::$instance[$base];
 
-                #self::setDatabase(self::$database);
+                self::setDatabase($base);
             } catch (PDOException $e) {
                 $error = self::getErrorInfo($e);
 
@@ -235,7 +234,7 @@ class PDO4You
     }
 
     /**
-     * Método para mudar o Schema padrão da base de dados
+     * Método para apontar o nome da base de dados corrente
      * 
      * @access private static
      * @param string $base Nome da base de dados
@@ -244,16 +243,7 @@ class PDO4You
      * */
     private static function setDatabase($base)
     {
-        $driver = self::getDriver();
-
-        switch ($driver):
-            case 'mysql': self::$handle->exec('USE ' . $base);
-                break;
-            case 'pgsql': self::$handle->exec('SET search_path TO ' . $base);
-                break;
-            default:
-                throw new PDOException(self::$exception['not-implemented']);
-        endswitch;
+        self::$database = $base;
     }
 
     /**
@@ -832,11 +822,10 @@ class PDO4You
         self::setStyle();
 
         $tables = self::select("SHOW TABLES;");
-        $index = array_keys($tables[0]);
-        $baseName = preg_replace('~tables_in_~', '', $index[0]);
+        $baseName = self::getDatabase();
 
         $html = '<div class="pdo4you">';
-        $html.= '<strong>Database:</strong> ' . $baseName . ' &nbsp;<strong>Total of tables:</strong> ' . count($tables) . '<br /><br />';
+        $html.= '<strong>Database:</strong> ' . $baseName . ' &nbsp;<strong>Total of tables:</strong> ' . count($tables) . '<br />';
         foreach ($tables as $k1 => $v1):
             foreach ($v1 as $k2 => $v2):
                 $desc = self::select("DESCRIBE " . $baseName . "." . $v2);
@@ -852,14 +841,14 @@ class PDO4You
         endforeach;
         $html.= '</div>';
 
-        exit($html);
+        echo $html;
     }
 
     /**
      * Método do PostgreSQL, para exibir e descrever as tabelas da base de dados
      * 
      * @access public static
-     * @Param void 
+     * @param void 
      * @return void
      * 
      * */
@@ -868,10 +857,10 @@ class PDO4You
         self::setStyle();
 
         $tables = self::select("SELECT table_name FROM information_schema.tables WHERE table_type = 'BASE TABLE' AND table_schema NOT IN ('pg_catalog', 'information_schema');");
-        $baseName = DATA_BASE;
+        $baseName = self::getDatabase();
 
         $html = '<div class="pdo4you">';
-        $html.= '<strong>Database:</strong> ' . $baseName . ' &nbsp;<strong>Total of tables:</strong> ' . count($tables) . '<br /><br />';
+        $html.= '<strong>Database:</strong> ' . $baseName . ' &nbsp;<strong>Total of tables:</strong> ' . count($tables) . '<br />';
         foreach ($tables as $k1 => $v1):
             foreach ($v1 as $k2 => $v2):
                 $desc = self::select("SELECT a.attname AS field, t.typname AS type FROM pg_class c, pg_attribute a, pg_type t WHERE c.relname = '" . $v2 . "' AND a.attnum > 0 AND a.attrelid = c.oid AND a.atttypid = t.oid ORDER BY a.attnum");
@@ -887,14 +876,36 @@ class PDO4You
         endforeach;
         $html.= '</div>';
 
-        exit($html);
+        echo $html;
     }
 
+    /**
+     * Método que exibe e descreve as tabelas da base de dados
+     * 
+     * @access public static
+     * @param void 
+     * @return void
+     * 
+     * */
+    public static function showTables()
+    {
+        $driver = self::getDriver();
+
+        switch ($driver):
+            case 'mysql': self::showMySqlTables();
+                break;
+            case 'pgsql': self::showPgSqlTables();
+                break;
+            default:
+                throw new PDOException(self::$exception['not-implemented']);
+        endswitch;
+    }
+    
     /**
      * Método do PostgreSQL, para exibir e descrever as tabelas da base de dados
      * 
      * @access public static
-     * @Param void 
+     * @param void 
      * @return void
      * 
      * */
@@ -903,10 +914,10 @@ class PDO4You
         self::setStyle();
 
         $tables = self::select("SELECT table_name, view_definition FROM information_schema.views WHERE view_definition IS NOT NULL AND table_schema NOT IN ('pg_catalog', 'information_schema');");
-        $baseName = DATA_BASE;
+        $baseName = self::getDatabase();
 
         $html = '<div class="pdo4you">';
-        $html.= '<strong>Database:</strong> ' . $baseName . ' &nbsp;<strong>Total of views:</strong> ' . count($tables) . '<br /><br />';
+        $html.= '<strong>Database:</strong> ' . $baseName . ' &nbsp;<strong>Total of views:</strong> ' . count($tables) . '<br />';
         foreach ($tables as $k1 => $v1):
             $html.= '<code>&nbsp;<strong>View</strong>: <i style="color:#00B;">' . $v1['table_name'] . '</i></code>';
             $html.= '<code class="trace">';
@@ -916,7 +927,7 @@ class PDO4You
         endforeach;
         $html.= '</div>';
 
-        exit($html);
+        echo $html;
     }
 
     /**
