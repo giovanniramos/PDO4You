@@ -2,9 +2,10 @@
 ---------------------------------
 --CREATE DATABASE pdo4you;
 ---------------------------------
+DROP SCHEMA IF EXISTS public CASCADE;
+CREATE SCHEMA public;
 
-DROP TABLE IF EXISTS users;
-CREATE TABLE users (
+CREATE TABLE public.users (
 	id SERIAL NOT NULL,
 	firstname VARCHAR(20) NOT NULL,
 	lastname VARCHAR(20) NOT NULL,
@@ -12,14 +13,13 @@ CREATE TABLE users (
 	PRIMARY KEY (id)
 );
 
-INSERT INTO users (firstname, lastname, mail) VALUES 
+INSERT INTO public.users (firstname, lastname, mail) VALUES 
 ('Giovanni', 'Ramos', 'pdo4you@gmail.com');
 
-SELECT setval('public."users_id_seq"', max("id") ) FROM users;
+SELECT setval('public.users_id_seq', max("id") ) FROM public.users;
 
 
-DROP TABLE IF EXISTS books;
-CREATE TABLE books (
+CREATE TABLE public.books (
 	id SERIAL NOT NULL,
 	title VARCHAR(50) NOT NULL,
 	author VARCHAR(50) NOT NULL,
@@ -27,18 +27,19 @@ CREATE TABLE books (
 	PRIMARY KEY (id)
 );
 
-INSERT INTO books VALUES 
+INSERT INTO public.books VALUES 
 (1, 'Lorem ipsum dolor sit amet.', 'Giovanni Ramos', NULL);
 
-SELECT setval('public."books_id_seq"', max("id") ) FROM books;
+SELECT setval('public.books_id_seq', max("id") ) FROM public.books;
 
 
 ---------------------------------
 --CREATE DATABASE bookstore;
 ---------------------------------
+DROP SCHEMA IF EXISTS public CASCADE;
+CREATE SCHEMA public;
 
-DROP TABLE IF EXISTS  books;
-CREATE TABLE books (
+CREATE TABLE public.books (
 	id SERIAL NOT NULL,
 	title VARCHAR(50) NOT NULL,
 	author VARCHAR(50) NOT NULL,
@@ -46,7 +47,7 @@ CREATE TABLE books (
 	PRIMARY KEY (id)
 );
 
-INSERT INTO books VALUES 
+INSERT INTO public.books VALUES 
 (1, 'PostgreSQL: Up and Running', 'Regina Obe, Leo Hsu', NULL);
 
-SELECT setval('public."books_id_seq"', max("id") ) FROM books;
+SELECT setval('public.books_id_seq', max("id") ) FROM public.books;
