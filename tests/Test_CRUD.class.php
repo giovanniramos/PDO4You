@@ -28,55 +28,39 @@ class Test_CRUD
      * Usage: PDO4You::select()
      * 
      * */
-    public function select($db = null)
+    public function select($instance = null)
     {
-        // Sets the instance of the database
-        if (!is_null($db))
-            PDO4You::setInstance($db);
-
         // Execute SQL query and Store the result
-        $rs = PDO4You::select($this->sql, $db);
+        $rs = PDO4You::select($this->sql, $instance);
 
         echo '<code>&nbsp;<strong>Test with PDO4You::select()</strong></code>';
-        echo '<code class="debug">PDO4You::select(' . $this->formatSql() . ', ' . $this->formatDB($db) . ');' . $this->formatRS($rs, false, true) . '</code>';
+        echo '<code class="debug">PDO4You::select(' . $this->formatSql() . ', ' . $this->formatDB() . ');' . $this->formatRS($rs, false) . '</code>';
     }
 
     /**
-     * All Selects
+     * All Selects with default instance
      * Usage: PDO4You::select(), PDO4You::selectNum(), PDO4You::selectObj(), PDO4You::selectAll()
      * 
      * */
     public function allSelects()
     {
-        // Sets the instance of the database
-        PDO4You::setInstance('bookstore');
-
         // Execute SQL query and Store the result
+        $rs = PDO4You::select($this->sql);
         $rs_num = PDO4You::selectNum($this->sql);
         $rs_obj = PDO4You::selectObj($this->sql);
         $rs_all = PDO4You::selectAll($this->sql);
-        $rs = PDO4You::select($this->sql);
-
-        echo '<code>&nbsp;<strong>Test with PDO4You::selectNum()</strong></code>';
-        echo '<code class="debug">PDO4You::selectNum(' . $this->formatSql() . ', ' . $this->formatDB() . ');' . $this->formatRS($rs_num, false, true) . '</code>';
-
-        echo '<code>&nbsp;<strong>Test with PDO4You::selectObj()</strong></code>';
-        echo '<code class="debug">PDO4You::selectObj(' . $this->formatSql() . ', ' . $this->formatDB() . ');' . $this->formatRS($rs_obj, false, true) . '</code>';
-
-        echo '<code>&nbsp;<strong>Test with PDO4You::selectAll()</strong></code>';
-        echo '<code class="debug">PDO4You::selectAll(' . $this->formatSql() . ', ' . $this->formatDB() . ');' . $this->formatRS($rs_all, false, true) . '</code>';
 
         echo '<code>&nbsp;<strong>Test with PDO4You::select()</strong></code>';
-        echo '<code class="debug">PDO4You::select(' . $this->formatSql() . ', ' . $this->formatDB() . ');' . $this->formatRS($rs, false, true) . '</code>';
+        echo '<code class="debug">PDO4You::select(' . $this->formatSql() . ', ' . $this->formatDB() . ');' . $this->formatRS($rs, false) . '</code>';
 
-        // Sets another instance
-        PDO4You::setInstance('pdo4you');
+        echo '<code>&nbsp;<strong>Test with PDO4You::selectNum()</strong></code>';
+        echo '<code class="debug">PDO4You::selectNum(' . $this->formatSql() . ', ' . $this->formatDB() . ');' . $this->formatRS($rs_num, false) . '</code>';
 
-        // Execute SQL query and Store the result
-        $rs = PDO4You::select($this->sql);
+        echo '<code>&nbsp;<strong>Test with PDO4You::selectObj()</strong></code>';
+        echo '<code class="debug">PDO4You::selectObj(' . $this->formatSql() . ', ' . $this->formatDB() . ');' . $this->formatRS($rs_obj, false) . '</code>';
 
-        echo '<code>&nbsp;<strong>Test with PDO4You::select() in another instance of the database</strong></code>';
-        echo '<code class="debug">PDO4You::select(' . $this->formatSql() . ', ' . $this->formatDB() . ');' . $this->formatRS($rs, false, true) . '</code>';
+        echo '<code>&nbsp;<strong>Test with PDO4You::selectAll()</strong></code>';
+        echo '<code class="debug">PDO4You::selectAll(' . $this->formatSql() . ', ' . $this->formatDB() . ');' . $this->formatRS($rs_all, false) . '</code>';
     }
 
     /**
@@ -99,10 +83,10 @@ class Test_CRUD
 		';
 
         // Store the result
-        $rs = PDO4You::insert($sql, 'pdo4you');
+        $rs = PDO4You::insert($sql);
 
         echo '<code>&nbsp;<strong>Test with PDO4You::insert()</strong></code>';
-        echo '<code class="debug">PDO4You::insert(' . $this->formatSql($sql) . ', ' . $this->formatDB() . ');' . $this->formatRS($rs, true, true) . '</code>';
+        echo '<code class="debug">PDO4You::insert(' . $this->formatSql($sql) . ', ' . $this->formatDB() . ');' . $this->formatRS($rs, true) . '</code>';
     }
 
     /**
@@ -135,10 +119,10 @@ class Test_CRUD
 		';
 
         // Store the result
-        $rs = PDO4You::update($sql, 'pdo4you');
+        $rs = PDO4You::update($sql);
 
         echo '<code>&nbsp;<strong>Test with PDO4You::update()</strong></code>';
-        echo '<code class="debug">PDO4You::update(' . $this->formatSql($sql) . ', ' . $this->formatDB() . ');' . $this->formatRS($rs, false, true) . '</code>';
+        echo '<code class="debug">PDO4You::update(' . $this->formatSql($sql) . ', ' . $this->formatDB() . ');' . $this->formatRS($rs, false) . '</code>';
     }
 
     /**
@@ -167,10 +151,10 @@ class Test_CRUD
 		';
 
         // Store the result
-        $rs = PDO4You::delete($sql, 'pdo4you');
+        $rs = PDO4You::delete($sql);
 
         echo '<code>&nbsp;<strong>Test with PDO4You::delete()</strong></code>';
-        echo '<code class="debug">PDO4You::delete(' . $this->formatSql($sql) . ', ' . $this->formatDB() . ');' . $this->formatRS($rs, false, true) . '</code>';
+        echo '<code class="debug">PDO4You::delete(' . $this->formatSql($sql) . ', ' . $this->formatDB() . ');' . $this->formatRS($rs, false) . '</code>';
     }
 
     /**
@@ -191,10 +175,10 @@ class Test_CRUD
 		';
 
         // Store the result
-        $rs = PDO4You::update($sql, 'pdo4you');
+        $rs = PDO4You::update($sql);
 
         echo '<code>&nbsp;<strong>Test with PDO4You::update()</strong></code>';
-        echo '<code class="debug">PDO4You::update(' . $this->formatSql($sql) . ', ' . $this->formatDB() . ');' . $this->formatRS($rs, false, true) . '</code>';
+        echo '<code class="debug">PDO4You::update(' . $this->formatSql($sql) . ', ' . $this->formatDB() . ');' . $this->formatRS($rs, false) . '</code>';
     }
 
     /**
@@ -203,9 +187,9 @@ class Test_CRUD
      */
     private function formatSql($sql = null)
     {
-        $s = '<strong style="color:green;">' . (!is_null($sql) ? trim($sql) : $this->sql) . '</strong>';
+        $s = '"<strong style="color:green;">' . (!is_null($sql) ? trim($sql) : $this->sql) . '</strong>"';
 
-        return '"' . $s . '"';
+        return $s;
     }
 
     /**
@@ -214,28 +198,20 @@ class Test_CRUD
      */
     private function formatDB()
     {
-        $s = '<strong style="color:red;">' . PDO4You::getDatabase() . '</strong>';
+        $s = '"<strong style="color:red;">' . PDO4You::getDatabase() . '</strong>"';
 
-        return '"' . $s . '"';
+        return $s;
     }
 
     /**
      * Format the Result
      * 
      */
-    private function formatRS($rs, $show_id = false, $show_count = false)
+    private function formatRS($rs, $show_lastid = false)
     {
-        $s = '<br /><br />- The code above will output: ';
-        $s.= '<pre style="color:blue;">' . print_r($rs, true) . '</pre>';
-
-        if ($show_id)
-            $s.= 'Id of the last iteration: <strong style="color:red;">' . PDO4You::lastId() . '</strong>';
-
-        if ($show_count) {
-            if ($show_id)
-                $s.= ' &nbsp;|&nbsp;';
-            $s.= 'Total records affected: <strong style="color:red;">' . PDO4You::rowCount() . '</strong>';
-        }
+        $s = '<br /><br />- The code above will output: <pre style="color:blue;">' . print_r($rs, true) . '</pre>';
+        $s.= 'Total records affected: <strong style="color:red;">' . PDO4You::rowCount() . '</strong>';
+        $s.= ($show_lastid) ? '&nbsp;&nbsp;&nbsp;&nbsp;Id of the last iteration: <strong style="color:red;">' . PDO4You::lastId() . '</strong>' : null;
 
         return $s;
     }
