@@ -33,7 +33,7 @@ require_once('PDO4You.load.php');
 
 `PDO4You.load.php`: arquivo responsável pelo carregamento dos arquivos necessários ao funcionamento da lib PDO4You.
 
-`PDO4You.class.php`: contém a implementação do objeto PDO4You de conexão, estendendo a extensão PDO.
+`PDO4You.class.php`: contém a implementação do objeto PDO de conexão.
 
 `PDO4You.config.php`: arquivo de configuração inicial, de acesso ao servidor e base de dados.
 
@@ -44,7 +44,8 @@ require_once('PDO4You.load.php');
 Verificando os drivers suportados pelo servidor
 --------------------------------------------------
 
-Execute o método abaixo para verificar se o servidor tem suporte a um driver PDO específico de sua base de dados. Os drivers suportados serão exibidos na tela.
+Execute o método abaixo para verificar se o servidor tem suporte a um driver PDO específico de sua base de dados. 
+Os drivers suportados serão exibidos na tela.
 
 ~~~ php
 <?php
@@ -72,28 +73,27 @@ extension=php_pdo_pgsql.dll
 Estabelecendo conexão com a base de dados
 --------------------------------------------------
 
-Para abstrair nossos mecanismos de acesso aos dados, usamos um DSN ou Data Source Name (Nome de Fonte de Dados), que armazena as informações necessárias para se iniciar uma comunicação com outras fontes de dados, tais como: tipo de tecnologia, nome do servidor ou localização, nome da base de dados, usuário, senha e outras configurações adicionais. Isso facilita a troca de acesso à base de dados que sofrerem migração.
+Para abstrair nossos mecanismos de acesso aos dados, usamos um DSN (Data Source Name = Nome de Fonte de Dados) que armazena as informações necessárias para se iniciar uma comunicação com outras fontes de dados, tais como: tipo de tecnologia, nome do servidor ou localização, nome da base de dados, usuário, senha e outras configurações adicionais. Isso facilita a troca de acesso à base de dados que sofrerem migração.
 
 ~~~ php
 <?php
 
-// Principais meios de se iniciar uma instância de conexão. O uso do DSN é opcional.
+// Principais meios de se iniciar uma instância de conexão
 
 # MySQL 
-PDO4You::getInstance(); // PADRÃO - Os dados de acesso já foram definidos na interface
-PDO4You::getInstance('database'); // Instanciando e definindo uma outra base de dados que será utilizada
+PDO4You::getInstance(); // PADRÃO - Os dados de acesso já foram definidos no arquivo de configuração inicial
 
 
 // Conectando-se a outras fontes de dados, através de um DSN.
 
 # MySQL
-PDO4You::getInstance('database', 'mysql:host=localhost;', 'root', 'pass');
+PDO4You::getInstance('nome_da_instancia', 'mysql:host=localhost;dbname=pdo4you', 'user', 'pass');
 
 # PostgreSQL
-PDO4You::getInstance('database', 'pgsql:host=localhost;', 'root', 'pass');
+PDO4You::getInstance('nome_da_instancia', 'pgsql:host=localhost;dbname=pdo4you', 'user', 'pass');
 
 # MS SQL
-PDO4You::getInstance('database', 'mssql:host=localhost;', 'root', 'pass');
+PDO4You::getInstance('nome_da_instancia', 'mssql:host=localhost;dbname=pdo4you', 'user', 'pass');
 
 ?>
 ~~~ 
@@ -126,17 +126,17 @@ Selecionando registros na base de dados
 ~~~ php
 <?php
 
-// Iniciando uma instância de conexão. O padrão de conexão é persistente.
+// Iniciando uma instância de conexão. O padrão de conexão é não-persistente
 PDO4You::getInstance();
 
-// Para definir um tipo de comunicação persistente ou não-persistente, utilize o método abaixo passando um valor booleano.
-PDO4You::setPersistent(false);
+// Definindo uma comunicação persistente com a base de dados
+PDO4You::setPersistent(true);
 
 // Selecionando registros na base de dados
 PDO4You::select('SELECT * FROM books LIMIT 2');
 
-// Selecionando registros e definindo qual instância de base de dados será utilizada
-PDO4You::select('SELECT * FROM books LIMIT 2', 'bookstore');
+// Selecionando registros e definindo qual instância de conexão será utilizada
+PDO4You::select('SELECT * FROM books LIMIT 2', 'nome_da_instancia');
 
 
 // Query de consulta
@@ -188,8 +188,8 @@ Inserindo um simples registro na base de dados
 ~~~ php
 <?php
 
-// SQL query
-$sql = '
+// Query
+$json = '
 {
 	query : [
 		{
@@ -201,7 +201,7 @@ $sql = '
 ';
 
 // A variável $result armazena como retorno do método, um array com o número de linhas afetadas por operação de inserção
-$result = PDO4You::insert($sql);
+$result = PDO4You::insert($json);
 
 // Logo após a inserção, utilize o método lastId(), para recuperar o ID da última operação de inserção na base de dados
 $lastInsertId = PDO4You::lastId();
@@ -220,8 +220,8 @@ Inserindo múltiplos registros
 ~~~ php
 <?php
 
-// SQL query
-$sql = '
+// Query
+$json = '
 {
 	query : [
 		{
@@ -239,7 +239,7 @@ $sql = '
 ';
 
 // A variável $result armazena um array com o número de linhas afetadas por operação de inserção
-$result = PDO4You::insert($sql);
+$result = PDO4You::insert($json);
 
 ?>
 ~~~ 
@@ -252,8 +252,8 @@ Atualizando múltiplos registros
 ~~~ php
 <?php
 
-// SQL query
-$sql = '
+// Query
+$json = '
 {
 	query : [
 		{
@@ -274,7 +274,7 @@ $sql = '
 ';
 
 // A variável $result armazena um array com o número de linhas afetadas por operação de atualização
-$result = PDO4You::update($sql);
+$result = PDO4You::update($json);
 
 ?>
 ~~~ 
@@ -287,8 +287,8 @@ Excluindo múltiplos registros
 ~~~ php
 <?php
 
-// SQL query
-$sql = '
+// Query
+$json = '
 {
 	query : [
 		{
@@ -309,7 +309,7 @@ $sql = '
 ';
 
 // A variável $result armazena um array com o número de linhas afetadas por operação de exclusão
-$result = PDO4You::delete($sql);
+$result = PDO4You::delete($json);
 
 ?>
 ~~~ 
