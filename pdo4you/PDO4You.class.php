@@ -34,13 +34,13 @@ class PDO4You
     private static $dataport;
 
     /**
-     * Armazena o nome da base de dados
+     * Armazena o nome da instância corrente de conexão
      * 
      * @access private static
      * @var string
      * 
      * */
-    private static $database;
+    private static $connection;
 
     /**
      * Armazena uma instância do objeto PDO de conexão
@@ -67,7 +67,7 @@ class PDO4You
      * @var boolean
      * 
      * */
-    private static $connection = false;
+    private static $persistent = false;
 
     /**
      * Armazena o ID do último registro inserido ou o valor de seqüência
@@ -126,7 +126,7 @@ class PDO4You
      * Método Singleton de conexão
      * 
      * @access private static
-     * @param string $alias Apelido de uma instância de conexão
+     * @param string $alias Nome da instância de conexão
      * @param string $driver Driver DSN de conexão
      * @param string $user Usuário da base de dados
      * @param string $pass Senha da base de dados
@@ -164,10 +164,10 @@ class PDO4You
     }
 
     /**
-     * Método para manipular as instâncias de conexão estabelecidas
+     * Método para definir uma instância de conexão
      * 
      * @access public static
-     * @param string $alias Nome da instância de conexão
+     * @param string $alias Nome de uma instância de conexão
      * @return void
      * 
      * */
@@ -180,8 +180,8 @@ class PDO4You
      * Método que obtém uma única instância da base de dados por conexão
      * 
      * @access public static
-     * @param string $alias Apelido que será usada como identificação de uma instância de conexão
-     * @param string $type Tipo de conexão usando o nome da fonte de dados ou um DSN completo
+     * @param string $alias Nome que será usada como identificação de uma instância de conexão
+     * @param string $type Tipo de conexão se estiver usando a "Configuração Inicial" ou um "DSN completo"
      * @param string $user Usuário da base de dados
      * @param string $pass Senha da base de dados
      * @param string $option Configuração adicional do driver
@@ -194,14 +194,10 @@ class PDO4You
         try {
             try {
                 if (!array_key_exists($alias, self::$handle)):
-                    self::setDatahost(DATA_HOST);
-                    self::setDataport(DATA_PORT);
-                    self::setDatabase(DATA_BASE);
-
                     $type = !(empty($type)) ? strtolower($type) : 'mysql';
-                    $host = self::getDatahost();
-                    $port = self::getDataport();
-                    $base = self::getDatabase();
+                    $host = DATA_HOST;
+                    $port = DATA_PORT;
+                    $base = DATA_BASE;
 
                     switch ($type):
                         case 'mysql':
@@ -214,12 +210,12 @@ class PDO4You
                         case 'oracle':
                         case 'oci': $driver = 'oci:dbname=' . $base . ';';
                             break;
-                        case 'sqlsrv': $driver = 'sqlsrv:Database=' . $base . ';Server=' . $host . ';';
+                        case 'sqlsrv': $driver = 'sqlsrv:database=' . $base . ';server=' . $host . ';';
                             break;
                         default: $driver = $type;
                     endswitch;
 
-                    $option = !is_null($option) ? $option : array(PDO::ATTR_PERSISTENT => self::$connection, PDO::ATTR_CASE => PDO::CASE_LOWER);
+                    $option = !is_null($option) ? $option : array(PDO::ATTR_PERSISTENT => self::$persistent, PDO::ATTR_CASE => PDO::CASE_LOWER);
 
                     self::singleton($alias, $driver, $user, $pass, $option);
                 endif;
@@ -241,8 +237,10 @@ class PDO4You
     /**
      * Método para atribuir uma nova instância do objeto PDO de conexão
      *
-     * @param string $alias
-     * @param object $instance 
+     * @param string $alias Nome de uma instância de conexão
+     * @param PDO $instance Objeto PDO de conexão
+     * @return void
+     * 
      */
     private static function setHandle($alias, PDO $instance)
     {
@@ -252,12 +250,13 @@ class PDO4You
     /**
      * Método para retornar um objeto PDO de conexão
      *
-     * @param string $alias
-     * @return object 
+     * @param string $alias Nome de uma instância de conexão
+     * @return object Retorna uma instância de conexão
+     * 
      */
     private static function getHandle($alias)
     {
-        self::setDatabase($alias);
+        self::setConnection($alias);
 
         return self::$handle[$alias];
     }
@@ -315,29 +314,29 @@ class PDO4You
     }
 
     /**
-     * Método para definir o nome da base de dados corrente
+     * Método para definir qual a instância corrente de conexão
      * 
      * @access private static
-     * @param string $base Nome da base de dados
+     * @param string $alias Nome da instância de conexão
      * @return void
      * 
      * */
-    private static function setDatabase($base)
+    private static function setConnection($alias)
     {
-        self::$database = $base;
+        self::$connection = $alias;
     }
 
     /**
-     * Método para recuperar o nome da base de dados apontada como instância corrente de conexão
+     * Método para recuperar o nome da instância corrente de conexão
      * 
      * @access public static
      * @param void
-     * @return string Retorna o nome da base de dados instanciada
+     * @return string Retorna o nome da instância de conexão
      * 
      * */
-    public static function getDatabase()
+    public static function getConnection()
     {
-        return self::$database;
+        return self::$connection;
     }
 
     /**
@@ -355,16 +354,16 @@ class PDO4You
 
     /**
      * Método para definir o tipo de comunicação com a base de dados
-     * O padrão de conexão é persistente
+     * O padrão de conexão é não-persistente
      * 
      * @access public static
-     * @param boolean $connection Define uma conexão persistente
+     * @param boolean $persistent Define uma conexão persistente
      * @return void
      * 
      * */
-    public static function setPersistent($connection)
+    public static function setPersistent($persistent)
     {
-        self::$connection = $connection;
+        self::$persistent = $persistent;
     }
 
     /**
@@ -893,17 +892,18 @@ class PDO4You
     /**
      * Método do MySQL para exibir e descrever as tabelas da base de dados
      * 
-     * @access public static
+     * @access private static
      * @param void 
      * @return void
      * 
      * */
-    public static function showMySqlTables()
+    private static function showMySqlTables()
     {
         self::setStyle();
 
         $tables = self::select("SHOW TABLES;");
-        $baseName = self::getDatabase();
+        $index = array_keys($tables[0]);
+        $baseName = preg_replace('~tables_in_~', '', $index[0]);
 
         $html = '<div class="pdo4you">';
         $html.= '<strong>Database:</strong> ' . $baseName . ' &nbsp;<strong>Total of tables:</strong> ' . count($tables) . '<br />';
@@ -928,32 +928,30 @@ class PDO4You
     /**
      * Método do PostgreSQL para exibir e descrever as tabelas da base de dados
      * 
-     * @access public static
+     * @access private static
      * @param void 
      * @return void
      * 
      * */
-    public static function showPgSqlTables()
+    private static function showPgSqlTables()
     {
         self::setStyle();
 
-        $tables = self::select("SELECT table_name FROM information_schema.tables WHERE table_type = 'BASE TABLE' AND table_schema NOT IN ('pg_catalog', 'information_schema');");
-        $baseName = self::getDatabase();
+        $tables = self::select("SELECT table_catalog, table_name FROM information_schema.tables WHERE table_type = 'BASE TABLE' AND table_schema NOT IN ('pg_catalog', 'information_schema');");
+        $baseName = $tables[0]['table_catalog'];
 
         $html = '<div class="pdo4you">';
         $html.= '<strong>Database:</strong> ' . $baseName . ' &nbsp;<strong>Total of tables:</strong> ' . count($tables) . '<br />';
         foreach ($tables as $k1 => $v1):
-            foreach ($v1 as $k2 => $v2):
-                $desc = self::select("SELECT a.attname AS field, t.typname AS type FROM pg_class c, pg_attribute a, pg_type t WHERE c.relname = '" . $v2 . "' AND a.attnum > 0 AND a.attrelid = c.oid AND a.atttypid = t.oid ORDER BY a.attnum");
+            $desc = self::select("SELECT a.attname AS field, t.typname AS type FROM pg_class c, pg_attribute a, pg_type t WHERE c.relname = '" . $v1['table_name'] . "' AND a.attnum > 0 AND a.attrelid = c.oid AND a.atttypid = t.oid ORDER BY a.attnum");
 
-                $html.= '<code>&nbsp;<strong>Table</strong>: ' . $v2 . '</code>';
-                $html.= '<code class="trace">';
-                foreach ($desc as $k3 => $v3):
-                    $html.= '<div class="number">&nbsp;</div> ';
-                    $html.= '<span><i style="color:#00B;">' . $v3['field'] . "</i> - " . strtoupper($v3['type']) . '</span><br />';
-                endforeach;
-                $html.= '</code>';
+            $html.= '<code>&nbsp;<strong>Table</strong>: ' . $v1['table_name'] . '</code>';
+            $html.= '<code class="trace">';
+            foreach ($desc as $k2 => $v2):
+                $html.= '<div class="number">&nbsp;</div> ';
+                $html.= '<span><i style="color:#00B;">' . $v2['field'] . "</i> - " . strtoupper($v2['type']) . '</span><br />';
             endforeach;
+            $html.= '</code>';
         endforeach;
         $html.= '</div>';
 
@@ -987,7 +985,7 @@ class PDO4You
     }
 
     /**
-     * Método do PostgreSQL para exibir e descrever as views da base de dados
+     * Método TESTE do PostgreSQL para exibir e descrever as views da base de dados
      * 
      * @access public static
      * @param void 
@@ -998,8 +996,8 @@ class PDO4You
     {
         self::setStyle();
 
-        $tables = self::select("SELECT table_name, view_definition FROM information_schema.views WHERE view_definition IS NOT NULL AND table_schema NOT IN ('pg_catalog', 'information_schema');");
-        $baseName = self::getDatabase();
+        $tables = self::select("SELECT table_catalog, table_name, view_definition FROM information_schema.views WHERE view_definition IS NOT NULL AND table_schema NOT IN ('pg_catalog', 'information_schema');");
+        $baseName = $tables[0]['table_catalog'];
 
         $html = '<div class="pdo4you">';
         $html.= '<strong>Database:</strong> ' . $baseName . ' &nbsp;<strong>Total of views:</strong> ' . count($tables) . '<br />';
