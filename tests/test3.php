@@ -8,22 +8,26 @@ $test = new Test_CRUD;
 // Starting the main method
 $test->init();
 
-// PostgreSQL test
-//PDO4You::getInstance('pg_test', 'pgsql:host=localhost;port=5432;dbname=bookstore', 'postgres', '123456');
-
 // Test with multiple instances
 echo '<h2><a href=".">TEST</a> &rsaquo; MULTIPLE INSTANCES</h2>';
 
 // Displaying records from the last data instance set
 $test->select();
-#PDO4You::showTables();
 
-// Displaying records from the database: bookstore
+PDO4You::getInstance('bookstore', 'mysql:host=127.0.0.2;dbname=bookstore', 'root', '');
+PDO4You::getInstance('pdo4you', 'mysql:host=127.0.0.2;dbname=pdo4you', 'root', '');
+
+// Displaying records from the data instance: bookstore
 $test->select('bookstore');
-#PDO4You::showTables();
 
-// Displaying records from the database: pdo4you
+// Displaying records from the data instance: pdo4you
 $test->select('pdo4you');
-#PDO4You::showTables();
+
+// Sets another instance
+#PDO4You::setInstance('bookstore');
+PDO4You::setInstance('default');
+
+// Displaying records from the last data instance set
+$test->select();
 
 ?>

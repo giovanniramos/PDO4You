@@ -13,5 +13,6 @@ echo '<h2><a href=".">TEST</a> &rsaquo; ALL SELECTS</h2>';
 
 // Displaying records between different instances of base
 $test->allSelects();
+#PDO4You::showTables();
 
 ?>
