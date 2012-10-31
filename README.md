@@ -25,7 +25,7 @@ Introdução: carregando a biblioteca necessária
 ~~~ php
 <?php
 
-// Apenas um arquivo é necessário para carregar toda a biblioteca.
+// Apenas um arquivo é necessário para carregar toda a biblioteca
 require_once('PDO4You.load.php');
 
 ?>
@@ -50,7 +50,7 @@ Os drivers suportados serão exibidos na tela.
 ~~~ php
 <?php
 
-// O método getAvailableDrivers, exibe todos os drivers instalados e que são suportados pelo servidor.
+// O método abaixo exibe todos os drivers instalados e que são suportados pelo servidor
 PDO4You::getAvailableDrivers();
 
 ?>
@@ -80,11 +80,11 @@ Para abstrair nossos mecanismos de acesso aos dados, usamos um DSN (Data Source 
 
 // Principais meios de se iniciar uma instância de conexão
 
-# MySQL 
-PDO4You::getInstance(); // PADRÃO - Os dados de acesso já foram definidos no arquivo de configuração inicial
+# PADRÃO 
+PDO4You::getInstance(); // Os dados de acesso já foram definidos no arquivo de configuração inicial
 
 
-// Conectando-se a outras fontes de dados, através de um DSN.
+// Conectando-se a outras fontes de dados através de um DSN
 
 # MySQL
 PDO4You::getInstance('nome_da_instancia', 'mysql:host=localhost;dbname=pdo4you', 'user', 'pass');
@@ -108,13 +108,13 @@ Create(INSERT), Retrieve(SELECT), Update(UPDATE) e Destroy(DELETE)
 
 Instruções SQL de consulta:
 
-`PDO4You::select()`: obtém registros como um array indexado pelo nome da coluna. Equivale a PDO::FETCH_ASSOC
+`PDO4You::select()`: retorna um array indexado pelo nome da coluna. Equivale a PDO::FETCH_ASSOC
 
-`PDO4You::selectNum()`: obtém registros como um array indexado pelo número da coluna. Equivale a PDO::FETCH_NUM
+`PDO4You::selectNum()`: retorna um array indexado pela posição numérica da coluna. Equivale a PDO::FETCH_NUM
 
-`PDO4You::selectObj()`: obtém registros como um objeto com nomes de coluna como propriedades. Equivale a PDO::FETCH_OBJ
+`PDO4You::selectObj()`: retorna um objeto com nomes de coluna como propriedades. Equivale a PDO::FETCH_OBJ
 
-`PDO4You::selectAll()`: obtém registros como um array indexado tanto pelo nome como pelo número da coluna. Equivale a PDO::FETCH_BOTH
+`PDO4You::selectAll()`: retorna um array indexado pelo nome e pela posição numérica da coluna. Equivale a PDO::FETCH_BOTH
 
 
 Abaixo seguem exemplos de como realizar estas operações.
@@ -203,11 +203,11 @@ $json = '
 // A variável $result armazena como retorno do método, um array com o número de linhas afetadas por operação de inserção
 $result = PDO4You::insert($json);
 
-// Logo após a inserção, utilize o método lastId(), para recuperar o ID da última operação de inserção na base de dados
+// Logo após a inserção, utilize o método PDO4You::lastId() para obter o ID da última operação de inserção na base de dados
 $lastInsertId = PDO4You::lastId();
 
-// Se estiver usando o driver pgsql(Postgres), será necessário informar o nome da seqüência para obter o ID, que por padrão foi definido como "_id_seq"
-$lastInsertId = PDO4You::lastId('_id_seq');
+// Se necessário, informe o nome da variável de sequência, solicitado em algumas base de dados
+$lastInsertId = PDO4You::lastId('table_id_seq');
 
 ?>
 ~~~ 
