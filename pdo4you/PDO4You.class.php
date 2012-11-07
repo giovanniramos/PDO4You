@@ -8,7 +8,7 @@
  * @author Giovanni Ramos <giovannilauro@gmail.com>
  * @copyright 2010-2012, Giovanni Ramos
  * @since 2010-09-07
- * @version 2.5
+ * @version 2.6
  * @license http://opensource.org/licenses/gpl-3.0.html GNU Public License
  * @link https://github.com/giovanniramos/PDO4You
  * 
@@ -95,20 +95,20 @@ class PDO4You
      * 
      * */
     private static $exception = array(
-        'code-1044' => 'Acesso negado para o usu&aacute;rio \'%1$s\'',
-        'code-1045' => 'Houve uma falha de comunica&ccedil;&atilde;o com a base de dados usando: \'%1$s\'@\'%2$s\'',
-        'code-2002' => 'Nenhuma conex&atilde;o p&ocirc;de ser feita porque a m&aacute;quina de destino as recusou ativamente. Este host n&atilde;o &eacute; conhecido.',
-        'code-2005' => 'N&atilde;o houve comunica&ccedil;&atilde;o com o host fornecido. Verifique as suas configura&ccedil;&otilde;es.',
-        'no-database' => 'Base de dados desconhecida. Verifique as suas configura&ccedil;&otilde;es.',
-        'no-instance' => 'N&atilde;o existe uma inst&acirc;ncia do objeto PDO4You dispon&iacute;vel. Imposs&iacute;vel acessar os m&eacute;todos.',
-        'no-argument-sql' => 'O argumento SQL de consulta est&aacute; ausente.',
-        'no-instruction-json' => 'A instru&ccedil;&atilde;o SQL no formato JSON est&aacute; ausente.',
-        'not-implemented' => 'N&atilde;o implementado.',
-        'critical-error' => 'Erro cr&iacute;tico detectado no sistema.',
-        'json-error-depth' => 'Profundidade m&aacute;xima da pilha excedida.',
-        'json-error-state-mismatch' => 'Incompatibilidade de modos ou opera&ccedil;&atilde;o aritm&eacute;tica imposs&iacute;vel de ser representado.',
-        'json-error-ctrl-char' => 'Atributo de controle inesperado foi encontrado.',
-        'json-error-syntax' => 'A query JSON fornecida est&aacute; mal formatada.'
+        'code-1044' => 'Access denied for user: \'%1$s\'',
+        'code-1045' => 'Failed communication with the database using: \'%1$s\'@\'%2$s\'',
+        'code-2002' => 'No connection could be made because the destination machine actively refused. This host is not known.',
+        'code-2005' => 'No communication with the host provided. Check your settings.',
+        'no-database' => 'Database unknown. Check your settings.',
+        'no-instance' => 'No instance of object PDO4You available. Unable to access the methods.',
+        'no-argument-sql' => 'The SQL argument is missing.',
+        'no-instruction-json' => 'The SQL statement is missing in JSON format.',
+        'not-implemented' => 'Method not implemented.',
+        'critical-error' => 'Critical error detected in the system.',
+        'json-error-depth' => 'Maximum stack depth exceeded.',
+        'json-error-state-mismatch' => 'Mismatch or arithmetic operation modes impossible to be represented.',
+        'json-error-ctrl-char' => 'Attribute control unexpected was found.',
+        'json-error-syntax' => 'The query is poorly formatted JSON provided'
     );
 
     /**
@@ -200,6 +200,7 @@ class PDO4You
                     $base = DATA_BASE;
 
                     switch ($type):
+                        case 'cubrid':
                         case 'mysql':
                         case 'pgsql': $driver = $type . ':dbname=' . $base . ';host=' . $host . ';port=' . $port . ';';
                             break;
@@ -809,6 +810,7 @@ class PDO4You
             $driver = self::getDriver();
 
             switch ($driver):
+                case 'cubrid':
                 case 'mysql': $sql = "SELECT LAST_INSERT_ID() AS lastId;";
                     break;
                 #case 'pgsql': $sql = "SELECT CURRVAL('" . $sequence . "') AS lastId;";
@@ -823,7 +825,7 @@ class PDO4You
                 case 'sqlsrv': $sql = "SELECT SCOPE_IDENTITY() AS lastId;";
                     break;
                 default:
-                    throw new PDOException(self::$exception['not-implemented']);
+                    throw new PDOException('PDO4You::lastId() - ' . self::$exception['not-implemented']);
             endswitch;
 
             self::$lastId = self::selectRecords($sql, null, null, false);
@@ -977,7 +979,7 @@ class PDO4You
                 case 'pgsql': self::showPgSqlTables($schema);
                     break;
                 default:
-                    throw new PDOException(self::$exception['not-implemented']);
+                    throw new PDOException('PDO4You::showTables() - ' . self::$exception['not-implemented']);
             endswitch;
         } catch (PDOException $e) {
             self::stackTrace($e);

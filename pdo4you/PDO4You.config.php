@@ -15,9 +15,9 @@
  * */
 
 // Dados de conexão
-define('DATA_TYPE', 'mysql'); # Tipo de conexão: mysql, pgsql, oracle, mssql, sqlsrv
+define('DATA_TYPE', 'mysql'); # Tipo de conexão: cubrid, mysql, pgsql, oracle, mssql, sybase, dblib, sqlsrv
 define('DATA_HOST', 'localhost'); # Nome do servidor: localhost, 127.0.0.1
-define('DATA_PORT', '3306'); # Porta do servidor: 3306, 5432
+define('DATA_PORT', '3306'); # Porta do servidor: 3306, 5432, 33000
 define('DATA_USER', 'root'); # Nome de usuário da base de dados
 define('DATA_PASS', ''); # Senha da base de dados
 define('DATA_BASE', 'pdo4you'); # O nome da base de dados
