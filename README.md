@@ -4,6 +4,10 @@ PDO4You
 Esta classe é baseada no PDO, que é uma extensão do PHP que permite aos desenvolvedores criar um código portável, de modo a atender a maioria das bases de dados mais populares.
 Sendo o MySQL, PostgreSQL, Oracle, MS SQL Server, Sybase.
 
+E agora a partir da versão 2.6, também oferencendo suporte ao banco de dados CUBRID.
+O mais novo sistema de gerenciamento de banco de dados altamente otimizado para aplicações Web.
+Mais informações em: http://www.cubrid.org
+
 O PDO4You provê uma camada abstrata de acesso a dados, que independentemente de qual base de dados você esteja utilizando, sempre poderá usar os mesmos métodos para emitir consultas e buscar dados.
 
 O padrão de projeto Singleton foi adotado para otimizar a conexão, garantindo uma única instância do objeto de conexão por base de dados.
@@ -62,6 +66,7 @@ Para habilitar algum driver não instalado, localize o arquivo php.ini, abra e p
 extension=php_pdo.dll
 extension=php_pdo_mysql.dll
 extension=php_pdo_pgsql.dll
+;extension=php_pdo_cubrid.dll
 ;extension=php_pdo_mssql.dll
 ;extension=php_pdo_oci.dll
 ;extension=php_pdo_oci8.dll
@@ -87,13 +92,13 @@ PDO4You::getInstance(); // Os dados de acesso já foram definidos no arquivo de 
 // Conectando-se a outras fontes de dados através de um DSN
 
 # MySQL
-PDO4You::getInstance('nome_da_instancia', 'mysql:host=localhost;dbname=pdo4you', 'user', 'pass');
+PDO4You::getInstance('nome_da_instancia', 'mysql:host=localhost;dbname=pdo4you;port=3306', 'user', 'pass');
 
 # PostgreSQL
-PDO4You::getInstance('nome_da_instancia', 'pgsql:host=localhost;dbname=pdo4you', 'user', 'pass');
+PDO4You::getInstance('nome_da_instancia', 'pgsql:host=localhost;dbname=pdo4you;port=5432', 'user', 'pass');
 
-# MS SQL
-PDO4You::getInstance('nome_da_instancia', 'mssql:host=localhost;dbname=pdo4you', 'user', 'pass');
+# CUBRID
+PDO4You::getInstance('nome_da_instancia', 'cubrid:host=localhost;dbname=pdo4you;port=33000', 'user', 'pass');
 
 ?>
 ~~~ 
