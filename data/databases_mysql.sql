@@ -1,8 +1,7 @@
 
-DROP DATABASE pdo4you;
-CREATE DATABASE pdo4you;
-
-
+---------------------------------
+--CREATE DATABASE pdo4you;
+---------------------------------
 DROP TABLE IF EXISTS pdo4you.users;
 CREATE TABLE pdo4you.users (
 	id INT(11) NOT NULL AUTO_INCREMENT,
@@ -15,30 +14,29 @@ CREATE TABLE pdo4you.users (
 INSERT INTO pdo4you.users (firstname, lastname, mail) VALUES 
 ('Giovanni', 'Ramos', 'pdo4you@gmail.com');
 
+
 DROP TABLE IF EXISTS pdo4you.books;
 CREATE TABLE pdo4you.books (
 	id INT(11) NOT NULL AUTO_INCREMENT,
-	title VARCHAR(50) NOT NULL,
+	title VARCHAR(100) NOT NULL,
 	author VARCHAR(50) NOT NULL,
 	description TEXT NULL,
 	PRIMARY KEY (id)
 ) ENGINE=InnoDB;
 
 INSERT INTO pdo4you.books VALUES 
-(1, 'Lorem ipsum dolor sit amet.', 'Giovanni Ramos', NULL);
+(1, 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.', 'Giovanni Ramos', NULL);
 
 
-
-DROP DATABASE bookstore;
-CREATE DATABASE bookstore;
-
-
+---------------------------------
+--CREATE DATABASE bookstore;
+---------------------------------
 DROP TABLE IF EXISTS bookstore.books;
 CREATE TABLE bookstore.books (
 	id INT(11) NOT NULL AUTO_INCREMENT,
-	title VARCHAR(50) NOT NULL,
+	title VARCHAR(100) NOT NULL,
 	author VARCHAR(50) NOT NULL,
-	description TINYTEXT NULL,
+	description TEXT NULL,
 	PRIMARY KEY (id)
 ) ENGINE=InnoDB;
 
