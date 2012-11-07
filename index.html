@@ -44,6 +44,10 @@
 <p>Esta classe é baseada no PDO, que é uma extensão do PHP que permite aos desenvolvedores criar um código portável, de modo a atender a maioria das bases de dados mais populares.
 Sendo o MySQL, PostgreSQL, Oracle, MS SQL Server, Sybase.</p>
 
+<p>E agora a partir da versão 2.6, também oferencendo suporte ao banco de dados CUBRID.
+O mais novo sistema de gerenciamento de banco de dados altamente otimizado para aplicações Web.
+Mais informações em: <a href="http://www.cubrid.org">http://www.cubrid.org</a></p>
+
 <p>O PDO4You provê uma camada abstrata de acesso a dados, que independentemente de qual base de dados você esteja utilizando, sempre poderá usar os mesmos métodos para emitir consultas e buscar dados.</p>
 
 <p>O padrão de projeto Singleton foi adotado para otimizar a conexão, garantindo uma única instância do objeto de conexão por base de dados.</p>
@@ -93,6 +97,7 @@ Os drivers suportados serão exibidos na tela.</p>
 <div class="highlight"><pre>extension=php_pdo.dll
 extension=php_pdo_mysql.dll
 extension=php_pdo_pgsql.dll
+;extension=php_pdo_cubrid.dll
 ;extension=php_pdo_mssql.dll
 ;extension=php_pdo_oci.dll
 ;extension=php_pdo_oci8.dll
@@ -114,13 +119,13 @@ extension=php_pdo_pgsql.dll
 <span class="c1">// Conectando-se a outras fontes de dados através de um DSN</span>
 
 <span class="c1"># MySQL</span>
-<span class="nx">PDO4You</span><span class="o">::</span><span class="na">getInstance</span><span class="p">(</span><span class="s1">'nome_da_instancia'</span><span class="p">,</span> <span class="s1">'mysql:host=localhost;dbname=pdo4you'</span><span class="p">,</span> <span class="s1">'user'</span><span class="p">,</span> <span class="s1">'pass'</span><span class="p">);</span>
+<span class="nx">PDO4You</span><span class="o">::</span><span class="na">getInstance</span><span class="p">(</span><span class="s1">'nome_da_instancia'</span><span class="p">,</span> <span class="s1">'mysql:host=localhost;dbname=pdo4you;port=3306'</span><span class="p">,</span> <span class="s1">'user'</span><span class="p">,</span> <span class="s1">'pass'</span><span class="p">);</span>
 
 <span class="c1"># PostgreSQL</span>
-<span class="nx">PDO4You</span><span class="o">::</span><span class="na">getInstance</span><span class="p">(</span><span class="s1">'nome_da_instancia'</span><span class="p">,</span> <span class="s1">'pgsql:host=localhost;dbname=pdo4you'</span><span class="p">,</span> <span class="s1">'user'</span><span class="p">,</span> <span class="s1">'pass'</span><span class="p">);</span>
+<span class="nx">PDO4You</span><span class="o">::</span><span class="na">getInstance</span><span class="p">(</span><span class="s1">'nome_da_instancia'</span><span class="p">,</span> <span class="s1">'pgsql:host=localhost;dbname=pdo4you;port=5432'</span><span class="p">,</span> <span class="s1">'user'</span><span class="p">,</span> <span class="s1">'pass'</span><span class="p">);</span>
 
-<span class="c1"># MS SQL</span>
-<span class="nx">PDO4You</span><span class="o">::</span><span class="na">getInstance</span><span class="p">(</span><span class="s1">'nome_da_instancia'</span><span class="p">,</span> <span class="s1">'mssql:host=localhost;dbname=pdo4you'</span><span class="p">,</span> <span class="s1">'user'</span><span class="p">,</span> <span class="s1">'pass'</span><span class="p">);</span>
+<span class="c1"># CUBRID</span>
+<span class="nx">PDO4You</span><span class="o">::</span><span class="na">getInstance</span><span class="p">(</span><span class="s1">'nome_da_instancia'</span><span class="p">,</span> <span class="s1">'cubrid:host=localhost;dbname=pdo4you;port=33000'</span><span class="p">,</span> <span class="s1">'user'</span><span class="p">,</span> <span class="s1">'pass'</span><span class="p">);</span>
 
 <span class="cp">?&gt;</span><span class="x"></span>
 </pre></div>
@@ -317,6 +322,7 @@ Create(INSERT), Retrieve(SELECT), Update(UPDATE) e Destroy(DELETE)</p>
       </section>
       <footer>
         <p>Project maintained by <a href="https://github.com/giovanniramos">giovanniramos</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="http://twitter.com/#!/michigangraham">mattgraham</a></small></p>
       </footer>
     </div>
     <!--[if !IE]><script>fixScale(document);</script><![endif]-->
