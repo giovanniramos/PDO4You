@@ -929,23 +929,23 @@ class PDO4You
      * Método do PostgreSQL para exibir e descrever as tabelas da base de dados
      * 
      * @access private static
-     * @param void 
+     * @param string $schema Nome do schema 
      * @return void
      * 
      * */
-    private static function showPgSqlTables()
+    private static function showPgSqlTables($schema)
     {
         self::setStyle();
 
-        $tables = self::select("SELECT table_catalog, table_name FROM information_schema.tables WHERE table_type = 'BASE TABLE' AND table_schema NOT IN ('pg_catalog', 'information_schema');");
+        $tables = self::select("SELECT table_catalog, table_name FROM information_schema.tables WHERE table_schema = '" . $schema . "' AND table_type = 'BASE TABLE';");
         $baseName = $tables[0]['table_catalog'];
 
         $html = '<div class="pdo4you">';
         $html.= '<strong>Database:</strong> ' . $baseName . ' &nbsp;<strong>Total of tables:</strong> ' . count($tables) . '<br />';
         foreach ($tables as $k1 => $v1):
-            $desc = self::select("SELECT a.attname AS field, t.typname AS type FROM pg_class c, pg_attribute a, pg_type t WHERE c.relname = '" . $v1['table_name'] . "' AND a.attnum > 0 AND a.attrelid = c.oid AND a.atttypid = t.oid ORDER BY a.attnum");
+            $desc = self::select("SELECT d.datname, n.nspname, a.attname AS field, t.typname AS type FROM pg_database d, pg_namespace n, pg_class c, pg_attribute a, pg_type t WHERE d.datname = '" . $baseName . "' AND n.nspname = '" . $schema . "' AND c.relname = '" . $v1['table_name'] . "' AND c.relnamespace = n.oid AND n.nspname not like 'pg\\_%' AND n.nspname != 'information_schema' AND a.attnum > 0 AND not a.attisdropped AND a.attrelid = c.oid AND a.atttypid = t.oid ORDER BY a.attnum");
 
-            $html.= '<code>&nbsp;<strong>Table</strong>: ' . $v1['table_name'] . '</code>';
+            $html.= '<code>&nbsp;<strong>Table</strong>: ' . $schema . '.' . $v1['table_name'] . '</code>';
             $html.= '<code class="trace">';
             foreach ($desc as $k2 => $v2):
                 $html.= '<div class="number">&nbsp;</div> ';
@@ -962,11 +962,11 @@ class PDO4You
      * Método que exibe e descreve as tabelas da base de dados
      * 
      * @access public static
-     * @param void 
+     * @param string $schema Nome do schema solicitado em algumas base de dados 
      * @return void
      * 
      * */
-    public static function showTables()
+    public static function showTables($schema = 'public')
     {
         try {
             $driver = self::getDriver();
@@ -974,7 +974,7 @@ class PDO4You
             switch ($driver):
                 case 'mysql': self::showMySqlTables();
                     break;
-                case 'pgsql': self::showPgSqlTables();
+                case 'pgsql': self::showPgSqlTables($schema);
                     break;
                 default:
                     throw new PDOException(self::$exception['not-implemented']);
@@ -982,35 +982,6 @@ class PDO4You
         } catch (PDOException $e) {
             self::stackTrace($e);
         }
-    }
-
-    /**
-     * Método TESTE do PostgreSQL para exibir e descrever as views da base de dados
-     * 
-     * @access public static
-     * @param void 
-     * @return void
-     * 
-     * */
-    public static function showPgSqlViews()
-    {
-        self::setStyle();
-
-        $tables = self::select("SELECT table_catalog, table_name, view_definition FROM information_schema.views WHERE view_definition IS NOT NULL AND table_schema NOT IN ('pg_catalog', 'information_schema');");
-        $baseName = $tables[0]['table_catalog'];
-
-        $html = '<div class="pdo4you">';
-        $html.= '<strong>Database:</strong> ' . $baseName . ' &nbsp;<strong>Total of views:</strong> ' . count($tables) . '<br />';
-        foreach ($tables as $k1 => $v1):
-            $html.= '<code>&nbsp;<strong>View</strong>: <i style="color:#00B;">' . $v1['table_name'] . '</i></code>';
-            $html.= '<code class="trace">';
-            $html.= '<div class="number">&nbsp;</div> ';
-            $html.= '<span>' . $v1['view_definition'] . '</span><br />';
-            $html.= '</code>';
-        endforeach;
-        $html.= '</div>';
-
-        echo $html;
     }
 
     /**
