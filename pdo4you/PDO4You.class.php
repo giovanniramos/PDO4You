@@ -372,11 +372,11 @@ class PDO4You
      * 
      * @access public static
      * @param Exception $e Obtém a mensagem da exceção lançada
-     * @param boolean $show Exibe na tela os valores capturados na mensagem
+     * @param boolean $debug Habilita a exibição dos valores capturados
      * @return array Retorna um vetor da mensagem capturada
      * 
      * */
-    public static function getErrorInfo(Exception $e, $show = false)
+    public static function getErrorInfo(Exception $e, $debug = false)
     {
         if (defined(WEBMASTER))
             self::fireAlert(self::$exception['critical-error'], $e);
@@ -390,7 +390,7 @@ class PDO4You
         $info['code'] = isset($errorInfo[2]) ? $errorInfo[2] : null;
         $info['message'] = isset($errorInfo[3]) ? $errorInfo[3] : null;
 
-        if ($show)
+        if ($debug)
             echo '<pre>', print_r($info), '</pre>';
 
         return $info;
@@ -470,14 +470,15 @@ class PDO4You
     }
 
     /**
-     * Método para exibir a stack trace de uma Exception lançada 
+     * Método para exibir o rastreamento da pilha de erros de uma Exception 
      * 
      * @access public static
-     * @param array $e Contém a pilha de erros gerada pela exceção 
+     * @param Exception $e Obtém a pilha de erros gerada pela exceção
+     * @param boolean $show Habilita a exibição da pilha de erros
      * @return void
      * 
      * */
-    public static function stackTrace(Exception $e)
+    public static function stackTrace(Exception $e, $show = true)
     {
         if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
             $jarr['timer'] = '15000';
@@ -500,8 +501,9 @@ class PDO4You
             $count = 0;
             $stack = '<div class="pdo4you">';
             $stack.= '<strong>Exception:</strong> ' . $e->getMessage() . '<br />';
-            foreach ($e->getTrace() as $t)
-                $stack.= '<code>&nbsp;<strong>#' . $count++ . '</strong> ' . $t['file'] . ':' . $t['line'] . '</code><code class="trace">' . self::highlightSource($t['file'], $t['line']) . '</code>';
+            if ($show)
+                foreach ($e->getTrace() as $t)
+                    $stack.= '<code>&nbsp;<strong>#' . $count++ . '</strong> ' . $t['file'] . ':' . $t['line'] . '</code><code class="trace">' . self::highlightSource($t['file'], $t['line']) . '</code>';
             $stack.= '</div>';
 
             exit($stack);
@@ -825,7 +827,7 @@ class PDO4You
                 case 'sqlsrv': $sql = "SELECT SCOPE_IDENTITY() AS lastId;";
                     break;
                 default:
-                    throw new PDOException('PDO4You::lastId() - ' . self::$exception['not-implemented']);
+                    throw new PDOException(self::$exception['not-implemented'] . ' PDO4You::lastId()');
             endswitch;
 
             self::$lastId = self::selectRecords($sql, null, null, false);
@@ -892,6 +894,42 @@ class PDO4You
     }
 
     /**
+     * Método do CUBRID para exibir e descrever as tabelas da base de dados
+     * 
+     * @access private static
+     * @param void 
+     * @return void
+     * 
+     * */
+    private static function showCubridTables()
+    {
+        self::setStyle();
+
+        $tables = self::select("SHOW TABLES;");
+        $index = array_keys($tables[0]);
+        $baseName = preg_replace('~tables_in_~i', '', $index[0]);
+
+        $html = '<div class="pdo4you">';
+        $html.= '<strong>Database:</strong> ' . $baseName . ' &nbsp;<strong>Total of tables:</strong> ' . count($tables) . '<br />';
+        foreach ($tables as $k1 => $v1):
+            foreach ($v1 as $k2 => $v2):
+                $desc = self::select("SHOW COLUMNS IN " . $v2);
+
+                $html.= '<code>&nbsp;<strong>Table</strong>: ' . $v2 . '</code>';
+                $html.= '<code class="trace">';
+                foreach ($desc as $k3 => $v3):
+                    $html.= '<div class="number">&nbsp;</div> ';
+                    $html.= '<span><i style="color:#00B;">' . $v3['Field'] . "</i> - " . strtoupper($v3['Type']) . '</span><br />';
+                endforeach;
+                $html.= '</code>';
+            endforeach;
+        endforeach;
+        $html.= '</div>';
+
+        echo $html;
+    }
+
+    /**
      * Método do MySQL para exibir e descrever as tabelas da base de dados
      * 
      * @access private static
@@ -905,7 +943,7 @@ class PDO4You
 
         $tables = self::select("SHOW TABLES;");
         $index = array_keys($tables[0]);
-        $baseName = preg_replace('~tables_in_~', '', $index[0]);
+        $baseName = preg_replace('~tables_in_~i', '', $index[0]);
 
         $html = '<div class="pdo4you">';
         $html.= '<strong>Database:</strong> ' . $baseName . ' &nbsp;<strong>Total of tables:</strong> ' . count($tables) . '<br />';
@@ -974,15 +1012,17 @@ class PDO4You
             $driver = self::getDriver();
 
             switch ($driver):
+                case 'cubrid': self::showCubridTables();
+                    break;
                 case 'mysql': self::showMySqlTables();
                     break;
                 case 'pgsql': self::showPgSqlTables($schema);
                     break;
                 default:
-                    throw new PDOException('PDO4You::showTables() - ' . self::$exception['not-implemented']);
+                    throw new PDOException(self::$exception['not-implemented'] . ' PDO4You::showTables()');
             endswitch;
         } catch (PDOException $e) {
-            self::stackTrace($e);
+            self::stackTrace($e, false);
         }
     }
 
