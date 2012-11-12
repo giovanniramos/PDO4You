@@ -6,7 +6,7 @@ Sendo o MySQL, PostgreSQL, Oracle, MS SQL Server, Sybase.
 
 E agora a partir da versão 2.6, também oferencendo suporte ao banco de dados CUBRID.
 O mais novo sistema de gerenciamento de banco de dados altamente otimizado para aplicações Web.
-Mais informações em: http://www.cubrid.org
+Mais informações em: http://bit.ly/CUBRID
 
 O PDO4You provê uma camada abstrata de acesso a dados, que independentemente de qual base de dados você esteja utilizando, sempre poderá usar os mesmos métodos para emitir consultas e buscar dados.
 
