@@ -45,12 +45,12 @@ class Test_Register
                 if (empty($firstName) || empty($lastName)) {
                     $error = 'Enter your name and last name';
                 } else if (empty($mail)) {
-                    $error = 'Enter your mail';
+                    $error = 'Enter a valid email address';
                 }
 
                 // Displays a message in case of errors
                 if (isset($error)) {
-                    self::$message = '<i>' . $error . '</i><br />';
+                    self::$message = '<i style="color: #f50;">ERROR: ' . $error . '</i><br />';
                 } else {
                     $sql = '
                     { query : [

@@ -1,11 +1,9 @@
 <?php
 
 /**
- * Wrapper para carregar os arquivos necessários da classe PDO4You
+ * Simples funÃ§Ã£o lambda para exigir os arquivos necessÃ¡rios da classe PDO4You
  * 
  * */
-
-// Simples função lambda para exigir arquivos
 function requires(array $var)
 {
     array_walk($var, create_function('$x', 'require_once("pdo4you/$x");'));
