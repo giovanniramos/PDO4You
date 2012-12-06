@@ -8,6 +8,8 @@
  * */
 class Test_CRUD
 {
+    // Stores the SQL query
+    private $sql;
 
     /**
      * Main method
@@ -20,6 +22,34 @@ class Test_CRUD
     }
 
     /**
+     * Returns the SQL query to the appropriate driver
+     * 
+     * */
+    public function getSQL()
+    {
+        // SQL query
+        $this->sql = null;
+
+        // Retrieves the name of the current driver
+        $driver = PDO4You::getDriver();
+        switch ($driver):
+            case 'mysql':
+            case 'pgsql': 
+            case 'cubrid': $this->sql = 'SELECT * FROM books LIMIT 2;';
+                break;
+            case 'mssql':
+            case 'dblib': 
+            case 'sybase': 
+            case 'sqlsrv': $this->sql = 'SELECT TOP 2 * FROM books;';
+                break;
+            case 'oracle': $this->sql = 'SELECT * FROM (SELECT ROW_NUMBER() OVER AS LIMIT FROM books) WHERE LIMIT <= 2;';
+                break;
+        endswitch;
+
+        return $this->sql;
+    }
+
+    /**
      * Default Select
      * Usage: PDO4You::select()
      * 
@@ -27,7 +57,7 @@ class Test_CRUD
     public function select($instance = null)
     {
         // SQL query
-        $sql = 'SELECT * FROM books LIMIT 2';
+        $sql = $this->getSQL();
 
         // Execute the SQL query in a "pre-defined instance" and store the result
         $result = PDO4You::select($sql, $instance);
@@ -44,7 +74,7 @@ class Test_CRUD
     public function allSelects()
     {
         // SQL query
-        $sql = 'SELECT * FROM books LIMIT 2';
+        $sql = $this->getSQL();
 
         // Execute the SQL query in a "default instance" and store the result
         $result_1 = PDO4You::select($sql);
