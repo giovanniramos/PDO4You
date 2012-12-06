@@ -6,9 +6,9 @@
  * @category Library
  * @package PDO4You
  * @author Giovanni Ramos <giovannilauro@gmail.com>
- * @copyright 2010-2012, Giovanni Ramos
+ * @copyright 2010-2013, Giovanni Ramos
  * @since 2010-09-07
- * @version 2.1
+ * @version 2.7+
  * @license http://opensource.org/licenses/gpl-3.0.html GNU Public License
  * @link https://github.com/giovanniramos/PDO4You
  *
@@ -17,18 +17,18 @@
 /**
  * O Autoloader permite o carregamento automático de classes
  * 
- * @param string $class Nome da classe invocada durante o processo
- * @throws Gera uma exceção em caso de erro
+ * @param string $classname Nome da classe invocada durante a instância
+ * @throws Gera uma exceção caso não consiga localizar a classe
  * 
  * */
-function __autoload($class)
+function __autoload($classname)
 {
     try {
         try {
             spl_autoload_extensions('.class.php');
-            spl_autoload($class);
+            spl_autoload($classname);
         } catch (Exception $e) {
-            throw new Exception("O Autoloader n&atilde;o conseguiu localizar a classe '<i>" . $class . ".class.php</i>', impedindo a sua inst&acirc;ncia autom&aacute;tica.");
+            throw new Exception("O Autoloader n&atilde;o conseguiu localizar a classe '<i>" . $classname . ".class.php</i>', impedindo a sua inst&acirc;ncia autom&aacute;tica.");
         }
     } catch (Exception $e) {
         PDO4You::stackTrace($e);
@@ -36,76 +36,103 @@ function __autoload($class)
 }
 
 /**
- * Conta o total de vezes que os valores de um array não estão vazias
+ * Interpreta um arquivo INI com herança de seção
  * 
- * @param array $arr Array que será avaliado
- * @return integer Retorna o total
+ * @param string $filename Nome do arquivo
+ * @return array
+ * @link https://gist.github.com/4217717
  * 
- * */
-function countValues($arr)
+ */
+function parse_ini_file_advanced($filename)
 {
-    $count = 0;
+    $nArr = array();
+    $oArr = parse_ini_file($filename, true);
 
-    foreach ($arr as $k => $v)
-        if (!empty($v))
-            $count++;
+    if (is_array($oArr)):
+        foreach ($oArr as $k => $v):
+            $k = preg_split('~[:]~', preg_replace('~[\s]{1,}~', null, $k));
+            $t = &$nArr;
+            foreach ($k as $x)
+                $t = &$t[$x];
+            $t = $v;
+        endforeach;
+    endif;
 
-    return $count;
+    return $nArr;
 }
 
 /**
- * Soma o total de ocorrências em um array de uma determinada condição satisfeita 
+ * Conta o número de vezes em um Array que um valor esteja vazio
  * 
- * @param mixed $expr1 Valor que será avaliado
- * @param string $expr2 Operador de avaliação
- * @param string $expr3 Atribuição condicional
- * @return integer Retorna o total
+ * @param array $array Vetor que será avaliado
+ * @return integer
+ * 
+ * */
+function countValues(array $array)
+{
+    $i = 0;
+    foreach ($array as $k => $v)
+        if (!empty($v))
+            $i++;
+
+    return $i;
+}
+
+/**
+ * Conta o número de ocorrências em um Array de uma determinada condição satisfeita
+ * 
+ * @param mixed $value Valor que será avaliado
+ * @param string $operator Operador de avaliação
+ * @param string $conditional Atribuição condicional
+ * @return integer
  * @link https://gist.github.com/3100679
  * @see PDO4You::rowCount()
  * 
  * */
-function countWhere($expr1 = 1, $expr2 = '==', $expr3 = 1)
+function countWhere($value = 1, $operator = '==', $conditional = 1)
 {
-    $expr1 = is_array($expr1) ? $expr1 : (array) $expr1;
-    $expr2 = !in_array($expr2, array('<', '>', '<=', '>=', '==', '!=')) ? '==' : $expr2;
+    $array = is_array($value) ? $value : (array) $value;
+    $operator = !in_array($operator, array('<', '>', '<=', '>=', '==', '!=')) ? '==' : $operator;
 
     $i = 0;
-    foreach ($expr1 as $current):
+    foreach ($array as $k):
         $match = null;
-        eval('$match = (bool)("' . $current . '"' . $expr2 . '"' . $expr3 . '");');
 
-        $i = $match ? $i + 1 : $i;
+        eval('$match = (bool)("' . $k . '"' . $operator . '"' . $conditional . '");');
+
+        $i = $match ? ++$i : $i;
     endforeach;
 
     return $i;
 }
 
 /**
- * Remove a marcação de estilo em tags html oriundas de um editor de texto
+ * Remove a marcação de 'estilo' em tags HTML
+ * Apropriado em entradas oriundas de um editor de texto
  * 
- * @param string $str A string de entrada
+ * @param string $value O valor de entrada
  * @return string
  * @link https://gist.github.com/3078188
  * 
  * */
-function clearStyle($str)
+function clearStyle($value)
 {
-    $str = preg_replace("~<(a|ol|ul|li|h[1-6r]|d[dlt]|em|p|i|b|s|strong|span|div|table|t[dhr])\s?(style.*)?/>~i", "<$1>", $str);
+    $value = preg_replace("~<(a|ol|ul|li|h[1-6r]|d[dlt]|em|p|i|b|s|strong|span|div|table|t[dhr])\s?(style.*)?/>~i", "<$1>", $value);
 
-    return $str;
+    return $value;
 }
 
 /**
- * Converte o caracter de 'dois pontos' em uma string
+ * Converte o caracter de 'dois pontos'
  * 
- * @param string $str A string de entrada
+ * @param string $value O valor de entrada
  * @return string
  * 
  * */
-function htmlColon($str)
+function htmlColon($value)
 {
-    $str = htmlentities($str);
-    $str = preg_replace('~[:]~', '&#58;', $str);
+    $value = htmlentities($value);
+    $value = preg_replace('~[:]~', '&#58;', $value);
 
-    return $str;
+    return $value;
 }
