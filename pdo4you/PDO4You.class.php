@@ -894,43 +894,7 @@ class PDO4You
     }
 
     /**
-     * Método do CUBRID para exibir e descrever as tabelas da base de dados
-     * 
-     * @access private static
-     * @param void 
-     * @return void
-     * 
-     * */
-    private static function showCubridTables()
-    {
-        self::setStyle();
-
-        $tables = self::select("SHOW TABLES;");
-        $index = array_keys($tables[0]);
-        $baseName = preg_replace('~tables_in_~i', '', $index[0]);
-
-        $html = '<div class="pdo4you">';
-        $html.= '<strong>Database:</strong> ' . $baseName . ' &nbsp;<strong>Total of tables:</strong> ' . count($tables) . '<br />';
-        foreach ($tables as $k1 => $v1):
-            foreach ($v1 as $k2 => $v2):
-                $desc = self::select("SHOW COLUMNS IN " . $v2);
-
-                $html.= '<code>&nbsp;<strong>Table</strong>: ' . $v2 . '</code>';
-                $html.= '<code class="trace">';
-                foreach ($desc as $k3 => $v3):
-                    $html.= '<div class="number">&nbsp;</div> ';
-                    $html.= '<span><i style="color:#00B;">' . $v3['Field'] . "</i> - " . strtoupper($v3['Type']) . '</span><br />';
-                endforeach;
-                $html.= '</code>';
-            endforeach;
-        endforeach;
-        $html.= '</div>';
-
-        echo $html;
-    }
-
-    /**
-     * Método do MySQL para exibir e descrever as tabelas da base de dados
+     * Método do MySQL para exibir as tabelas da base de dados
      * 
      * @access private static
      * @param void 
@@ -943,20 +907,18 @@ class PDO4You
 
         $tables = self::select("SHOW TABLES;");
         $index = array_keys($tables[0]);
-        $baseName = preg_replace('~tables_in_~i', '', $index[0]);
+        $database = preg_replace('~tables_in_~i', '', $index[0]);
 
         $html = '<div class="pdo4you">';
-        $html.= '<strong>Database:</strong> ' . $baseName . ' &nbsp;<strong>Total of tables:</strong> ' . count($tables) . '<br />';
+        $html.= '<strong>Database:</strong> ' . $database . ' &nbsp;<strong>Total of tables:</strong> ' . count($tables) . '<br />';
         foreach ($tables as $k1 => $v1):
             foreach ($v1 as $k2 => $v2):
-                $desc = self::select("DESCRIBE " . $baseName . "." . $v2);
+                $desc = self::select("DESCRIBE " . $database . "." . $v2);
 
                 $html.= '<code>&nbsp;<strong>Table</strong>: ' . $v2 . '</code>';
                 $html.= '<code class="trace">';
-                foreach ($desc as $k3 => $v3):
-                    $html.= '<div class="number">&nbsp;</div> ';
-                    $html.= '<span><i style="color:#00B;">' . $v3['field'] . "</i> - " . strtoupper($v3['type']) . '</span><br />';
-                endforeach;
+                foreach ($desc as $k3 => $v3)
+                    $html.= '<div class="number">&nbsp;</div> <span><i style="color:#00B;">' . $v3['field'] . "</i> - " . strtoupper($v3['type']) . '</span><br />';
                 $html.= '</code>';
             endforeach;
         endforeach;
@@ -966,10 +928,10 @@ class PDO4You
     }
 
     /**
-     * Método do PostgreSQL para exibir e descrever as tabelas da base de dados
+     * Método do PostgreSQL para exibir as tabelas da base de dados
      * 
      * @access private static
-     * @param string $schema Nome do schema 
+     * @param string $schema Nome do esquema
      * @return void
      * 
      * */
@@ -977,20 +939,85 @@ class PDO4You
     {
         self::setStyle();
 
-        $tables = self::select("SELECT table_catalog, table_name FROM information_schema.tables WHERE table_schema = '" . $schema . "' AND table_type = 'BASE TABLE';");
-        $baseName = $tables[0]['table_catalog'];
+        $table_schema = !is_null($schema) ? "table_schema = '" . $schema . "'" : "table_schema NOT SIMILAR TO '(information_schema|pg_%)'";
+        $tables = self::select("SELECT table_catalog, table_schema, table_name FROM information_schema.tables WHERE table_type = 'BASE TABLE' AND " . $table_schema . ";");
+        $database = $tables[0]['table_catalog'];
 
         $html = '<div class="pdo4you">';
-        $html.= '<strong>Database:</strong> ' . $baseName . ' &nbsp;<strong>Total of tables:</strong> ' . count($tables) . '<br />';
+        $html.= '<strong>Database:</strong> ' . $database . ' &nbsp;<strong>Total of tables:</strong> ' . count($tables) . '<br />';
         foreach ($tables as $k1 => $v1):
-            $desc = self::select("SELECT d.datname, n.nspname, a.attname AS field, t.typname AS type FROM pg_database d, pg_namespace n, pg_class c, pg_attribute a, pg_type t WHERE d.datname = '" . $baseName . "' AND n.nspname = '" . $schema . "' AND c.relname = '" . $v1['table_name'] . "' AND c.relnamespace = n.oid AND n.nspname not like 'pg\\_%' AND n.nspname != 'information_schema' AND a.attnum > 0 AND not a.attisdropped AND a.attrelid = c.oid AND a.atttypid = t.oid ORDER BY a.attnum");
+            $desc = self::select("SELECT d.datname, n.nspname, a.attname AS field, t.typname AS type FROM pg_database d, pg_namespace n, pg_class c, pg_attribute a, pg_type t WHERE d.datname = '" . $v1['table_catalog'] . "' AND n.nspname = '" . $v1['table_schema'] . "' AND c.relname = '" . $v1['table_name'] . "' AND c.relnamespace = n.oid AND a.attnum > 0 AND not a.attisdropped AND a.attrelid = c.oid AND a.atttypid = t.oid ORDER BY a.attnum");
 
-            $html.= '<code>&nbsp;<strong>Table</strong>: ' . $schema . '.' . $v1['table_name'] . '</code>';
+            $html.= '<code>&nbsp;<strong>Table</strong>: ' . $v1['table_schema'] . '.' . $v1['table_name'] . '</code>';
             $html.= '<code class="trace">';
-            foreach ($desc as $k2 => $v2):
-                $html.= '<div class="number">&nbsp;</div> ';
-                $html.= '<span><i style="color:#00B;">' . $v2['field'] . "</i> - " . strtoupper($v2['type']) . '</span><br />';
+            foreach ($desc as $k2 => $v2)
+                $html.= '<div class="number">&nbsp;</div> <span><i style="color:#00B;">' . $v2['field'] . "</i> - " . strtoupper($v2['type']) . '</span><br />';
+            $html.= '</code>';
+        endforeach;
+        $html.= '</div>';
+
+        echo $html;
+    }
+
+    /**
+     * Método do CUBRID para exibir as tabelas da base de dados
+     * 
+     * @access private static
+     * @param void 
+     * @return void
+     * 
+     * */
+    private static function showCubridTables()
+    {
+        self::setStyle();
+
+        $tables = self::select("SHOW TABLES;");
+        $index = array_keys($tables[0]);
+        $database = preg_replace('~tables_in_~i', '', $index[0]);
+
+        $html = '<div class="pdo4you">';
+        $html.= '<strong>Database:</strong> ' . $database . ' &nbsp;<strong>Total of tables:</strong> ' . count($tables) . '<br />';
+        foreach ($tables as $k1 => $v1):
+            foreach ($v1 as $k2 => $v2):
+                $desc = self::select("SHOW COLUMNS IN " . $v2);
+
+                $html.= '<code>&nbsp;<strong>Table</strong>: ' . $v2 . '</code>';
+                $html.= '<code class="trace">';
+                foreach ($desc as $k3 => $v3)
+                    $html.= '<div class="number">&nbsp;</div> <span><i style="color:#00B;">' . $v3['Field'] . "</i> - " . strtoupper($v3['Type']) . '</span><br />';
+                $html.= '</code>';
             endforeach;
+        endforeach;
+        $html.= '</div>';
+
+        echo $html;
+    }
+
+    /**
+     * Método do Microsoft SQL Server para as tabelas da base de dados
+     * 
+     * @access private static
+     * @param string $schema Nome do esquema
+     * @return void
+     * 
+     * */
+    private static function showMsSqlTables($schema)
+    {
+        self::setStyle();
+
+        $table_schema = !is_null($schema) ? "table_schema = '" . $schema . "'" : "table_schema IS NOT NULL";
+        $tables = self::select("SELECT table_catalog, table_schema, table_name FROM information_schema.tables WHERE table_type = 'BASE TABLE' AND " . $table_schema . ";");
+        $database = $tables[0]['table_catalog'];
+
+        $html = '<div class="pdo4you">';
+        $html.= '<strong>Database:</strong> ' . $database . ' &nbsp;<strong>Total of tables:</strong> ' . count($tables) . '<br />';
+        foreach ($tables as $k1 => $v1):
+            $desc = self::select("SELECT table_catalog, table_schema, table_name, column_name AS field, data_type AS type FROM information_schema.columns WHERE table_catalog = '" . $v1['table_catalog'] . "' AND table_name = '" . $v1['table_name'] . "';");
+
+            $html.= '<code>&nbsp;<strong>Table</strong>: ' . $v1['table_schema'] . '.' . $v1['table_name'] . '</code>';
+            $html.= '<code class="trace">';
+            foreach ($desc as $k2 => $v2)
+                $html.= '<div class="number">&nbsp;</div> <span><i style="color:#00B;">' . $v2['field'] . "</i> - " . strtoupper($v2['type']) . '</span><br />';
             $html.= '</code>';
         endforeach;
         $html.= '</div>';
@@ -1002,21 +1029,24 @@ class PDO4You
      * Método que exibe e descreve as tabelas da base de dados
      * 
      * @access public static
-     * @param string $schema Nome do schema solicitado em algumas base de dados 
+     * @param string $schema Nome do esquema utilizado
      * @return void
      * 
      * */
-    public static function showTables($schema = 'public')
+    public static function showTables($schema = null)
     {
         try {
             $driver = self::getDriver();
 
             switch ($driver):
-                case 'cubrid': self::showCubridTables();
-                    break;
                 case 'mysql': self::showMySqlTables();
                     break;
                 case 'pgsql': self::showPgSqlTables($schema);
+                    break;
+                case 'cubrid': self::showCubridTables();
+                    break;
+                case 'mssql':
+                case 'sqlsrv': self::showMsSqlTables($schema);
                     break;
                 default:
                     throw new PDOException(self::$exception['not-implemented'] . ' PDO4You::showTables()');
