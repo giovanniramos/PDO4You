@@ -566,10 +566,6 @@ class PDO4You
             else:
                 $pre = $pdo->prepare($query);
                 $pre->execute();
-                $total = $pre->rowCount();
-
-                if ($count)
-                    self::$rowCount = $total;
 
                 switch ($type):
                     case 'num' : $result = $pre->fetchAll(PDO::FETCH_NUM);
@@ -580,6 +576,10 @@ class PDO4You
                         break;
                     default : $result = $pre->fetchAll(PDO::FETCH_ASSOC);
                 endswitch;
+
+                $total = $pre->rowCount();
+                if ($count)
+                    self::$rowCount = $total;
             endif;
         } catch (PDOException $e) {
             self::stackTrace($e);
@@ -802,11 +802,11 @@ class PDO4You
      * Método que retorna o ID do último registro inserido ou o valor de seqüência
      * 
      * @access public static
-     * @param string $sequence Nome da variável de sequência solicitado em algumas base de dados
+     * @param string $sequence Nome da variável de sequência solicitado em algumas base de dados, ex: table_id_seq
      * @return array Retorna o ID do último registro
      * 
      * */
-    public static function lastId($sequence = 'table_id_seq')
+    public static function lastId($sequence = null)
     {
         try {
             $driver = self::getDriver();
@@ -815,16 +815,13 @@ class PDO4You
                 case 'cubrid':
                 case 'mysql': $sql = "SELECT LAST_INSERT_ID() AS lastId;";
                     break;
-                #case 'pgsql': $sql = "SELECT CURRVAL('" . $sequence . "') AS lastId;";
-                case 'pgsql': $sql = "SELECT LASTVAL() AS lastId;";
+                case 'pgsql': $sql = "SELECT " . ($sequence ? "CURRVAL('" . $sequence . "')" : "LASTVAL()") . " AS lastId;";
                     break;
-                case 'mssql': $sql = "SELECT @@IDENTITY AS lastId;";
+                case 'mssql':
+                case 'sqlsrv': $sql = "SELECT " . ($sequence ? "IDENT_CURRENT('" . $sequence . "')" : "@@IDENTITY") . " AS lastId;";
                     break;
                 #case 'oracle': $sql = "SELECT " . $sequence . ".CURRVAL AS lastId FROM DUAL;";
                 case 'oracle': $sql = "SELECT last_number AS lastId FROM user_sequences WHERE sequence_name = '" . $sequence . "';";
-                    break;
-                #case 'sqlsrv': $sql = "SELECT current_value AS lastId FROM sys.sequences WHERE name = '" . $sequence . "';";
-                case 'sqlsrv': $sql = "SELECT SCOPE_IDENTITY() AS lastId;";
                     break;
                 default:
                     throw new PDOException(self::$exception['not-implemented'] . ' PDO4You::lastId()');
