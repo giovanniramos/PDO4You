@@ -43,6 +43,8 @@ require_once('PDO4You.load.php');
 
 `PDO4You.library.php`: contém um autoloading de classes e pode ser usado como biblioteca de funções úteis ao sistema.
 
+`settings.ini`: contém as definições para cada adaptador de conexão com a base de dados.
+
 
 
 Verificando os drivers suportados pelo servidor
