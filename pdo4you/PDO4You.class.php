@@ -8,7 +8,7 @@
  * @author Giovanni Ramos <giovannilauro@gmail.com>
  * @copyright 2010-2012, Giovanni Ramos
  * @since 2010-09-07
- * @version 2.6
+ * @version 2.7
  * @license http://opensource.org/licenses/gpl-3.0.html GNU Public License
  * @link https://github.com/giovanniramos/PDO4You
  * 
@@ -181,7 +181,7 @@ class PDO4You
      * 
      * @access public static
      * @param string $alias Nome que será usada como identificação de uma instância de conexão
-     * @param string $type Tipo de conexão se estiver usando a "Configuração Inicial" ou um "DSN completo"
+     * @param string $type Tipo de conexão se estiver usando a "Configuração Inicial", ou um "DSN completo"
      * @param string $user Usuário da base de dados
      * @param string $pass Senha da base de dados
      * @param string $option Configuração adicional do driver
@@ -189,29 +189,53 @@ class PDO4You
      * @throws Exception Dispara uma exceção em caso de falhas na conexão
      * 
      * */
-    public static function getInstance($alias = 'default', $type = DATA_TYPE, $user = DATA_USER, $pass = DATA_PASS, Array $option = null)
+    public static function getInstance($alias = 'default', $type = null, $user = null, $pass = null, Array $option = null)
     {
         try {
             try {
                 if (!array_key_exists($alias, self::$handle)):
-                    $type = !(empty($type)) ? strtolower($type) : 'mysql';
-                    $host = DATA_HOST;
-                    $port = DATA_PORT;
-                    $base = DATA_BASE;
+                    if ($alias == 'default'):
+                        $dir = dirname(__FILE__);
+                        $file = $dir . '\settings.ini';
 
+                        if (file_exists($file)):
+                            if (is_readable($file)):
+                                $datafile = parse_ini_file_advanced($file);
+
+                                if (isset($datafile['adapter'])):
+                                    $part = preg_split('~[.]~', preg_replace('~[\s]{1,}~', null, ADAPTER));
+                                    $data = count($part) == 2 ? $datafile['adapter'][$part[0]][$part[1]] : $datafile['adapter'][$part[0]];
+
+                                    $type = $data['DATA_TYPE'];
+                                    $host = $data['DATA_HOST'];
+                                    $port = $data['DATA_PORT'];
+                                    $user = $data['DATA_USER'];
+                                    $pass = $data['DATA_PASS'];
+                                    $base = $data['DATA_BASE'];
+                                else:
+                                    exit('The settings for existing databases, were not configured in the <strong>settings.ini</strong>.');
+                                endif;
+                            else:
+                                exit('The <strong>settings.ini</strong> file cannot be read.');
+                            endif;
+                        else:
+                            exit('The <strong>settings.ini</strong> file could not be found in directory:<br /> ' . $dir . '\\');
+                        endif;
+                    endif;
+
+                    $type = strtolower($type);
                     switch ($type):
-                        case 'cubrid':
                         case 'mysql':
-                        case 'pgsql': $driver = $type . ':dbname=' . $base . ';host=' . $host . ';port=' . $port . ';';
+                        case 'pgsql':
+                        case 'cubrid': $driver = $type . ':' . (!(empty($base)) ? 'dbname=' . $base . ';' : null) . 'host=' . $host . ';port=' . $port . ';';
                             break;
                         case 'mssql':
-                        case 'sybase':
-                        case 'dblib': $driver = $type . ':dbname=' . $base . ';host=' . $host . ';';
+                        case 'dblib':
+                        case 'sybase': $driver = $type . ':' . (!(empty($base)) ? 'dbname=' . $base . ';' : null) . 'host=' . $host . ';';
                             break;
-                        case 'oracle':
-                        case 'oci': $driver = 'oci:dbname=' . $base . ';';
+                        case 'sqlsrv': $driver = 'sqlsrv:' . (!(empty($base)) ? 'database=' . $base . ';' : null) . 'server=' . $host . ';';
                             break;
-                        case 'sqlsrv': $driver = 'sqlsrv:database=' . $base . ';server=' . $host . ';';
+                        case 'oracle': $driver = 'oci:' . $base;
                             break;
                         default: $driver = $type;
                     endswitch;
@@ -341,19 +365,6 @@ class PDO4You
     }
 
     /**
-     * Método para recuperar o nome do driver corrente
-     * 
-     * @access public static
-     * @param void
-     * @return string Retorna o nome do driver
-     * 
-     * */
-    public static function getDriver()
-    {
-        return self::$instance->getAttribute(PDO::ATTR_DRIVER_NAME);
-    }
-
-    /**
      * Método para definir o tipo de comunicação com a base de dados
      * O padrão de conexão é não-persistente
      * 
@@ -397,6 +408,19 @@ class PDO4You
     }
 
     /**
+     * Método para recuperar o nome do driver corrente
+     * 
+     * @access public static
+     * @param void
+     * @return string Retorna o nome do driver
+     * 
+     * */
+    public static function getDriver()
+    {
+        return self::$instance->getAttribute(PDO::ATTR_DRIVER_NAME);
+    }
+
+    /**
      * Método para exibir detalhes sobre a meta do servidor da base de dados conectada
      * 
      * @access public static
@@ -411,7 +435,7 @@ class PDO4You
                 self::setStyle();
 
                 $info = self::$instance->getAttribute(constant("PDO::ATTR_SERVER_INFO"));
-                echo '<h7>' . $info . '</h7>';
+                echo '<h7>Server Information - ', is_array($info) ? implode(', ', $info) : $info, '</h7>';
             else:
                 throw new PDOException(self::$exception['no-instance']);
             endif;
@@ -1087,7 +1111,7 @@ class PDO4You
         
     }
 
-    public function beginTransaction()
+    public static function beginTransaction()
     {
         try {
             if (!self::$instance instanceof PDO)
@@ -1100,7 +1124,7 @@ class PDO4You
         }
     }
 
-    public function commit()
+    public static function commit()
     {
         try {
             if (!self::$instance instanceof PDO)
@@ -1113,7 +1137,7 @@ class PDO4You
         }
     }
 
-    public function exec($query)
+    public static function exec($query)
     {
         try {
             if (!self::$instance instanceof PDO)
@@ -1121,12 +1145,14 @@ class PDO4You
 
             if (!self::$instance->exec($query))
                 throw new PDOException(current(self::$instance->errorInfo()) . ' ' . end(self::$instance->errorInfo()));
+            else
+                return self::$instance->exec($query);
         } catch (PDOException $e) {
             self::stackTrace($e);
         }
     }
 
-    public function query($query)
+    public static function query($query)
     {
         try {
             if (!self::$instance instanceof PDO)
@@ -1139,7 +1165,7 @@ class PDO4You
         }
     }
 
-    public function rollBack()
+    public static function rollBack()
     {
         try {
             if (!self::$instance instanceof PDO)
@@ -1152,7 +1178,7 @@ class PDO4You
         }
     }
 
-    public function lastInsertId($name)
+    public static function lastInsertId($name)
     {
         try {
             if (!self::$instance instanceof PDO)
