@@ -16,14 +16,14 @@
 
 // Adaptador de conexão definido em: \pdo4you\settings.ini
 // Ex.: mysql, pgsql, pgsql.dev, pgsql.pro, test
-define('ADAPTER', 'test');
+define('PDO4YOU_ADAPTER', 'test');
 
 // Depuração de erros com tratamento de exceção
-define('FIREDEBUG', true);
+define('PDO4YOU_FIREDEBUG', true);
 
 // Monitoramento de erros com o envio de notificações via e-mail ao administrador do sistema
-define('FIREALERT', false);
+define('PDO4YOU_FIREALERT', false);
 
 // E-mail do administrador do sistema para recebimento das notificações
-define('WEBMASTER', 'pdo4you@gmail.com');
+define('PDO4YOU_WEBMASTER', 'pdo4you@gmail.com');
 
