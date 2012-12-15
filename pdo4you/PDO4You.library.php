@@ -21,7 +21,7 @@
  * @throws Gera uma exceção caso não consiga localizar a classe
  * 
  * */
-function __autoload($classname)
+function pdo4you_autoload($classname)
 {
     try {
         try {
@@ -34,6 +34,9 @@ function __autoload($classname)
         PDO4You::stackTrace($e);
     }
 }
+// Possibilita declarar deversas funções de autoload, ideal p/ bibliotecas
+spl_autoload_register("pdo4you_autoload");
+
 
 /**
  * Interpreta um arquivo INI com herança de seção
@@ -43,7 +46,7 @@ function __autoload($classname)
  * @link https://gist.github.com/4217717
  * 
  */
-function parse_ini_file_advanced($filename)
+function pdo4you_parse_ini_file_advanced($filename)
 {
     $nArr = array();
     $oArr = parse_ini_file($filename, true);
@@ -89,7 +92,7 @@ function countValues(array $array)
  * @see PDO4You::rowCount()
  * 
  * */
-function countWhere($value = 1, $operator = '==', $conditional = 1)
+function pdo4you_countWhere($value = 1, $operator = '==', $conditional = 1)
 {
     $array = is_array($value) ? $value : (array) $value;
     $operator = !in_array($operator, array('<', '>', '<=', '>=', '==', '!=')) ? '==' : $operator;

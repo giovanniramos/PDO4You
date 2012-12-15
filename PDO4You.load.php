@@ -1,14 +1,10 @@
 <?php
 
 /**
- * Simples função lambda para exigir os arquivos necessários da classe PDO4You
+ * Carrega os arquivos do PDO4YOU  - Utilizado require_once por questões de desempenho comparado com uma função de load
  * 
  * */
-function requires(array $var)
-{
-    array_walk($var, create_function('$x', 'require_once("pdo4you/$x");'));
-}
 
-requires(array('PDO4You.config.php', 'PDO4You.library.php', 'PDO4You.class.php'));
-
-?>
+require_once("pdo4you/PDO4You.config.php");
+require_once("pdo4you/PDO4You.library.php");
+require_once("pdo4you/PDO4You.class.php");

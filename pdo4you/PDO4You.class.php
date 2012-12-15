@@ -196,14 +196,14 @@ class PDO4You
                 if (!array_key_exists($alias, self::$handle)):
                     if ($alias == 'default'):
                         $dir = dirname(__FILE__);
-                        $file = $dir . '\settings.ini';
+                        $file = $dir . '/PDO4You.settings.ini';
 
                         if (file_exists($file)):
                             if (is_readable($file)):
-                                $datafile = parse_ini_file_advanced($file);
+                                $datafile = pdo4you_parse_ini_file_advanced($file);
 
                                 if (isset($datafile['adapter'])):
-                                    $part = preg_split('~[.]~', preg_replace('~[\s]{1,}~', null, ADAPTER));
+                                    $part = preg_split('~[.]~', preg_replace('~[\s]{1,}~', null, PDO4YOU_ADAPTER));
                                     $data = count($part) == 2 ? $datafile['adapter'][$part[0]][$part[1]] : $datafile['adapter'][$part[0]];
 
                                     $type = $data['DATA_TYPE'];
@@ -213,13 +213,13 @@ class PDO4You
                                     $pass = $data['DATA_PASS'];
                                     $base = $data['DATA_BASE'];
                                 else:
-                                    exit('The settings for existing databases, were not configured in the <strong>settings.ini</strong>.');
+                                    exit('The settings for existing databases, were not configured in the <strong>PDO4YOU.settings.ini</strong>.');
                                 endif;
                             else:
-                                exit('The <strong>settings.ini</strong> file cannot be read.');
+                                exit('The <strong>PDO4YOU.settings.ini</strong> file cannot be read.');
                             endif;
                         else:
-                            exit('The <strong>settings.ini</strong> file could not be found in directory:<br /> ' . $dir . '\\');
+                            exit('The <strong>PDO4YOU.settings.ini</strong> file could not be found in directory:<br /> ' . $dir );
                         endif;
                     endif;
 
@@ -389,7 +389,7 @@ class PDO4You
      * */
     public static function getErrorInfo(Exception $e, $debug = false)
     {
-        if (defined(WEBMASTER))
+        if (defined(PDO4YOU_WEBMASTER))
             self::fireAlert(self::$exception['critical-error'], $e);
 
         $info = null;
@@ -516,10 +516,10 @@ class PDO4You
         } else {
             self::setStyle();
 
-            if (!FIREDEBUG)
+            if (!PDO4YOU_FIREDEBUG)
                 return;
 
-            if (defined(WEBMASTER))
+            if (defined(PDO4YOU_WEBMASTER))
                 self::fireAlert(self::$exception['critical-error'], $e);
 
             $count = 0;
@@ -869,7 +869,7 @@ class PDO4You
      * */
     public static function rowCount()
     {
-        $count = (is_array(self::$rowCount)) ? countWhere(self::$rowCount, '>', 0) : self::$rowCount;
+        $count = (is_array(self::$rowCount)) ? pdo4you_countWhere(self::$rowCount, '>', 0) : self::$rowCount;
 
         return $count;
     }
@@ -1094,8 +1094,8 @@ class PDO4You
         $head.= 'Return-Path: Alerta automático <firealert@noreply.com>' . PHP_EOL;
         $body = 'Diagnóstico do alerta:<br /><br /><b>' . $error->getMessage() . '</b><br />' . $error->getFile() . ' : ' . $error->getLine();
 
-        if (FIREALERT)
-            @mail(WEBMASTER, $text, $body, $head);
+        if (PDO4YOU_FIREALERT)
+            @mail(PDO4YOU_WEBMASTER, $text, $body, $head);
     }
 
     /**
