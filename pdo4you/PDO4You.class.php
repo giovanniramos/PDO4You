@@ -196,7 +196,7 @@ class PDO4You
                 if (!array_key_exists($alias, self::$handle)):
                     if ($alias == 'default'):
                         $dir = dirname(__FILE__);
-                        $file = $dir . '\PDO4You.settings.ini';
+                        $file = $dir . '/PDO4You.settings.ini';
 
                         if (file_exists($file)):
                             if (is_readable($file)):
@@ -213,13 +213,13 @@ class PDO4You
                                     $pass = $data['DATA_PASS'];
                                     $base = $data['DATA_BASE'];
                                 else:
-                                    exit('The settings for existing databases, were not configured in the <strong>settings.ini</strong>.');
+                                    exit('The settings for existing databases, were not configured in the <strong>PDO4YOU.settings.ini</strong>.');
                                 endif;
                             else:
-                                exit('The <strong>settings.ini</strong> file cannot be read.');
+                                exit('The <strong>PDO4YOU.settings.ini</strong> file cannot be read.');
                             endif;
                         else:
-                            exit('The <strong>settings.ini</strong> file could not be found in directory:<br /> ' . $dir . '\\');
+                            exit('The <strong>PDO4YOU.settings.ini</strong> file could not be found in directory:<br /> ' . $dir );
                         endif;
                     endif;
 
