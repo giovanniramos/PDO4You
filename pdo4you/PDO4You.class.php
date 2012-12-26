@@ -99,6 +99,7 @@ class PDO4You
         'code-1045' => 'Failed communication with the database using: \'%1$s\'@\'%2$s\'',
         'code-2002' => 'No connection could be made because the destination machine actively refused. This host is not known.',
         'code-2005' => 'No communication with the host provided. Check your settings.',
+        'unrecognized' => 'The Adapter/DSN Instance was not recognized.',
         'no-database' => 'Database unknown. Check your settings.',
         'no-instance' => 'No instance of object PDO4You available. Unable to access the methods.',
         'no-argument-sql' => 'The SQL argument is missing.',
@@ -132,7 +133,7 @@ class PDO4You
      * @param string $pass Senha da base de dados
      * @param string $option Configuração do driver de conexão
      * @return void
-     * @throws Exception Dispara uma exceção em caso de falhas na conexão
+     * @throws PDOException Dispara uma exceção em caso de falhas na conexão
      * 
      * */
     private static function singleton($alias, $driver, $user, $pass, $option)
@@ -147,7 +148,9 @@ class PDO4You
             } catch (PDOException $e) {
                 $error = self::getErrorInfo($e);
 
-                if ($error['code'] == '2005')
+                if ($e->getMessage() == 'could not find driver' || $e->getMessage() == 'invalid data source name')
+                    throw new PDOException(self::$exception['unrecognized']);
+                elseif ($error['code'] == '2005')
                     throw new PDOException(self::$exception['code-2005']);
                 elseif ($error['code'] == '2002')
                     throw new PDOException(self::$exception['code-2002']);
@@ -180,12 +183,12 @@ class PDO4You
      * Método que obtém uma única instância da base de dados por conexão
      * 
      * @access public static
-     * @param string $alias Nome que será usada como identificação de uma instância de conexão
+     * @param string $alias Pseudônimo que será usado como ponteiro de uma instância de conexão pré-estabelecida
      * @param string $type Tipo de conexão se estiver usando a "Configuração Inicial", ou um "DSN completo"
      * @param string $user Usuário da base de dados
      * @param string $pass Senha da base de dados
      * @param string $option Configuração adicional do driver
-     * @return object O objeto retornado é uma instância da conexão estabelecida
+     * @return object
      * @throws Exception Dispara uma exceção em caso de falhas na conexão
      * 
      * */
@@ -204,14 +207,14 @@ class PDO4You
 
                                 if (isset($datafile['adapter'])):
                                     $part = preg_split('~[.]~', preg_replace('~[\s]{1,}~', null, ADAPTER));
-                                    $data = count($part) == 2 ? $datafile['adapter'][$part[0]][$part[1]] : $datafile['adapter'][$part[0]];
+                                    $data = count($part) == 2 ? @$datafile['adapter'][$part[0]][$part[1]] : @$datafile['adapter'][$part[0]];
 
-                                    $type = $data['DATA_TYPE'];
-                                    $host = $data['DATA_HOST'];
-                                    $port = $data['DATA_PORT'];
-                                    $user = $data['DATA_USER'];
-                                    $pass = $data['DATA_PASS'];
-                                    $base = $data['DATA_BASE'];
+                                    $type = isset($data['DATA_TYPE']) ? $data['DATA_TYPE'] : null;
+                                    $host = isset($data['DATA_HOST']) ? $data['DATA_HOST'] : null;
+                                    $port = isset($data['DATA_PORT']) ? $data['DATA_PORT'] : null;
+                                    $user = isset($data['DATA_USER']) ? $data['DATA_USER'] : null;
+                                    $pass = isset($data['DATA_PASS']) ? $data['DATA_PASS'] : null;
+                                    $base = isset($data['DATA_BASE']) ? $data['DATA_BASE'] : null;
                                 else:
                                     exit('The settings for existing databases, were not configured in the <strong>settings.ini</strong>.');
                                 endif;
@@ -262,7 +265,7 @@ class PDO4You
     /**
      * Método para atribuir uma nova instância do objeto PDO de conexão
      *
-     * @param string $alias Nome de uma instância de conexão
+     * @param string $alias Pseudônimo para identificar a instância de conexão
      * @param PDO $instance Objeto PDO de conexão
      * @return void
      * 
@@ -275,8 +278,8 @@ class PDO4You
     /**
      * Método para retornar um objeto PDO de conexão
      *
-     * @param string $alias Nome de uma instância de conexão
-     * @return object Retorna uma instância de conexão
+     * @param string $alias Pseudônimo de uma instância de conexão
+     * @return object
      * 
      */
     private static function getHandle($alias)
@@ -304,7 +307,7 @@ class PDO4You
      * 
      * @access public static
      * @param void
-     * @return string Retorna o nome do servidor
+     * @return string
      * 
      * */
     public static function getDatahost()
@@ -330,7 +333,7 @@ class PDO4You
      * 
      * @access public static
      * @param void
-     * @return string Retorna o número da porta
+     * @return string
      * 
      * */
     public static function getDataport()
@@ -342,7 +345,7 @@ class PDO4You
      * Método para definir qual a instância corrente de conexão
      * 
      * @access private static
-     * @param string $alias Nome da instância de conexão
+     * @param string $alias Pseudônimo da instância de conexão
      * @return void
      * 
      * */
@@ -356,7 +359,7 @@ class PDO4You
      * 
      * @access public static
      * @param void
-     * @return string Retorna o nome da instância de conexão
+     * @return string
      * 
      * */
     public static function getConnection()
@@ -384,7 +387,7 @@ class PDO4You
      * @access public static
      * @param Exception $e Obtém a mensagem da exceção lançada
      * @param boolean $debug Habilita a exibição dos valores capturados
-     * @return array Retorna um vetor da mensagem capturada
+     * @return array
      * 
      * */
     public static function getErrorInfo(Exception $e, $debug = false)
@@ -412,7 +415,7 @@ class PDO4You
      * 
      * @access public static
      * @param void
-     * @return string Retorna o nome do driver
+     * @return string
      * 
      * */
     public static function getDriver()
@@ -434,7 +437,9 @@ class PDO4You
             if (self::$instance instanceof PDO):
                 self::setStyle();
 
-                $info = self::$instance->getAttribute(constant("PDO::ATTR_SERVER_INFO"));
+                $driver = self::getDriver();
+
+                $info = ($driver == 'mssql') ? 'not available' : self::$instance->getAttribute(PDO::ATTR_SERVER_INFO);
                 echo '<h7>Server Information - ', is_array($info) ? implode(', ', $info) : $info, '</h7>';
             else:
                 throw new PDOException(self::$exception['no-instance']);
@@ -541,7 +546,7 @@ class PDO4You
      * @param string $fileName Nome do arquivo
      * @param string $lineNumber Define a linha de destaque
      * @param string $showLines Define o número de linhas a serem exibidas
-     * @return string Retorna o trecho de código destacado
+     * @return string
      * @author Marcus Welz
      * 
      * */
@@ -569,8 +574,8 @@ class PDO4You
      * @param string $query Instrução SQL de consulta
      * @param string $type Tipo de retorno da consulta
      * @param string $use Nome da base de dados instanciada
-     * @param boolean $count Conta o número de linhas afetadas
-     * @return mixed Retorna todos os registros afetados
+     * @param boolean $count Conta o número de linhas afetadas (opcional)
+     * @return mixed
      * 
      * */
     private static function selectRecords($query, $type, $use = null, $count = true)
@@ -823,11 +828,13 @@ class PDO4You
     }
 
     /**
-     * Método que retorna o ID do último registro inserido ou o valor de seqüência
+     * Método que retorna o ID do último registro inserido ou o valor de sequência
+     * Base de dados como: MS SQL Server, PostgreSQL, entre outros, fazem uso da variável de sequência
+     * Exemplos: users, users_id_seq, table_seq, (...)
      * 
      * @access public static
-     * @param string $sequence Nome da variável de sequência solicitado em algumas base de dados, ex: table_id_seq
-     * @return array Retorna o ID do último registro
+     * @param string $sequence Nome da variável de sequência solicitado em algumas base de dados
+     * @return array
      * 
      * */
     public static function lastId($sequence = null)
@@ -864,7 +871,7 @@ class PDO4You
      * 
      * @access public static
      * @param void
-     * @return string Retorna o total de linhas afetadas
+     * @return string
      * 
      * */
     public static function rowCount()
@@ -879,7 +886,7 @@ class PDO4You
      * 
      * @access private static
      * @param string $json String no formato de notação JSON
-     * @return array Retorna o array convertido
+     * @return array
      * 
      * */
     private static function parseJSON($json)
