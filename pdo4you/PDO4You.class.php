@@ -199,7 +199,7 @@ class PDO4You
                 if (!array_key_exists($alias, self::$handle)):
                     if ($alias == 'default'):
                         $dir = dirname(__FILE__);
-                        $file = $dir . '\settings.ini';
+                        $file = $dir . '/settings.ini';
 
                         if (file_exists($file)):
                             if (is_readable($file)):
