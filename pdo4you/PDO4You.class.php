@@ -484,12 +484,13 @@ class PDO4You
     public static function setStyle()
     {
         $css = '<style type="text/css">';
-        $css.= 'body, code    { background:#FAFAFA; font:normal 12px/1.7em Bitstream Vera Sans Mono,Courier New,Monospace; margin:0; padding:0; }';
+        $css.= 'body,.code    { background:#FAFAFA; font:normal 12px/1.7em Bitstream Vera Sans Mono,Courier New,Monospace; margin:0; padding:0; }';
         $css.= '#pdo4you h2   { display:block; color:#000; background:#FFF; font-size:20px; margin:0; padding:10px; border-bottom:solid 1px #999; }';
         $css.= '#pdo4you h7   { display:block; color:#FFF; background:#000; font-size:12px; margin:0; padding:2px 5px; }';
         $css.= '.pdo4you      { margin:8px; padding:0; }';
-        $css.= 'code          { display:block; font:inherit; background:#EFEFEF; border:solid 1px #DDD; border-right-color:#BBB; border-bottom:none; margin:10px 10px 0 10px; overflow:auto; }';
+        $css.= '.code         { font:inherit; background:#EFEFEF; border:solid 1px #DDD; border-right-color:#BBB; border-bottom:none; margin:10px 10px 0 10px; overflow:auto; }';
         $css.= '.trace,.debug { background:#FFF; border:solid 1px #BBB; border-left-color:#DDD; border-top:none; margin:0 10px 15px 10px; }';
+        $css.= '.trace div    { clear:both; }';
         $css.= '.debug        { padding:5px; }';
         $css.= '.number       { color:#AAA; background:#EFEFEF; min-width:40px; padding:0 5px; margin-right:5px; float:left; text-align:right; cursor:default; }';
         $css.= '.highlight    { background:#FFC; }';
@@ -532,7 +533,7 @@ class PDO4You
             $stack.= '<strong>Exception:</strong> ' . $e->getMessage() . '<br />';
             if ($show)
                 foreach ($e->getTrace() as $t)
-                    $stack.= '<code>&nbsp;<strong>#' . $count++ . '</strong> ' . $t['file'] . ':' . $t['line'] . '</code><code class="trace">' . self::highlightSource($t['file'], $t['line']) . '</code>';
+                    $stack.= '<div class="code">&nbsp;<strong>#' . $count++ . '</strong> ' . $t['file'] . ':' . $t['line'] . '</div><div class="code trace">' . self::highlightSource($t['file'], $t['line']) . '</div>';
             $stack.= '</div>';
 
             exit($stack);
@@ -556,12 +557,15 @@ class PDO4You
         $lines = file_get_contents($fileName);
         $lines = highlight_string($lines, true);
         $lines = array_slice(explode('<br />', $lines), $offset, $showLines);
-        $trace = null;
 
-        foreach ($lines as $l):
+        $count = count($lines);
+        for ($i = $count; $i < $showLines; $i++)
+            array_push($lines, '&nbsp;');
+
+        $trace = null;
+        foreach ($lines as $line):
             $offset++;
-            $line = '<div class="number">' . sprintf('%4d', $offset) . '</div>' . $l . '<br />';
-            $trace.= ($offset == $lineNumber) ? '<div class="highlight">' . $line . '</div>' : $line;
+            $trace.= '<div' . ($offset == $lineNumber ? ' class="highlight"' : '') . '><span class="number">' . sprintf('%4d', $offset) . '</span>' . $line . '</div>';
         endforeach;
 
         return $trace;
@@ -943,11 +947,11 @@ class PDO4You
             foreach ($v1 as $k2 => $v2):
                 $desc = self::select("DESCRIBE " . $database . "." . $v2);
 
-                $html.= '<code>&nbsp;<strong>Table</strong>: ' . $v2 . '</code>';
-                $html.= '<code class="trace">';
+                $html.= '<div class="code">&nbsp;<strong>Table</strong>: ' . $v2 . '</div>';
+                $html.= '<div class="code trace">';
                 foreach ($desc as $k3 => $v3)
                     $html.= '<div class="number">&nbsp;</div> <span><i style="color:#00B;">' . $v3['field'] . "</i> - " . strtoupper($v3['type']) . '</span><br />';
-                $html.= '</code>';
+                $html.= '</div>';
             endforeach;
         endforeach;
         $html.= '</div>';
@@ -976,11 +980,11 @@ class PDO4You
         foreach ($tables as $k1 => $v1):
             $desc = self::select("SELECT d.datname, n.nspname, a.attname AS field, t.typname AS type FROM pg_database d, pg_namespace n, pg_class c, pg_attribute a, pg_type t WHERE d.datname = '" . $v1['table_catalog'] . "' AND n.nspname = '" . $v1['table_schema'] . "' AND c.relname = '" . $v1['table_name'] . "' AND c.relnamespace = n.oid AND a.attnum > 0 AND not a.attisdropped AND a.attrelid = c.oid AND a.atttypid = t.oid ORDER BY a.attnum");
 
-            $html.= '<code>&nbsp;<strong>Table</strong>: ' . $v1['table_schema'] . '.' . $v1['table_name'] . '</code>';
-            $html.= '<code class="trace">';
+            $html.= '<div class="code">&nbsp;<strong>Table</strong>: ' . $v1['table_schema'] . '.' . $v1['table_name'] . '</div>';
+            $html.= '<div class="code trace">';
             foreach ($desc as $k2 => $v2)
                 $html.= '<div class="number">&nbsp;</div> <span><i style="color:#00B;">' . $v2['field'] . "</i> - " . strtoupper($v2['type']) . '</span><br />';
-            $html.= '</code>';
+            $html.= '</div>';
         endforeach;
         $html.= '</div>';
 
@@ -1009,11 +1013,11 @@ class PDO4You
             foreach ($v1 as $k2 => $v2):
                 $desc = self::select("SHOW COLUMNS IN " . $v2);
 
-                $html.= '<code>&nbsp;<strong>Table</strong>: ' . $v2 . '</code>';
-                $html.= '<code class="trace">';
+                $html.= '<div class="code">&nbsp;<strong>Table</strong>: ' . $v2 . '</div>';
+                $html.= '<div class="code trace">';
                 foreach ($desc as $k3 => $v3)
                     $html.= '<div class="number">&nbsp;</div> <span><i style="color:#00B;">' . $v3['Field'] . "</i> - " . strtoupper($v3['Type']) . '</span><br />';
-                $html.= '</code>';
+                $html.= '</div>';
             endforeach;
         endforeach;
         $html.= '</div>';
@@ -1042,11 +1046,11 @@ class PDO4You
         foreach ($tables as $k1 => $v1):
             $desc = self::select("SELECT table_catalog, table_schema, table_name, column_name AS field, data_type AS type FROM information_schema.columns WHERE table_catalog = '" . $v1['table_catalog'] . "' AND table_name = '" . $v1['table_name'] . "';");
 
-            $html.= '<code>&nbsp;<strong>Table</strong>: ' . $v1['table_schema'] . '.' . $v1['table_name'] . '</code>';
-            $html.= '<code class="trace">';
+            $html.= '<div class="code">&nbsp;<strong>Table</strong>: ' . $v1['table_schema'] . '.' . $v1['table_name'] . '</div>';
+            $html.= '<div class="code trace">';
             foreach ($desc as $k2 => $v2)
                 $html.= '<div class="number">&nbsp;</div> <span><i style="color:#00B;">' . $v2['field'] . "</i> - " . strtoupper($v2['type']) . '</span><br />';
-            $html.= '</code>';
+            $html.= '</div>';
         endforeach;
         $html.= '</div>';
 
