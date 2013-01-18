@@ -62,8 +62,8 @@ class Test_CRUD
         // Execute the SQL query in a "pre-defined instance" and store the result
         $result = PDO4You::select($sql, $instance);
 
-        echo '<code>&nbsp;<strong>Test with PDO4You::select()</strong></code>';
-        echo '<code class="debug">PDO4You::select(' . $this->formatQuery($sql) . ', ' . $this->formatInstance() . ');' . $this->formatResult($result, false) . '</code>';
+        echo '<div class="code">&nbsp;<strong>Test with PDO4You::select()</strong></div>';
+        echo '<div class="code debug">PDO4You::select(' . $this->formatQuery($sql) . ', ' . $this->formatInstance() . ');' . $this->formatResult($result, false) . '</div>';
     }
 
     /**
@@ -82,17 +82,17 @@ class Test_CRUD
         $result_3 = PDO4You::selectObj($sql);
         $result_4 = PDO4You::selectAll($sql);
 
-        echo '<code>&nbsp;<strong>Test with PDO4You::select()</strong></code>';
-        echo '<code class="debug">PDO4You::select(' . $this->formatQuery($sql) . ', ' . $this->formatInstance() . ');' . $this->formatResult($result_1, false) . '</code>';
+        echo '<div class="code">&nbsp;<strong>Test with PDO4You::select()</strong></div>';
+        echo '<div class="code debug">PDO4You::select(' . $this->formatQuery($sql) . ', ' . $this->formatInstance() . ');' . $this->formatResult($result_1, false) . '</div>';
 
-        echo '<code>&nbsp;<strong>Test with PDO4You::selectNum()</strong></code>';
-        echo '<code class="debug">PDO4You::selectNum(' . $this->formatQuery($sql) . ', ' . $this->formatInstance() . ');' . $this->formatResult($result_2, false) . '</code>';
+        echo '<div class="code">&nbsp;<strong>Test with PDO4You::selectNum()</strong></div>';
+        echo '<div class="code debug">PDO4You::selectNum(' . $this->formatQuery($sql) . ', ' . $this->formatInstance() . ');' . $this->formatResult($result_2, false) . '</div>';
 
-        echo '<code>&nbsp;<strong>Test with PDO4You::selectObj()</strong></code>';
-        echo '<code class="debug">PDO4You::selectObj(' . $this->formatQuery($sql) . ', ' . $this->formatInstance() . ');' . $this->formatResult($result_3, false) . '</code>';
+        echo '<div class="code">&nbsp;<strong>Test with PDO4You::selectObj()</strong></div>';
+        echo '<div class="code debug">PDO4You::selectObj(' . $this->formatQuery($sql) . ', ' . $this->formatInstance() . ');' . $this->formatResult($result_3, false) . '</div>';
 
-        echo '<code>&nbsp;<strong>Test with PDO4You::selectAll()</strong></code>';
-        echo '<code class="debug">PDO4You::selectAll(' . $this->formatQuery($sql) . ', ' . $this->formatInstance() . ');' . $this->formatResult($result_4, false) . '</code>';
+        echo '<div class="code">&nbsp;<strong>Test with PDO4You::selectAll()</strong></div>';
+        echo '<div class="code debug">PDO4You::selectAll(' . $this->formatQuery($sql) . ', ' . $this->formatInstance() . ');' . $this->formatResult($result_4, false) . '</div>';
     }
 
     /**
@@ -117,8 +117,8 @@ class Test_CRUD
         // Store the result
         $result = PDO4You::insert($json);
 
-        echo '<code>&nbsp;<strong>Test with PDO4You::insert()</strong></code>';
-        echo '<code class="debug">PDO4You::insert(' . $this->formatQuery($json) . ', ' . $this->formatInstance() . ');' . $this->formatResult($result, true) . '</code>';
+        echo '<div class="code">&nbsp;<strong>Test with PDO4You::insert()</strong></div>';
+        echo '<div class="code debug">PDO4You::insert(' . $this->formatQuery($json) . ', ' . $this->formatInstance() . ');' . $this->formatResult($result, true) . '</div>';
     }
 
     /**
@@ -153,8 +153,8 @@ class Test_CRUD
         // Store the result
         $result = PDO4You::update($json);
 
-        echo '<code>&nbsp;<strong>Test with PDO4You::update()</strong></code>';
-        echo '<code class="debug">PDO4You::update(' . $this->formatQuery($json) . ', ' . $this->formatInstance() . ');' . $this->formatResult($result, false) . '</code>';
+        echo '<div class="code">&nbsp;<strong>Test with PDO4You::update()</strong></div>';
+        echo '<div class="code debug">PDO4You::update(' . $this->formatQuery($json) . ', ' . $this->formatInstance() . ');' . $this->formatResult($result, false) . '</div>';
     }
 
     /**
@@ -185,8 +185,8 @@ class Test_CRUD
         // Store the result
         $result = PDO4You::delete($json);
 
-        echo '<code>&nbsp;<strong>Test with PDO4You::delete()</strong></code>';
-        echo '<code class="debug">PDO4You::delete(' . $this->formatQuery($json) . ', ' . $this->formatInstance() . ');' . $this->formatResult($result, false) . '</code>';
+        echo '<div class="code">&nbsp;<strong>Test with PDO4You::delete()</strong></div>';
+        echo '<div class="code debug">PDO4You::delete(' . $this->formatQuery($json) . ', ' . $this->formatInstance() . ');' . $this->formatResult($result, false) . '</div>';
     }
 
     /**
@@ -209,8 +209,8 @@ class Test_CRUD
         // Store the result
         $result = PDO4You::update($json);
 
-        echo '<code>&nbsp;<strong>Test with PDO4You::update()</strong></code>';
-        echo '<code class="debug">PDO4You::update(' . $this->formatQuery($json) . ', ' . $this->formatInstance() . ');' . $this->formatResult($result, false) . '</code>';
+        echo '<div class="code">&nbsp;<strong>Test with PDO4You::update()</strong></div>';
+        echo '<div class="code debug">PDO4You::update(' . $this->formatQuery($json) . ', ' . $this->formatInstance() . ');' . $this->formatResult($result, false) . '</div>';
     }
 
     /**
