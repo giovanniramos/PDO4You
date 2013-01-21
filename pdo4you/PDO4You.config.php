@@ -14,9 +14,8 @@
  * 
  * */
 
-// Adaptador de conexão definido em: \pdo4you\settings.ini
-// Ex.: mysql, pgsql, pgsql.dev, pgsql.pro, test
-define('ADAPTER', 'test');
+// Adaptador de conexão definido em settings.ini (Ex.: test, mysql, pgsql, pgsql.dev, pgsql.pro, vcap)
+define('ADAPTER', getenv('SERVER_NAME') == 'localhost' ? 'test' : 'vcap');
 
 // Depuração de erros com tratamento de exceção
 define('FIREDEBUG', true);

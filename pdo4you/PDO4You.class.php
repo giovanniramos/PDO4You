@@ -8,7 +8,7 @@
  * @author Giovanni Ramos <giovannilauro@gmail.com>
  * @copyright 2010-2012, Giovanni Ramos
  * @since 2010-09-07
- * @version 2.7
+ * @version 2.8
  * @license http://opensource.org/licenses/gpl-3.0.html GNU Public License
  * @link https://github.com/giovanniramos/PDO4You
  * 
@@ -206,15 +206,29 @@ class PDO4You
                                 $datafile = parse_ini_file_advanced($file);
 
                                 if (isset($datafile['adapter'])):
-                                    $part = preg_split('~[.]~', preg_replace('~[\s]{1,}~', null, ADAPTER));
-                                    $data = count($part) == 2 ? @$datafile['adapter'][$part[0]][$part[1]] : @$datafile['adapter'][$part[0]];
+                                    if (ADAPTER == 'vcap'):
+                                        $json = json_decode(getenv("VCAP_SERVICES"), true);
+                                        $data = $datafile['adapter']['vcap'];
+                                        $part = preg_split('~[|]~', $data['vcap']);
+                                        $conf = $json[$part[0]][$part[1]]['credentials'];
 
-                                    $type = isset($data['DATA_TYPE']) ? $data['DATA_TYPE'] : null;
-                                    $host = isset($data['DATA_HOST']) ? $data['DATA_HOST'] : null;
-                                    $port = isset($data['DATA_PORT']) ? $data['DATA_PORT'] : null;
-                                    $user = isset($data['DATA_USER']) ? $data['DATA_USER'] : null;
-                                    $pass = isset($data['DATA_PASS']) ? $data['DATA_PASS'] : null;
-                                    $base = isset($data['DATA_BASE']) ? $data['DATA_BASE'] : null;
+                                        $type = isset($data['type']) ? $data['type'] : null;
+                                        $host = isset($conf['hostname']) ? $conf['hostname'] : null;
+                                        $port = isset($conf['port']) ? $conf['port'] : null;
+                                        $user = isset($conf['username']) ? $conf['username'] : null;
+                                        $pass = isset($conf['password']) ? $conf['password'] : null;
+                                        $base = isset($conf['name']) ? $conf['name'] : null;
+                                    else:
+                                        $part = preg_split('~[.]~', preg_replace('~[\s]{1,}~', null, ADAPTER));
+                                        $conf = count($part) == 2 ? @$datafile['adapter'][$part[0]][$part[1]] : @$datafile['adapter'][$part[0]];
+
+                                        $type = isset($conf['type']) ? $conf['type'] : null;
+                                        $host = isset($conf['host']) ? $conf['host'] : null;
+                                        $port = isset($conf['port']) ? $conf['port'] : null;
+                                        $user = isset($conf['user']) ? $conf['user'] : null;
+                                        $pass = isset($conf['pass']) ? $conf['pass'] : null;
+                                        $base = isset($conf['base']) ? $conf['base'] : null;
+                                    endif;
                                 else:
                                     exit('The settings for existing databases, were not configured in the <strong>settings.ini</strong>.');
                                 endif;
@@ -238,7 +252,7 @@ class PDO4You
                             break;
                         case 'sqlsrv': $driver = 'sqlsrv:' . (!(empty($base)) ? 'database=' . $base . ';' : null) . 'server=' . $host . ';';
                             break;
-                        case 'oracle': $driver = 'oci:' . $base;
+                        case 'oracle': $driver = 'oci:' . (!(empty($base)) ? 'dbname=' . $base . ';' : null);
                             break;
                         default: $driver = $type;
                     endswitch;
