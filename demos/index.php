@@ -1,6 +1,6 @@
 <?php
-// Load of all necessary classes
-require_once '../PDO4You.load.php';
+// Loading all files required to run the library PDO4You
+require_once('../bootstrap.php');
 
 // Connection instance started and available
 PDO4You::getInstance();
@@ -14,7 +14,7 @@ PDO4You::getServerInfo();
 // Displays all available drivers
 #PDO4You::getAvailableDrivers();
 ?>
-<!DOCTYPE html>
+<!doctype html>
 <html>
     <head>
         <meta charset="UTF-8" />
@@ -30,12 +30,12 @@ PDO4You::getServerInfo();
         else:
             ?>
             <h2>
-                TEST &rsaquo; 
-                <a href="?p=test1.php">ALL SELECTS</a> <b>&sect;</b>
-                <a href="?p=test2.php">INSERT/UPDATE/DELETE</a> <b>&sect;</b>
-                <a href="?p=test3.php">MULTIPLE INSTANCES</a> <b>&sect;</b>
-                <a href="?p=test4.php">READ RECORDS</a> <b>&sect;</b>
-                <a href="?p=test5.php">HTML EDITOR</a>
+                DEMOS &rsaquo; 
+                <a href="?p=demo1.php">ALL SELECTS</a> <b>&sect;</b>
+                <a href="?p=demo2.php">INSERT/UPDATE/DELETE</a> <b>&sect;</b>
+                <a href="?p=demo3.php">MULTIPLE INSTANCES</a> <b>&sect;</b>
+                <a href="?p=demo4.php">READ RECORDS</a> <b>&sect;</b>
+                <a href="?p=demo5.php">HTML EDITOR</a>
             </h2>
         <?php
         endif;

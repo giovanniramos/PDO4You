@@ -27,13 +27,13 @@ O padrão de projeto Singleton foi adotado para otimizar a conexão, garantindo 
 
 
 
-Introdução: carregando a biblioteca necessária
+Carregando o arquivo de inicialização
 --------------------------------------------------
 
 ~~~ php
 <?php
 
-// Apenas um arquivo é necessário pelo carregamento dos arquivos necessários ao funcionamento da lib PDO4You.
+// Apenas um arquivo é necessário pelo carregamento dos arquivos responsáveis pelo funcionamento da classe.
 require_once('bootstrap.php');
 
 ?>
@@ -43,13 +43,13 @@ require_once('bootstrap.php');
 
 `PDO4You.config.php`: arquivo de configuração inicial, de acesso ao servidor e base de dados.
 
-`PDO4You.library.php`: contém um autoloading de classes, e pode ser usado como biblioteca de funções úteis ao sistema.
+`PDO4You.library.php`: arquivo contendo um autoloading de classes, e funções internas da classe.
 
-`settings.ini`: contém as definições para cada adaptador de conexão com a base de dados.
+`PDO4You.settings.ini`: contém as definições para cada adaptador de conexão com uma base de dados.
 
 
 
-Verificando os drivers suportados pelo servidor
+Drivers suportados pelo servidor
 --------------------------------------------------
 
 Execute o método abaixo para verificar se o servidor tem suporte a um driver PDO específico de sua base de dados. 

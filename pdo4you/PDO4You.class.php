@@ -6,7 +6,7 @@
  * @category PDO
  * @package PDO4You
  * @author Giovanni Ramos <giovannilauro@gmail.com>
- * @copyright 2010-2012, Giovanni Ramos
+ * @copyright 2010-2013, Giovanni Ramos
  * @since 2010-09-07
  * @version 2.8
  * @license http://opensource.org/licenses/gpl-3.0.html GNU Public License
@@ -109,7 +109,7 @@ class PDO4You
         'json-error-depth' => 'Maximum stack depth exceeded.',
         'json-error-state-mismatch' => 'Mismatch or arithmetic operation modes impossible to be represented.',
         'json-error-ctrl-char' => 'Attribute control unexpected was found.',
-        'json-error-syntax' => 'The query is poorly formatted JSON provided'
+        'json-error-syntax' => 'The query is poorly formatted JSON provided.'
     );
 
     /**
@@ -199,14 +199,14 @@ class PDO4You
                 if (!array_key_exists($alias, self::$handle)):
                     if ($alias == 'default'):
                         $dir = dirname(__FILE__);
-                        $file = $dir . '/settings.ini';
+                        $file = $dir . '/PDO4You.settings.ini';
 
                         if (file_exists($file)):
                             if (is_readable($file)):
                                 $datafile = parse_ini_file_advanced($file);
 
                                 if (isset($datafile['adapter'])):
-                                    if (ADAPTER == 'vcap'):
+                                    if (PDO4YOU_ADAPTER == 'vcap'):
                                         $json = json_decode(getenv("VCAP_SERVICES"), true);
                                         $data = $datafile['adapter']['vcap'];
                                         $part = preg_split('~[|]~', $data['vcap']);
@@ -219,7 +219,7 @@ class PDO4You
                                         $pass = isset($conf['password']) ? $conf['password'] : null;
                                         $base = isset($conf['name']) ? $conf['name'] : null;
                                     else:
-                                        $part = preg_split('~[.]~', preg_replace('~[\s]{1,}~', null, ADAPTER));
+                                        $part = preg_split('~[.]~', preg_replace('~[\s]{1,}~', null, PDO4YOU_ADAPTER));
                                         $conf = count($part) == 2 ? @$datafile['adapter'][$part[0]][$part[1]] : @$datafile['adapter'][$part[0]];
 
                                         $type = isset($conf['type']) ? $conf['type'] : null;
@@ -230,13 +230,13 @@ class PDO4You
                                         $base = isset($conf['base']) ? $conf['base'] : null;
                                     endif;
                                 else:
-                                    exit('The settings for existing databases, were not configured in the <strong>settings.ini</strong>.');
+                                    exit('The settings for existing databases, were not configured in the <strong>PDO4You.settings.ini</strong>.');
                                 endif;
                             else:
-                                exit('The <strong>settings.ini</strong> file cannot be read.');
+                                exit('The <strong>PDO4You.settings.ini</strong> file cannot be read.');
                             endif;
                         else:
-                            exit('The <strong>settings.ini</strong> file could not be found in directory:<br /> ' . $dir . '\\');
+                            exit('The <strong>PDO4You.settings.ini</strong> file could not be found in directory:<br /> ' . $dir);
                         endif;
                     endif;
 
@@ -406,7 +406,7 @@ class PDO4You
      * */
     public static function getErrorInfo(Exception $e, $debug = false)
     {
-        if (defined(WEBMASTER))
+        if (defined(PDO4YOU_WEBMASTER))
             self::fireAlert(self::$exception['critical-error'], $e);
 
         $info = null;
@@ -536,10 +536,10 @@ class PDO4You
         } else {
             self::setStyle();
 
-            if (!FIREDEBUG)
+            if (!PDO4YOU_FIREDEBUG)
                 return;
 
-            if (defined(WEBMASTER))
+            if (defined(PDO4YOU_WEBMASTER))
                 self::fireAlert(self::$exception['critical-error'], $e);
 
             $count = 0;
@@ -1119,8 +1119,8 @@ class PDO4You
         $head.= 'Return-Path: Alerta automático <firealert@noreply.com>' . PHP_EOL;
         $body = 'Diagnóstico do alerta:<br /><br /><b>' . $error->getMessage() . '</b><br />' . $error->getFile() . ' : ' . $error->getLine();
 
-        if (FIREALERT)
-            @mail(WEBMASTER, $text, $body, $head);
+        if (PDO4YOU_FIREALERT)
+            @mail(PDO4YOU_WEBMASTER, $text, $body, $head);
     }
 
     /**
@@ -1217,5 +1217,3 @@ class PDO4You
     }
 
 }
-
-?>

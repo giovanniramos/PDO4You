@@ -27,13 +27,13 @@ The Singleton design pattern was adopted to optimize the connection, ensuring a 
 
 
 
-Introduction: loading the required library
+Loading the bootstrap file
 --------------------------------------------------
 
 ~~~ php
 <?php
 
-// Only one file is needed for loading the files required to run the lib PDO4You.
+// Only one file is needed for loading the files responsible for the operation of the class.
 require_once('bootstrap.php');
 
 ?>
@@ -43,13 +43,13 @@ require_once('bootstrap.php');
 
 `PDO4You.config.php`: initial configuration file, server access and database.
 
-`PDO4You.library.php`: contains a autoloading of classes, and can be used as a library of useful functions to the system.
+`PDO4You.library.php`: file containing an autoloading class, and internal functions of the class.
 
-`settings.ini`: contains the settings for each adapter of connection to the database.
+`PDO4You.settings.ini`: contains the settings for each adapter of connection to the database.
 
 
 
-Checking the drivers supported by the server
+Drivers supported by the server
 --------------------------------------------------
 
 Execute the method below to check if the server supports a PDO driver specific to your database.
