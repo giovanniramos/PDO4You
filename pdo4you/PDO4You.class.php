@@ -1,14 +1,14 @@
 <?php
 
 /**
- * Esta classe implementa o padrão de projeto Singleton para conexão de base de dados, usando a extensão PDO (PHP Data Objects)
+ * PDO4You is a class that implements the Singleton design pattern for connecting the database using the PDO extension (PHP Data Objects)
  * 
  * @category PDO
  * @package PDO4You
  * @author Giovanni Ramos <giovannilauro@gmail.com>
  * @copyright 2010-2013, Giovanni Ramos
  * @since 2010-09-07
- * @version 2.8
+ * @version 2.9
  * @license http://opensource.org/licenses/gpl-3.0.html GNU Public License
  * @link https://github.com/giovanniramos/PDO4You
  * 
@@ -16,7 +16,7 @@
 class PDO4You
 {
     /**
-     * Armazena o nome da máquina na qual o servidor da base de dados reside
+     * Stores the name of the server machine on which the database resides
      * 
      * @access private static
      * @var string
@@ -25,7 +25,7 @@ class PDO4You
     private static $datahost;
 
     /**
-     * Armazena o nome da porta na qual o servidor está executando
+     * Stores the name of the port on which the server is running
      * 
      * @access private static
      * @var string
@@ -34,7 +34,7 @@ class PDO4You
     private static $dataport;
 
     /**
-     * Armazena o nome da instância corrente de conexão
+     * Stores the name of the current instance of the connection
      * 
      * @access private static
      * @var string
@@ -43,7 +43,7 @@ class PDO4You
     private static $connection;
 
     /**
-     * Armazena uma instância do objeto PDO de conexão
+     * Stores an object instance PDO connection
      * 
      * @access private static
      * @var object
@@ -52,7 +52,7 @@ class PDO4You
     private static $instance;
 
     /**
-     * Armazena instâncias do objeto PDO de conexão
+     * Stores object instances PDO connection
      * 
      * @access private static
      * @var array
@@ -61,7 +61,7 @@ class PDO4You
     private static $handle = array();
 
     /**
-     * Armazena a definição de conexão persistente
+     * Stores the definition of persistent connection
      * 
      * @access private static
      * @var boolean
@@ -70,7 +70,7 @@ class PDO4You
     private static $persistent = false;
 
     /**
-     * Armazena o ID do último registro inserido ou o valor de seqüência
+     * Stores the ID of the last inserted row or sequence value
      * 
      * @access private
      * @var string
@@ -79,7 +79,7 @@ class PDO4You
     private static $lastId;
 
     /**
-     * Armazena o total de linhas afetadas na última operação CRUD
+     * Stores the total of affected rows in last CRUD operation
      * 
      * @access private
      * @var string
@@ -88,7 +88,7 @@ class PDO4You
     private static $rowCount;
 
     /**
-     * Armazena as mensagens de Exception lançadas
+     * Stores messages Exception thrown
      * 
      * @access private
      * @var array
@@ -113,7 +113,7 @@ class PDO4You
     );
 
     /**
-     * O construtor é definido como privado, impedindo a instância direta da classe
+     * The constructor is set to private, preventing direct instance of the class
      * 
      * @access private
      * 
@@ -124,16 +124,16 @@ class PDO4You
     }
 
     /**
-     * Método Singleton de conexão
+     * Method Singleton connection
      * 
      * @access private static
-     * @param string $alias Nome da instância de conexão
-     * @param string $driver Driver DSN de conexão
-     * @param string $user Usuário da base de dados
-     * @param string $pass Senha da base de dados
-     * @param string $option Configuração do driver de conexão
+     * @param string $alias Pseudonym of a connection instance
+     * @param string $driver Driver DSN connection
+     * @param string $user Username of the database
+     * @param string $pass Password of the database
+     * @param string $option Configuration the connection driver
      * @return void
-     * @throws PDOException Dispara uma exceção em caso de falhas na conexão
+     * @throws PDOException Throws an exception in case of connection failures
      * 
      * */
     private static function singleton($alias, $driver, $user, $pass, $option)
@@ -167,10 +167,10 @@ class PDO4You
     }
 
     /**
-     * Método para definir uma instância de conexão
+     * Method for setting a connection instance
      * 
      * @access public static
-     * @param string $alias Nome de uma instância de conexão
+     * @param string $alias Pseudonym of a connection instance
      * @return void
      * 
      * */
@@ -180,16 +180,16 @@ class PDO4You
     }
 
     /**
-     * Método que obtém uma única instância da base de dados por conexão
+     * Method to get a single instance of the database per connection
      * 
      * @access public static
-     * @param string $alias Pseudônimo que será usado como ponteiro de uma instância de conexão pré-estabelecida
-     * @param string $type Tipo de conexão se estiver usando a "Configuração Inicial", ou um "DSN completo"
-     * @param string $user Usuário da base de dados
-     * @param string $pass Senha da base de dados
-     * @param string $option Configuração adicional do driver
+     * @param string $alias Pseudonym that will be used as a pointer to an instance of established connection
+     * @param string $type Connection type if using "Initial Setup" or "Full DSN"
+     * @param string $user Username of the database
+     * @param string $pass Password of the database
+     * @param string $option Configuration the connection driver
      * @return object
-     * @throws Exception Dispara uma exceção em caso de falhas na conexão
+     * @throws Exception Throws an exception in case of connection failures
      * 
      * */
     public static function getInstance($alias = 'default', $type = null, $user = null, $pass = null, Array $option = null)
@@ -277,10 +277,10 @@ class PDO4You
     }
 
     /**
-     * Método para atribuir uma nova instância do objeto PDO de conexão
+     * Method for assigning a new object instance PDO connection
      *
-     * @param string $alias Pseudônimo para identificar a instância de conexão
-     * @param PDO $instance Objeto PDO de conexão
+     * @param string $alias Pseudonym to identify the connection instance
+     * @param PDO $instance Object PDO connection
      * @return void
      * 
      */
@@ -290,9 +290,9 @@ class PDO4You
     }
 
     /**
-     * Método para retornar um objeto PDO de conexão
+     * Method to return an object PDO connection
      *
-     * @param string $alias Pseudônimo de uma instância de conexão
+     * @param string $alias Pseudonym of a connection instance
      * @return object
      * 
      */
@@ -304,10 +304,10 @@ class PDO4You
     }
 
     /**
-     * Método para definir o nome do servidor
+     * Method to set the server name
      * 
      * @access private static
-     * @param string $host Nome do servidor
+     * @param string $host Server name
      * @return void
      * 
      * */
@@ -317,7 +317,7 @@ class PDO4You
     }
 
     /**
-     * Método para recuperar o nome do servidor
+     * Method to retrieve the server name
      * 
      * @access public static
      * @param void
@@ -330,10 +330,10 @@ class PDO4You
     }
 
     /**
-     * Método para definir o número da porta do servidor
+     * Method to set the port number of the server
      * 
      * @access private static
-     * @param string $port Número da porta
+     * @param string $port Port number
      * @return void
      * 
      * */
@@ -343,7 +343,7 @@ class PDO4You
     }
 
     /**
-     * Método para recuperar o número da porta do servidor
+     * Method to retrieve the port number of the server
      * 
      * @access public static
      * @param void
@@ -356,10 +356,10 @@ class PDO4You
     }
 
     /**
-     * Método para definir qual a instância corrente de conexão
+     * Method to define which the current instance of connection
      * 
      * @access private static
-     * @param string $alias Pseudônimo da instância de conexão
+     * @param string $alias Pseudonym of a connection instance
      * @return void
      * 
      * */
@@ -369,7 +369,7 @@ class PDO4You
     }
 
     /**
-     * Método para recuperar o nome da instância corrente de conexão
+     * Method to retrieve the name of the current instance of connection
      * 
      * @access public static
      * @param void
@@ -382,25 +382,25 @@ class PDO4You
     }
 
     /**
-     * Método para definir o tipo de comunicação com a base de dados
-     * O padrão de conexão é não-persistente
+     * Method for defining the type of communication with the database
+     * The default connection is not persistent
      * 
      * @access public static
-     * @param boolean $persistent Define uma conexão persistente
+     * @param boolean $persistent Sets a persistent connection
      * @return void
      * 
      * */
-    public static function setPersistent($persistent)
+    public static function setPersistent($persistent = false)
     {
         self::$persistent = $persistent;
     }
 
     /**
-     * Método para capturar as informações de erro de uma Exception
+     * Method to capture the error information of an Exception
      * 
      * @access public static
-     * @param Exception $e Obtém a mensagem da exceção lançada
-     * @param boolean $debug Habilita a exibição dos valores capturados
+     * @param Exception $e Gets the message from the exception thrown
+     * @param boolean $debug Enables the display of the captured values
      * @return array
      * 
      * */
@@ -425,7 +425,7 @@ class PDO4You
     }
 
     /**
-     * Método para recuperar o nome do driver corrente
+     * Method to retrieve the name of the current driver
      * 
      * @access public static
      * @param void
@@ -438,7 +438,7 @@ class PDO4You
     }
 
     /**
-     * Método para exibir detalhes sobre a meta do servidor da base de dados conectada
+     * Method to display details about the target server's database connected
      * 
      * @access public static
      * @param void
@@ -464,7 +464,7 @@ class PDO4You
     }
 
     /**
-     * Método para exibir os drivers PDO instalados e suportados pelo servidor
+     * Method to display the PDO drivers installed and supported by the server
      * 
      * @access public static 
      * @param void
@@ -514,11 +514,11 @@ class PDO4You
     }
 
     /**
-     * Método para exibir o rastreamento da pilha de erros de uma Exception 
+     * Method to display the stack trace of an error Exception
      * 
      * @access public static
-     * @param Exception $e Obtém a pilha de erros gerada pela exceção
-     * @param boolean $show Habilita a exibição da pilha de erros
+     * @param Exception $e Gets the error stack generated by the exception
+     * @param boolean $show Enables the display of the error stack
      * @return void
      * 
      * */
@@ -555,12 +555,12 @@ class PDO4You
     }
 
     /**
-     * Método para destacar a sintaxe de um código
+     * Method to highlight the syntax of a code
      * 
      * @access public static
-     * @param string $fileName Nome do arquivo
-     * @param string $lineNumber Define a linha de destaque
-     * @param string $showLines Define o número de linhas a serem exibidas
+     * @param string $fileName Filename
+     * @param string $lineNumber Sets the highlighted row
+     * @param string $showLines Sets the number of rows to display
      * @return string
      * @author Marcus Welz
      * 
@@ -586,13 +586,13 @@ class PDO4You
     }
 
     /**
-     * Método para consulta de registros na base de dados
+     * Method to query records in the database
      * 
      * @access private static
-     * @param string $query Instrução SQL de consulta
-     * @param string $type Tipo de retorno da consulta
-     * @param string $use Nome da base de dados instanciada
-     * @param boolean $count Conta o número de linhas afetadas (opcional)
+     * @param string $query SQL query
+     * @param string $type Return type of the query
+     * @param string $use Alias of the database instantiated
+     * @param boolean $count OPTIONAL Counts the number of rows affected
      * @return mixed
      * 
      * */
@@ -637,12 +637,12 @@ class PDO4You
     }
 
     /**
-     * Método referente ao fetchAll(PDO::FETCH_NUM)
+     * Method referring to the fetchAll(PDO::FETCH_NUM)
      * 
      * @access public static
-     * @param string $sql Instrução SQL de consulta de registros
-     * @param object $use Nome da base de dados definida como nova instância de conexão (OPCIONAL)
-     * @return array Retorna um array indexado pelo número da coluna
+     * @param string $sql Instruction SQL of query of the records
+     * @param object $use OPTIONAL Name of the database defined as a new connection instance
+     * @return array Returns an array indexed by column number
      * 
      * */
     public static function selectNum($sql, $use = null)
@@ -651,12 +651,12 @@ class PDO4You
     }
 
     /**
-     * Método referente ao fetchAll(PDO::FETCH_OBJ)
+     * Method referring to the fetchAll(PDO::FETCH_OBJ)
      * 
      * @access public static
-     * @param string $sql Instrução SQL de consulta de registros
-     * @param object $use Nome da base de dados definida como nova instância de conexão (OPCIONAL)
-     * @return object Retorna um objeto com nomes de coluna como propriedades
+     * @param string $sql Instruction SQL of query of the records
+     * @param object $use OPTIONAL Name of the database defined as a new connection instance
+     * @return object Returns an object with column names as properties
      * 
      * */
     public static function selectObj($sql, $use = null)
@@ -665,12 +665,12 @@ class PDO4You
     }
 
     /**
-     * Método referente ao fetchAll(PDO::FETCH_BOTH)
+     * Method referring to the fetchAll(PDO::FETCH_BOTH)
      * 
      * @access public static
-     * @param string $sql Instrução SQL de consulta de registros
-     * @param object $use Nome da base de dados definida como nova instância de conexão (OPCIONAL)
-     * @return array Retorna um array indexado tanto pelo nome como pelo número da coluna
+     * @param string $sql Instruction SQL of query of the records
+     * @param object $use OPTIONAL Name of the database defined as a new connection instance
+     * @return array Returns an array indexed both by the name as the column number
      * 
      * */
     public static function selectAll($sql, $use = null)
@@ -679,12 +679,12 @@ class PDO4You
     }
 
     /**
-     * Método referente ao fetch(PDO::FETCH_ASSOC)
+     * Method referring to the fetchAll(PDO::FETCH_ASSOC)
      * 
      * @access public static
-     * @param string $sql Instrução SQL de consulta de registros
-     * @param object $use Nome da base de dados definida como nova instância de conexão (OPCIONAL)
-     * @return array Retorna um array indexado pelo nome da coluna
+     * @param string $sql Instruction SQL of query of the records
+     * @param object $use OPTIONAL Name of the database defined as a new connection instance
+     * @return array Returns an array indexed by column name
      * 
      * */
     public static function select($sql, $use = null)
@@ -693,13 +693,13 @@ class PDO4You
     }
 
     /**
-     * Método para manipulação de registros na base de dados
+     * Method for manipulation of records in the database
      * 
      * @access private static
-     * @param string $json Instrução SQL no formato JSON
-     * @param string $type Tipo de operação na base de dados
-     * @param string $use Nome da base de dados instanciada
-     * @return array Retorna um array com o número de linhas afetadas por operação
+     * @param string $json SQL statement in JSON format
+     * @param string $type Type of operation in the database
+     * @param string $use Name of the database instantiated
+     * @return array Returns an array with the number of rows affected by the operation
      * 
      * */
     private static function executeQuery($json, $type, $use = null)
@@ -804,12 +804,12 @@ class PDO4You
     }
 
     /**
-     * Método para inserir um novo registro na base de dados
+     * Method to insert a new record in the database
      * 
      * @access public static
-     * @param string $json Instrução SQL de inserção, no formato JSON
-     * @param string $use Nome da base de dados definida como nova instância de conexão (OPCIONAL)
-     * @return array Retorna um array com o número de linhas afetadas por operação de inserção
+     * @param string $json SQL insertion in JSON format
+     * @param string $use OPTIONAL Name of the database defined as a new connection instance
+     * @return array Returns an array with the number of rows affected by insert operation
      * 
      * */
     public static function insert($json, $use = null)
@@ -818,12 +818,12 @@ class PDO4You
     }
 
     /**
-     * Método para atualizar os dados de um registro
+     * Method to update a record in the database
      * 
      * @access public static
-     * @param string $json Instrução SQL de atualização, no formato JSON
-     * @param string $use Nome da base de dados definida como nova instância de conexão (OPCIONAL)
-     * @return array Retorna um array com o número de linhas afetadas por operação de atualização
+     * @param string $json SQL update in JSON format
+     * @param string $use OPTIONAL Name of the database defined as a new connection instance
+     * @return array Returns an array with the number of rows affected by update operation
      * 
      * */
     public static function update($json, $use = null)
@@ -832,12 +832,12 @@ class PDO4You
     }
 
     /**
-     * Método para excluir um registro
+     * Method to delete a record in the database
      * 
      * @access public static
-     * @param string $json Instrução SQL de exclusão, no formato JSON
-     * @param string $use Nome da base de dados definida como nova instância de conexão (OPCIONAL)
-     * @return array Retorna um array com o número de linhas afetadas por operação de exclusão
+     * @param string $json SQL exclusion in JSON format
+     * @param string $use OPTIONAL Name of the database defined as a new connection instance
+     * @return array Returns an array with the number of rows affected by delete operation
      * 
      * */
     public static function delete($json, $use = null)
@@ -846,12 +846,11 @@ class PDO4You
     }
 
     /**
-     * Método que retorna o ID do último registro inserido ou o valor de sequência
-     * Base de dados como: MS SQL Server, PostgreSQL, entre outros, fazem uso da variável de sequência
-     * Exemplos: users, users_id_seq, table_seq, (...)
+     * Method that returns the ID of the last inserted row or sequence value
+     * Database such as MS SQL Server, PostgreSQL, among others, they make use variable sequence
      * 
      * @access public static
-     * @param string $sequence Nome da variável de sequência solicitado em algumas base de dados
+     * @param string $sequence Name of the variable sequence requested for some database
      * @return array
      * 
      * */
@@ -885,7 +884,7 @@ class PDO4You
     }
 
     /**
-     * Método que retorna o número de linhas afetadas pelo último CRUD (INSERT, SELECT, UPDATE ou DELETE)
+     * Method that returns the number of rows affected by the last CRUD (INSERT, SELECT, UPDATE, or DELETE)
      * 
      * @access public static
      * @param void
@@ -900,10 +899,10 @@ class PDO4You
     }
 
     /**
-     * Método que converte uma string no formato JSON para Array 
+     * Method that converts a string in JSON format for Array
      * 
      * @access private static
-     * @param string $json String no formato de notação JSON
+     * @param string $json String in JSON notation format
      * @return array
      * 
      * */
@@ -940,7 +939,7 @@ class PDO4You
     }
 
     /**
-     * Método do MySQL para exibir as tabelas da base de dados
+     * MySQL method to display the tables of the database
      * 
      * @access private static
      * @param void 
@@ -974,10 +973,10 @@ class PDO4You
     }
 
     /**
-     * Método do PostgreSQL para exibir as tabelas da base de dados
+     * PostgreSQL method to display the tables of the database
      * 
      * @access private static
-     * @param string $schema Nome do esquema
+     * @param string $schema Name of scheme
      * @return void
      * 
      * */
@@ -1006,7 +1005,7 @@ class PDO4You
     }
 
     /**
-     * Método do CUBRID para exibir as tabelas da base de dados
+     * CUBRID method to display the tables of the database
      * 
      * @access private static
      * @param void 
@@ -1040,10 +1039,10 @@ class PDO4You
     }
 
     /**
-     * Método do Microsoft SQL Server para as tabelas da base de dados
+     * Microsoft SQL Server method to display the tables of the database
      * 
      * @access private static
-     * @param string $schema Nome do esquema
+     * @param string $schema Name of scheme
      * @return void
      * 
      * */
@@ -1072,10 +1071,10 @@ class PDO4You
     }
 
     /**
-     * Método que exibe e descreve as tabelas da base de dados
+     * Method which shows and describes the tables of the database
      * 
      * @access public static
-     * @param string $schema Nome do esquema utilizado
+     * @param string $schema Name of the schema used
      * @return void
      * 
      * */
@@ -1103,11 +1102,11 @@ class PDO4You
     }
 
     /**
-     * Dispara um aviso via e-mail para o administrador do sistema
+     * Triggers a warning via email to the system administrator
      * 
      * @access public static
-     * @param string $text Mensagem de erro
-     * @param object $error Objeto do diagnóstico de erros
+     * @param string $text Error Message
+     * @param object $error Object of diagnostic of the errors
      * @return void
      * 
      * */
@@ -1115,16 +1114,16 @@ class PDO4You
     {
         $head = 'MIME-Version: 1.1' . PHP_EOL;
         $head.= 'Content-type: text/html; charset=utf-8' . PHP_EOL;
-        $head.= 'From: Alerta automático <firealert@noreply.com>' . PHP_EOL;
-        $head.= 'Return-Path: Alerta automático <firealert@noreply.com>' . PHP_EOL;
-        $body = 'Diagnóstico do alerta:<br /><br /><b>' . $error->getMessage() . '</b><br />' . $error->getFile() . ' : ' . $error->getLine();
+        $head.= 'From: Automatic Alert <firealert@noreply.com>' . PHP_EOL;
+        $head.= 'Return-Path: Automatic Alert <firealert@noreply.com>' . PHP_EOL;
+        $body = 'Diagnostic alert:<br /><br /><b>' . $error->getMessage() . '</b><br />' . $error->getFile() . ' : ' . $error->getLine();
 
         if (PDO4YOU_FIREALERT)
             @mail(PDO4YOU_WEBMASTER, $text, $body, $head);
     }
 
     /**
-     * Assim como o construtor, tornamos __clone privado para impedir a clonagem da instância da classe
+     * As the builder, we make __clone private to prevent cloning instance of the class
      * 
      * @access private
      * @param void
