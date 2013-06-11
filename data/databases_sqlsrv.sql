@@ -26,7 +26,7 @@ CREATE TABLE books (
 	PRIMARY KEY (id)
 );
 
-INSERT INTO books VALUES
+INSERT INTO books VALUES 
 (1, 'Nam pharetra nisi eu leo consectetur semper.', 'Giovanni Ramos', NULL);
 
 CREATE SEQUENCE books_id_seq START WITH 1 INCREMENT BY 1;

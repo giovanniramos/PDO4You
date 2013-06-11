@@ -31,7 +31,8 @@ class DemoCRUD
         switch ($driver) {
             case 'mysql':
             case 'pgsql':
-            case 'cubrid': $sql = 'SELECT * FROM books LIMIT 2;';
+            case 'cubrid':
+            case 'sqlite': $sql = 'SELECT * FROM books LIMIT 2;';
                 break;
             case 'mssql':
             case 'dblib':
@@ -73,7 +74,7 @@ class DemoCRUD
         // SQL query
         $sql = $this->sql();
 
-        // Execute the SQL query in a "default instance" and store the result
+        // Execute the SQL query in a instance and store the result
         $result_1 = PDO4You::select($sql);
         $result_2 = PDO4You::selectNum($sql);
         $result_3 = PDO4You::selectObj($sql);

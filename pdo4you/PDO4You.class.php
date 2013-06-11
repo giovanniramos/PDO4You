@@ -148,18 +148,19 @@ class PDO4You
             } catch (PDOException $e) {
                 $error = self::getErrorInfo($e);
 
-                if ($e->getMessage() == 'could not find driver' || $e->getMessage() == 'invalid data source name')
+                if ($e->getMessage() == 'could not find driver' || $e->getMessage() == 'invalid data source name') {
                     throw new PDOException(self::$exception['unrecognized']);
-                elseif ($error['code'] == '2005')
+                } elseif ($error['code'] == '2005') {
                     throw new PDOException(self::$exception['code-2005']);
-                elseif ($error['code'] == '2002')
+                } elseif ($error['code'] == '2002') {
                     throw new PDOException(self::$exception['code-2002']);
-                elseif ($error['code'] == '1044')
+                } elseif ($error['code'] == '1044') {
                     throw new PDOException(sprintf(self::$exception['code-1044'], $user));
-                elseif ($error['code'] == '1045')
+                } elseif ($error['code'] == '1045') {
                     throw new PDOException(sprintf(self::$exception['code-1045'], $user, $pass));
-                else
+                } else {
                     throw $e;
+                }
             }
         } catch (PDOException $e) {
             self::stackTrace($e);
@@ -176,7 +177,7 @@ class PDO4You
      * */
     public static function setInstance($alias)
     {
-        self::$instance = self::getHandle($alias == null ? 'default' : $alias);
+        self::$instance = self::getHandle($alias == null ? 'standard' : $alias);
     }
 
     /**
@@ -192,21 +193,21 @@ class PDO4You
      * @throws Exception Throws an exception in case of connection failures
      * 
      * */
-    public static function getInstance($alias = 'default', $type = null, $user = null, $pass = null, Array $option = null)
+    public static function getInstance($alias = 'standard', $type = null, $user = null, $pass = null, Array $option = null)
     {
         try {
             try {
-                if (!array_key_exists($alias, self::$handle)):
-                    if ($alias == 'default'):
+                if (!array_key_exists($alias, self::$handle)) {
+                    if ($alias == 'standard') {
                         $dir = dirname(__FILE__);
                         $file = $dir . '/PDO4You.settings.ini';
 
-                        if (file_exists($file)):
-                            if (is_readable($file)):
+                        if (file_exists($file)) {
+                            if (is_readable($file)) {
                                 $datafile = parse_ini_file_advanced($file);
 
-                                if (isset($datafile['adapter'])):
-                                    if (PDO4YOU_ADAPTER == 'vcap'):
+                                if (isset($datafile['adapter'])) {
+                                    if (PDO4YOU_ADAPTER == 'vcap') {
                                         $json = json_decode(getenv("VCAP_SERVICES"), true);
                                         $data = $datafile['adapter']['vcap'];
                                         $part = preg_split('~[|]~', $data['vcap']);
@@ -218,7 +219,7 @@ class PDO4You
                                         $user = isset($conf['username']) ? $conf['username'] : null;
                                         $pass = isset($conf['password']) ? $conf['password'] : null;
                                         $base = isset($conf['name']) ? $conf['name'] : null;
-                                    else:
+                                    } else {
                                         $part = preg_split('~[.]~', preg_replace('~[\s]{1,}~', null, PDO4YOU_ADAPTER));
                                         $conf = count($part) == 2 ? @$datafile['adapter'][$part[0]][$part[1]] : @$datafile['adapter'][$part[0]];
 
@@ -228,20 +229,20 @@ class PDO4You
                                         $user = isset($conf['user']) ? $conf['user'] : null;
                                         $pass = isset($conf['pass']) ? $conf['pass'] : null;
                                         $base = isset($conf['base']) ? $conf['base'] : null;
-                                    endif;
-                                else:
+                                    }
+                                } else {
                                     exit('The settings for existing databases, were not configured in the <strong>PDO4You.settings.ini</strong>.');
-                                endif;
-                            else:
+                                }
+                            } else {
                                 exit('The <strong>PDO4You.settings.ini</strong> file cannot be read.');
-                            endif;
-                        else:
+                            }
+                        } else {
                             exit('The <strong>PDO4You.settings.ini</strong> file could not be found in directory:<br /> ' . $dir);
-                        endif;
-                    endif;
+                        }
+                    }
 
                     $type = strtolower($type);
-                    switch ($type):
+                    switch ($type) {
                         case 'mysql':
                         case 'pgsql':
                         case 'cubrid': $driver = $type . ':' . (!(empty($base)) ? 'dbname=' . $base . ';' : null) . 'host=' . $host . ';port=' . $port . ';';
@@ -252,22 +253,25 @@ class PDO4You
                             break;
                         case 'sqlsrv': $driver = 'sqlsrv:' . (!(empty($base)) ? 'database=' . $base . ';' : null) . 'server=' . $host . ';';
                             break;
-                        case 'oracle': $driver = 'oci:' . (!(empty($base)) ? 'dbname=' . $base . ';' : null);
+                        case 'oracle': $driver = 'oci:' . (!(empty($base)) ? 'dbname=' . $base : null);
+                            break;
+                        case 'sqlite': $driver = 'sqlite:' . (!(empty($base)) ? $base : null);
                             break;
                         default: $driver = $type;
-                    endswitch;
+                    }
 
                     $option = !is_null($option) ? $option : array(PDO::ATTR_PERSISTENT => self::$persistent, PDO::ATTR_CASE => PDO::CASE_LOWER);
 
                     self::singleton($alias, $driver, $user, $pass, $option);
-                endif;
+                }
             } catch (PDOException $e) {
                 $error = self::getErrorInfo($e);
 
-                if ($error['state'] == '42000')
+                if ($error['state'] == '42000') {
                     throw new PDOException(self::$exception['no-database']);
-                else
+                } else {
                     throw $e;
+                }
             }
         } catch (PDOException $e) {
             self::stackTrace($e);
@@ -406,20 +410,23 @@ class PDO4You
      * */
     public static function getErrorInfo(Exception $e, $debug = false)
     {
-        if (defined(PDO4YOU_WEBMASTER))
+        if (defined(PDO4YOU_WEBMASTER)) {
             self::fireAlert(self::$exception['critical-error'], $e);
+        }
 
         $info = null;
         $errorInfo = null;
         $message = $e->getMessage();
 
         preg_match('~SQLSTATE[[]([[:alnum:]]{1,})[]]:?\s[[]?([[:digit:]]{1,})?[]]?\s?(.+)~', $message, $errorInfo);
+
         $info['state'] = isset($errorInfo[1]) ? $errorInfo[1] : null;
         $info['code'] = isset($errorInfo[2]) ? $errorInfo[2] : null;
         $info['message'] = isset($errorInfo[3]) ? $errorInfo[3] : null;
 
-        if ($debug)
+        if ($debug) {
             echo '<pre>', print_r($info), '</pre>';
+        }
 
         return $info;
     }
@@ -448,16 +455,16 @@ class PDO4You
     public static function getServerInfo()
     {
         try {
-            if (self::$instance instanceof PDO):
+            if (self::$instance instanceof PDO) {
                 self::setStyle();
 
                 $driver = self::getDriver();
 
-                $info = ($driver == 'mssql') ? 'not available' : self::$instance->getAttribute(PDO::ATTR_SERVER_INFO);
+                $info = ($driver == 'sqlite' || $driver == 'mssql') ? 'not available' : self::$instance->getAttribute(PDO::ATTR_SERVER_INFO);
                 echo '<h7>Server Information - ', is_array($info) ? implode(', ', $info) : $info, '</h7>';
-            else:
+            } else {
                 throw new PDOException(self::$exception['no-instance']);
-            endif;
+            }
         } catch (PDOException $e) {
             self::stackTrace($e);
         }
@@ -474,14 +481,14 @@ class PDO4You
     public static function getAvailableDrivers()
     {
         try {
-            if (self::$instance instanceof PDO):
+            if (self::$instance instanceof PDO) {
                 self::setStyle();
 
                 $info = self::$instance->getAvailableDrivers();
                 echo '<h7>Available Drivers: ', implode(', ', $info), '</h7>';
-            else:
+            } else {
                 throw new PDOException(self::$exception['no-instance']);
-            endif;
+            }
         } catch (PDOException $e) {
             self::stackTrace($e);
         }
@@ -497,20 +504,20 @@ class PDO4You
      * */
     public static function setStyle()
     {
-        $css = '<style type="text/css">';
-        $css.= 'body,.code    { background:#FAFAFA; font:normal 12px/1.7em Bitstream Vera Sans Mono,Courier New,Monospace; margin:0; padding:0; }';
-        $css.= '#pdo4you h2   { display:block; color:#000; background:#FFF; font-size:20px; margin:0; padding:10px; border-bottom:solid 1px #999; }';
-        $css.= '#pdo4you h7   { display:block; color:#FFF; background:#000; font-size:12px; margin:0; padding:2px 5px; }';
-        $css.= '.pdo4you      { margin:8px; padding:0; }';
-        $css.= '.code         { font:inherit; background:#EFEFEF; border:solid 1px #DDD; border-right-color:#BBB; border-bottom:none; margin:10px 10px 0 10px; overflow:auto; }';
-        $css.= '.trace,.debug { background:#FFF; border:solid 1px #BBB; border-left-color:#DDD; border-top:none; margin:0 10px 15px 10px; }';
-        $css.= '.trace div    { clear:both; }';
-        $css.= '.debug        { padding:5px; }';
-        $css.= '.number       { color:#AAA; background:#EFEFEF; min-width:40px; padding:0 5px; margin-right:5px; float:left; text-align:right; cursor:default; }';
-        $css.= '.highlight    { background:#FFC; }';
-        $css.= '</style>';
+        $style = '<style type="text/css">';
+        $style.= 'body,.code    { background:#FAFAFA; font:normal 12px/1.7em Bitstream Vera Sans Mono,Courier New,Monospace; margin:0; padding:0; }';
+        $style.= '#pdo4you h2   { display:block; color:#000; background:#FFF; font-size:20px; margin:0; padding:10px; border-bottom:solid 1px #999; }';
+        $style.= '#pdo4you h7   { display:block; color:#FFF; background:#000; font-size:12px; margin:0; padding:2px 5px; }';
+        $style.= '.pdo4you      { margin:8px; padding:0; }';
+        $style.= '.code         { font:inherit; background:#EFEFEF; border:solid 1px #DDD; border-right-color:#BBB; border-bottom:none; margin:10px 10px 0 10px; overflow:auto; }';
+        $style.= '.trace,.debug { background:#FFF; border:solid 1px #BBB; border-left-color:#DDD; border-top:none; margin:0 10px 15px 10px; }';
+        $style.= '.trace div    { clear:both; }';
+        $style.= '.debug        { padding:5px; }';
+        $style.= '.number       { color:#AAA; background:#EFEFEF; min-width:40px; padding:0 5px; margin-right:5px; float:left; text-align:right; cursor:default; }';
+        $style.= '.highlight    { background:#FFC; }';
+        $style.= '</style>';
 
-        print $css;
+        print $style;
     }
 
     /**
@@ -528,26 +535,32 @@ class PDO4You
             $jarr['timer'] = '15000';
             $jarr['status'] = 'no';
             $jarr['info']['stack'][$i = 0] = '<strong>Exception:</strong> ' . $e->getMessage() . '<br />';
-            foreach ($e->getTrace() as $t)
+            foreach ($e->getTrace() as $t) {
                 $jarr['info']['stack'][$i] = '#' . $i++ . ' ' . basename($t['file']) . ':' . $t['line'];
+            }
+
             $json = json_encode($jarr, true);
 
             exit($json);
         } else {
             self::setStyle();
 
-            if (!PDO4YOU_FIREDEBUG)
+            if (!PDO4YOU_FIREDEBUG) {
                 return;
+            }
 
-            if (defined(PDO4YOU_WEBMASTER))
+            if (defined(PDO4YOU_WEBMASTER)) {
                 self::fireAlert(self::$exception['critical-error'], $e);
+            }
 
             $count = 0;
             $stack = '<div class="pdo4you">';
             $stack.= '<strong>Exception:</strong> ' . $e->getMessage() . '<br />';
-            if ($show)
-                foreach ($e->getTrace() as $t)
+            if ($show) {
+                foreach ($e->getTrace() as $t) {
                     $stack.= '<div class="code">&nbsp;<strong>#' . $count++ . '</strong> ' . $t['file'] . ':' . $t['line'] . '</div><div class="code trace">' . self::highlightSource($t['file'], $t['line']) . '</div>';
+                }
+            }
             $stack.= '</div>';
 
             exit($stack);
@@ -573,14 +586,15 @@ class PDO4You
         $lines = array_slice(explode('<br />', $lines), $offset, $showLines);
 
         $count = count($lines);
-        for ($i = $count; $i < $showLines; $i++)
+        for ($i = $count; $i < $showLines; $i++) {
             array_push($lines, '&nbsp;');
+        }
 
         $trace = null;
-        foreach ($lines as $line):
+        foreach ($lines as $line) {
             $offset++;
             $trace.= '<div' . ($offset == $lineNumber ? ' class="highlight"' : '') . '><span class="number">' . sprintf('%4d', $offset) . '</span>' . $line . '</div>';
-        endforeach;
+        }
 
         return $trace;
     }
@@ -598,39 +612,40 @@ class PDO4You
      * */
     private static function selectRecords($query, $type, $use = null, $count = true)
     {
-        $total = null;
-
         try {
-            if (is_null($query))
+            if (is_null($query)) {
                 throw new PDOException(self::$exception['no-argument-sql']);
+            }
 
-            if (!is_null($use))
+            if (!is_null($use)) {
                 self::setInstance($use);
+            }
 
             $pdo = self::$instance;
-            if (!$pdo instanceof PDO):
+            if (!$pdo instanceof PDO) {
                 throw new PDOException(self::$exception['no-instance']);
-            else:
+            } else {
                 $pre = $pdo->prepare($query);
                 $pre->execute();
 
-                switch ($type):
-                    case 'num' : $result = $pre->fetchAll(PDO::FETCH_NUM);
+                switch ($type) {
+                    case 'num': $result = $pre->fetchAll(PDO::FETCH_NUM);
                         break;
-                    case 'obj' : $result = $pre->fetchAll(PDO::FETCH_OBJ);
+                    case 'obj': $result = $pre->fetchAll(PDO::FETCH_OBJ);
                         break;
-                    case 'all' : $result = $pre->fetchAll(PDO::FETCH_BOTH);
+                    case 'all': $result = $pre->fetchAll(PDO::FETCH_BOTH);
                         break;
-                    default : $result = $pre->fetchAll(PDO::FETCH_ASSOC);
-                endswitch;
+                    default: $result = $pre->fetchAll(PDO::FETCH_ASSOC);
+                }
 
-                $total = $pre->rowCount();
-                if ($count)
-                    self::$rowCount = $total;
-            endif;
+                if ($count) {
+                    self::$rowCount = count($result);
+                }
+            }
         } catch (PDOException $e) {
             self::stackTrace($e);
         }
+
         $pdo = null;
 
         return $result;
@@ -707,83 +722,94 @@ class PDO4You
         $total = null;
 
         try {
-            if (is_null($json))
+            if (is_null($json)) {
                 throw new PDOException(self::$exception['no-instruction-json']);
+            }
 
-            if (!is_null($use))
+            if (!is_null($use)) {
                 self::setInstance($use);
+            }
 
             $pdo = self::$instance;
-            if (!$pdo instanceof PDO):
+            if (!$pdo instanceof PDO) {
                 throw new PDOException(self::$exception['no-instance']);
-            else:
+            } else {
                 $pdo->beginTransaction();
 
                 try {
                     $jarr = self::parseJSON($json);
 
-                    if ($type == 'insert'):
-                        foreach ($jarr['query'] as $field):
+                    if ($type == 'insert') {
+                        foreach ($jarr['query'] as $field) {
                             $sql = 'INSERT INTO ' . $field['table'] . ' (';
-                            foreach ($field['values'] as $key => $val)
+                            foreach ($field['values'] as $key => $val) {
                                 $sql.= ', ' . $key;
+                            }
                             $sql = preg_replace('/, /', '', $sql, 1);
                             $sql.= ') VALUES (';
-                            foreach ($field['values'] as $key => $val)
+                            foreach ($field['values'] as $key => $val) {
                                 $sql.= ', ?';
+                            }
                             $sql.= ')';
                             $sql = preg_replace('/\(, /', '(', $sql, 1);
 
                             $pre = $pdo->prepare($sql);
                             $k = 1;
-                            foreach ($field['values'] as $key => $val)
+                            foreach ($field['values'] as $key => $val) {
                                 $pre->bindValue($k++, $val);
+                            }
 
                             $pre->execute();
                             $total[] = $pre->rowCount();
-                        endforeach;
-                    endif;
+                        }
+                    }
 
-                    if ($type == 'update'):
-                        foreach ($jarr['query'] as $index => $field):
+                    if ($type == 'update') {
+                        foreach ($jarr['query'] as $index => $field) {
                             $sql = 'UPDATE ' . $field['table'] . ' SET ';
-                            foreach ($field['values'] as $key => $val)
+                            foreach ($field['values'] as $key => $val) {
                                 $sql.= ', ' . $key . ' = ?';
+                            }
                             $sql = preg_replace('/, /', '', $sql, 1);
                             $sql.= ' WHERE ';
-                            foreach ($field['where'] as $key => $val)
+                            foreach ($field['where'] as $key => $val) {
                                 $sql.= ' AND ' . $key . ' = ?';
+                            }
                             $sql = preg_replace('/ AND /', '', $sql, 1);
 
                             $pre = $pdo->prepare($sql);
                             $k = 1;
-                            foreach ($field['values'] as $key => $val)
+                            foreach ($field['values'] as $key => $val) {
                                 $pre->bindValue($k++, $val);
+                            }
                             $j = $k;
-                            foreach ($field['where'] as $key => $val)
+                            foreach ($field['where'] as $key => $val) {
                                 $pre->bindValue($j++, $val);
+                            }
 
                             $pre->execute();
                             $total[] = $pre->rowCount();
-                        endforeach;
-                    endif;
+                        }
+                    }
 
-                    if ($type == 'delete'):
-                        foreach ($jarr['query'] as $index => $field):
+                    if ($type == 'delete') {
+                        foreach ($jarr['query'] as $index => $field) {
                             $sql = 'DELETE FROM ' . $field['table'] . ' WHERE ';
-                            foreach ($field['where'] as $key => $val)
+                            foreach ($field['where'] as $key => $val) {
                                 $sql.= ' AND ' . $key . ' = ?';
+                            }
                             $sql = preg_replace('/ AND /', '', $sql, 1);
 
                             $pre = $pdo->prepare($sql);
                             $k = 1;
-                            foreach ($field['where'] as $key => $val)
+                            foreach ($field['where'] as $key => $val) {
                                 $pre->bindValue($k++, $val);
+                            }
 
                             $pre->execute();
                             $total[] = $pre->rowCount();
-                        endforeach;
-                    endif;
+                        }
+                    }
 
                     self::$rowCount = $total;
 
@@ -793,11 +819,12 @@ class PDO4You
 
                     throw $e;
                 }
-            endif;
+            }
         } catch (PDOException $e) {
             self::getErrorInfo($e);
             self::stackTrace($e);
         }
+
         $pdo = null;
 
         return $total;
@@ -859,9 +886,11 @@ class PDO4You
         try {
             $driver = self::getDriver();
 
-            switch ($driver):
-                case 'cubrid':
-                case 'mysql': $sql = "SELECT LAST_INSERT_ID() AS lastId;";
+            switch ($driver) {
+                case 'mysql':
+                case 'cubrid': $sql = "SELECT LAST_INSERT_ID() AS lastId;";
+                    break;
+                case 'sqlite': $sql = "SELECT LAST_INSERT_ROWID() AS lastId;";
                     break;
                 case 'pgsql': $sql = "SELECT " . ($sequence ? "CURRVAL('" . $sequence . "')" : "LASTVAL()") . " AS lastId;";
                     break;
@@ -873,7 +902,7 @@ class PDO4You
                     break;
                 default:
                     throw new PDOException(self::$exception['not-implemented'] . ' PDO4You::lastId()');
-            endswitch;
+            }
 
             self::$lastId = self::selectRecords($sql, null, null, false);
 
@@ -893,7 +922,7 @@ class PDO4You
      * */
     public static function rowCount()
     {
-        $count = (is_array(self::$rowCount)) ? countWhere(self::$rowCount, '>', 0) : self::$rowCount;
+        $count = is_array(self::$rowCount) ? countWhere(self::$rowCount, '>', 0) : self::$rowCount;
 
         return $count;
     }
@@ -914,8 +943,8 @@ class PDO4You
             $json = preg_replace('~(,?[{,])[[:space:]]*([^"]+?)[[:space:]]*:~', '$1"$2":', $json);
             $jarr = json_decode($json, true);
 
-            if (version_compare(PHP_VERSION, '5.3.5') >= 0):
-                switch (json_last_error()):
+            if (version_compare(PHP_VERSION, '5.3.5') >= 0) {
+                switch (json_last_error()) {
                     case JSON_ERROR_DEPTH: $json_error = self::$exception['json-error-depth'];
                         break;
                     case JSON_ERROR_STATE_MISMATCH: $json_error = self::$exception['json-error-state-mismatch'];
@@ -924,13 +953,14 @@ class PDO4You
                         break;
                     case JSON_ERROR_SYNTAX: $json_error = self::$exception['json-error-syntax'];
                         break;
-                endswitch;
-            else:
+                }
+            } else {
                 $json_error = self::$exception['json-error-syntax'];
-            endif;
+            }
 
-            if (is_null($jarr))
+            if (is_null($jarr)) {
                 throw new PDOException($json_error);
+            }
 
             return $jarr;
         } catch (PDOException $e) {
@@ -956,17 +986,18 @@ class PDO4You
 
         $html = '<div class="pdo4you">';
         $html.= '<strong>Database:</strong> ' . $database . ' &nbsp;<strong>Total of tables:</strong> ' . count($tables) . '<br />';
-        foreach ($tables as $k1 => $v1):
-            foreach ($v1 as $k2 => $v2):
+        foreach ($tables as $k1 => $v1) {
+            foreach ($v1 as $k2 => $v2) {
                 $desc = self::select("DESCRIBE " . $database . "." . $v2);
 
                 $html.= '<div class="code">&nbsp;<strong>Table</strong>: ' . $v2 . '</div>';
                 $html.= '<div class="code trace">';
-                foreach ($desc as $k3 => $v3)
+                foreach ($desc as $k3 => $v3) {
                     $html.= '<div class="number">&nbsp;</div> <span><i style="color:#00B;">' . $v3['field'] . "</i> - " . strtoupper($v3['type']) . '</span><br />';
+                }
                 $html.= '</div>';
-            endforeach;
-        endforeach;
+            }
+        }
         $html.= '</div>';
 
         echo $html;
@@ -990,15 +1021,16 @@ class PDO4You
 
         $html = '<div class="pdo4you">';
         $html.= '<strong>Database:</strong> ' . $database . ' &nbsp;<strong>Total of tables:</strong> ' . count($tables) . '<br />';
-        foreach ($tables as $k1 => $v1):
+        foreach ($tables as $k1 => $v1) {
             $desc = self::select("SELECT d.datname, n.nspname, a.attname AS field, t.typname AS type FROM pg_database d, pg_namespace n, pg_class c, pg_attribute a, pg_type t WHERE d.datname = '" . $v1['table_catalog'] . "' AND n.nspname = '" . $v1['table_schema'] . "' AND c.relname = '" . $v1['table_name'] . "' AND c.relnamespace = n.oid AND a.attnum > 0 AND not a.attisdropped AND a.attrelid = c.oid AND a.atttypid = t.oid ORDER BY a.attnum");
 
             $html.= '<div class="code">&nbsp;<strong>Table</strong>: ' . $v1['table_schema'] . '.' . $v1['table_name'] . '</div>';
             $html.= '<div class="code trace">';
-            foreach ($desc as $k2 => $v2)
+            foreach ($desc as $k2 => $v2) {
                 $html.= '<div class="number">&nbsp;</div> <span><i style="color:#00B;">' . $v2['field'] . "</i> - " . strtoupper($v2['type']) . '</span><br />';
+            }
             $html.= '</div>';
-        endforeach;
+        }
         $html.= '</div>';
 
         echo $html;
@@ -1022,17 +1054,18 @@ class PDO4You
 
         $html = '<div class="pdo4you">';
         $html.= '<strong>Database:</strong> ' . $database . ' &nbsp;<strong>Total of tables:</strong> ' . count($tables) . '<br />';
-        foreach ($tables as $k1 => $v1):
-            foreach ($v1 as $k2 => $v2):
+        foreach ($tables as $k1 => $v1) {
+            foreach ($v1 as $k2 => $v2) {
                 $desc = self::select("SHOW COLUMNS IN " . $v2);
 
                 $html.= '<div class="code">&nbsp;<strong>Table</strong>: ' . $v2 . '</div>';
                 $html.= '<div class="code trace">';
-                foreach ($desc as $k3 => $v3)
+                foreach ($desc as $k3 => $v3) {
                     $html.= '<div class="number">&nbsp;</div> <span><i style="color:#00B;">' . $v3['Field'] . "</i> - " . strtoupper($v3['Type']) . '</span><br />';
+                }
                 $html.= '</div>';
-            endforeach;
-        endforeach;
+            }
+        }
         $html.= '</div>';
 
         echo $html;
@@ -1056,15 +1089,16 @@ class PDO4You
 
         $html = '<div class="pdo4you">';
         $html.= '<strong>Database:</strong> ' . $database . ' &nbsp;<strong>Total of tables:</strong> ' . count($tables) . '<br />';
-        foreach ($tables as $k1 => $v1):
+        foreach ($tables as $k1 => $v1) {
             $desc = self::select("SELECT table_catalog, table_schema, table_name, column_name AS field, data_type AS type FROM information_schema.columns WHERE table_catalog = '" . $v1['table_catalog'] . "' AND table_name = '" . $v1['table_name'] . "';");
 
             $html.= '<div class="code">&nbsp;<strong>Table</strong>: ' . $v1['table_schema'] . '.' . $v1['table_name'] . '</div>';
             $html.= '<div class="code trace">';
-            foreach ($desc as $k2 => $v2)
+            foreach ($desc as $k2 => $v2) {
                 $html.= '<div class="number">&nbsp;</div> <span><i style="color:#00B;">' . $v2['field'] . "</i> - " . strtoupper($v2['type']) . '</span><br />';
+            }
             $html.= '</div>';
-        endforeach;
+        }
         $html.= '</div>';
 
         echo $html;
@@ -1083,7 +1117,7 @@ class PDO4You
         try {
             $driver = self::getDriver();
 
-            switch ($driver):
+            switch ($driver) {
                 case 'mysql': self::showMySqlTables();
                     break;
                 case 'pgsql': self::showPgSqlTables($schema);
@@ -1095,7 +1129,7 @@ class PDO4You
                     break;
                 default:
                     throw new PDOException(self::$exception['not-implemented'] . ' PDO4You::showTables()');
-            endswitch;
+            }
         } catch (PDOException $e) {
             self::stackTrace($e, false);
         }
@@ -1118,8 +1152,9 @@ class PDO4You
         $head.= 'Return-Path: Automatic Alert <firealert@noreply.com>' . PHP_EOL;
         $body = 'Diagnostic alert:<br /><br /><b>' . $error->getMessage() . '</b><br />' . $error->getFile() . ' : ' . $error->getLine();
 
-        if (PDO4YOU_FIREALERT)
+        if (PDO4YOU_FIREALERT) {
             @mail(PDO4YOU_WEBMASTER, $text, $body, $head);
+        }
     }
 
     /**
@@ -1138,11 +1173,13 @@ class PDO4You
     public static function beginTransaction()
     {
         try {
-            if (!self::$instance instanceof PDO)
+            if (!self::$instance instanceof PDO) {
                 throw new PDOException(self::$exception['no-instance']);
+            }
 
-            if (!self::$instance->beginTransaction())
+            if (!self::$instance->beginTransaction()) {
                 throw new PDOException(current(self::$instance->errorInfo()) . ' ' . end(self::$instance->errorInfo()));
+            }
         } catch (PDOException $e) {
             self::stackTrace($e);
         }
@@ -1151,11 +1188,13 @@ class PDO4You
     public static function commit()
     {
         try {
-            if (!self::$instance instanceof PDO)
+            if (!self::$instance instanceof PDO) {
                 throw new PDOException(self::$exception['no-instance']);
+            }
 
-            if (!self::$instance->commit())
+            if (!self::$instance->commit()) {
                 throw new PDOException(current(self::$instance->errorInfo()) . ' ' . end(self::$instance->errorInfo()));
+            }
         } catch (PDOException $e) {
             self::stackTrace($e);
         }
@@ -1164,13 +1203,15 @@ class PDO4You
     public static function exec($query)
     {
         try {
-            if (!self::$instance instanceof PDO)
+            if (!self::$instance instanceof PDO) {
                 throw new PDOException(self::$exception['no-instance']);
+            }
 
-            if (!self::$instance->exec($query))
+            if (!self::$instance->exec($query)) {
                 throw new PDOException(current(self::$instance->errorInfo()) . ' ' . end(self::$instance->errorInfo()));
-            else
+            } else {
                 return self::$instance->exec($query);
+            }
         } catch (PDOException $e) {
             self::stackTrace($e);
         }
@@ -1179,11 +1220,13 @@ class PDO4You
     public static function query($query)
     {
         try {
-            if (!self::$instance instanceof PDO)
+            if (!self::$instance instanceof PDO) {
                 throw new PDOException(self::$exception['no-instance']);
+            }
 
-            if (!self::$instance->query($query))
+            if (!self::$instance->query($query)) {
                 throw new PDOException(current(self::$instance->errorInfo()) . ' ' . end(self::$instance->errorInfo()));
+            }
         } catch (PDOException $e) {
             self::stackTrace($e);
         }
@@ -1192,11 +1235,13 @@ class PDO4You
     public static function rollBack()
     {
         try {
-            if (!self::$instance instanceof PDO)
+            if (!self::$instance instanceof PDO) {
                 throw new PDOException(self::$exception['no-instance']);
+            }
 
-            if (!self::$instance->rollBack())
+            if (!self::$instance->rollBack()) {
                 throw new PDOException(current(self::$instance->errorInfo()) . ' ' . end(self::$instance->errorInfo()));
+            }
         } catch (PDOException $e) {
             self::stackTrace($e);
         }
@@ -1205,11 +1250,13 @@ class PDO4You
     public static function lastInsertId($name)
     {
         try {
-            if (!self::$instance instanceof PDO)
+            if (!self::$instance instanceof PDO) {
                 throw new PDOException(self::$exception['no-instance']);
+            }
 
-            if (!self::$instance->lastInsertId($name))
+            if (!self::$instance->lastInsertId($name)) {
                 throw new PDOException(current(self::$instance->errorInfo()) . ' ' . end(self::$instance->errorInfo()));
+            }
         } catch (PDOException $e) {
             self::stackTrace($e);
         }
