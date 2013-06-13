@@ -13,7 +13,7 @@
  * @link https://github.com/giovanniramos/PDO4You
  * 
  * */
-class PDO4You
+class PDO4You extends PDO4You_pagination
 {
     /**
      * Stores the name of the server machine on which the database resides
@@ -605,12 +605,12 @@ class PDO4You
      * @access private static
      * @param string $query SQL query
      * @param string $type Return type of the query
-     * @param string $use Alias of the database instantiated
+     * @param string $use Pseudonym of a connection instance
      * @param boolean $count OPTIONAL Counts the number of rows affected
      * @return mixed
      * 
      * */
-    private static function selectRecords($query, $type, $use = null, $count = true)
+    private static function selectRecords($query, $type, $use, $count = true)
     {
         try {
             if (is_null($query)) {
@@ -625,6 +625,16 @@ class PDO4You
             if (!$pdo instanceof PDO) {
                 throw new PDOException(self::$exception['no-instance']);
             } else {
+                if (PDO4You_pagination::$paging == true) {
+                    $pre = $pdo->prepare($query);
+                    $pre->execute();
+                    $result = $pre->fetchAll(PDO::FETCH_ASSOC);
+
+                    PDO4You_pagination::setTotalPagingRecords($result);
+
+                    $query = PDO4You_pagination::setLimit($query);
+                }
+
                 $pre = $pdo->prepare($query);
                 $pre->execute();
 
@@ -655,8 +665,8 @@ class PDO4You
      * Method referring to the fetchAll(PDO::FETCH_NUM)
      * 
      * @access public static
-     * @param string $sql Instruction SQL of query of the records
-     * @param object $use OPTIONAL Name of the database defined as a new connection instance
+     * @param string $sql Instruction SQL of query of records
+     * @param string $use OPTIONAL Name of the database defined as a new connection instance
      * @return array Returns an array indexed by column number
      * 
      * */
@@ -669,8 +679,8 @@ class PDO4You
      * Method referring to the fetchAll(PDO::FETCH_OBJ)
      * 
      * @access public static
-     * @param string $sql Instruction SQL of query of the records
-     * @param object $use OPTIONAL Name of the database defined as a new connection instance
+     * @param string $sql Instruction SQL of query of records
+     * @param string $use OPTIONAL Name of the database defined as a new connection instance
      * @return object Returns an object with column names as properties
      * 
      * */
@@ -683,8 +693,8 @@ class PDO4You
      * Method referring to the fetchAll(PDO::FETCH_BOTH)
      * 
      * @access public static
-     * @param string $sql Instruction SQL of query of the records
-     * @param object $use OPTIONAL Name of the database defined as a new connection instance
+     * @param string $sql Instruction SQL of query of records
+     * @param string $use OPTIONAL Name of the database defined as a new connection instance
      * @return array Returns an array indexed both by the name as the column number
      * 
      * */
@@ -697,8 +707,8 @@ class PDO4You
      * Method referring to the fetchAll(PDO::FETCH_ASSOC)
      * 
      * @access public static
-     * @param string $sql Instruction SQL of query of the records
-     * @param object $use OPTIONAL Name of the database defined as a new connection instance
+     * @param string $sql Instruction SQL of query of records
+     * @param string $use OPTIONAL Name of the database defined as a new connection instance
      * @return array Returns an array indexed by column name
      * 
      * */
@@ -713,11 +723,11 @@ class PDO4You
      * @access private static
      * @param string $json SQL statement in JSON format
      * @param string $type Type of operation in the database
-     * @param string $use Name of the database instantiated
+     * @param string $use OPTIONAL Name of the database defined as a new connection instance
      * @return array Returns an array with the number of rows affected by the operation
      * 
      * */
-    private static function executeQuery($json, $type, $use = null)
+    private static function executeQuery($json, $type, $use)
     {
         $total = null;
 

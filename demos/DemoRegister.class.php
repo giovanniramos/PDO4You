@@ -78,7 +78,12 @@ class DemoRegister
      * */
     public function getTotalRecords()
     {
-        return is_array(self::$hasRecords) ? count(self::$hasRecords) : 0;
+        // Returns the total number of records in paging 
+        if (PDO4You_pagination::$paging == true) {
+            return PDO4You_pagination::getTotalPagingRecords();
+        } else {
+            return count(self::$hasRecords);
+        }
     }
 
     /**
@@ -95,9 +100,9 @@ class DemoRegister
             }
 
             return $html;
+        } else {
+            return '<div>No record at the time.</div>';
         }
-
-        return '<div>No record at the time.</div>';
     }
 
 }
