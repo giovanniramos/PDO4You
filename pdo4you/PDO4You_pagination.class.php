@@ -57,7 +57,7 @@ class PDO4You_pagination
      * 
      * @param string $sql SQL query
      */
-    public function setLimit($sql)
+    public static function setLimit($sql)
     {
         $limit = self::$limit;
         $offset = (self::$page - 1) * $limit;
@@ -105,7 +105,7 @@ class PDO4You_pagination
      * @param string $slug Slug for the page link
      * @return null|string
      */
-    public static function getPaginacao($link = null, $slug = null)
+    public static function getPagination($link = null, $slug = null)
     {
         if (self::$paging == false) {
             return null;

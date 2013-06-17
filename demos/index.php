@@ -38,8 +38,8 @@ PDO4You::getServerInfo();
                 <a href="?p=demo1.php">ALL SELECTS</a> <b>&sect;</b>
                 <a href="?p=demo2.php">INSERT/UPDATE/DELETE</a> <b>&sect;</b>
                 <a href="?p=demo3.php">MULTIPLE INSTANCES</a> <b>&sect;</b>
-                <a href="?p=demo4.php">READ RECORDS</a> <b>&sect;</b>
                 <a href="?p=demo5.php">HTML EDITOR</a> <b>&sect;</b>
+                <a href="?p=demo4.php">READ RECORDS</a> <b>&sect;</b>
                 <a href="?p=demo6.php">PAGINATION</a>
             </h2>
             <?php

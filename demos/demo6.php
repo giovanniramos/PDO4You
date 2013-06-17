@@ -39,5 +39,5 @@ echo '<h2><a href=".">DEMOS</a> &rsaquo; READ RECORDS</h2>';
 
     <?php echo $instance->getRecords(); ?>
 
-    <?php echo PDO4You::getPaginacao(); ?>
+    <?php echo PDO4You::getPagination(); ?>
 </div>
