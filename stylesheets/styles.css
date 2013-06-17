@@ -1,5 +1,5 @@
 /*
-Leap Day for Github Pages
+Leap Day for GitHub Pages
 by Matt Graham
 */
 @font-face {
@@ -508,32 +508,16 @@ body {
   font-weight: 300;
   margin: 0px;
   padding: 0px 0 20px 0px;
-  /*background: url(../images/body-background.png) #eae6d1;*/
-  background: #f5f5f5;
-  
-  font: 12px Helvetica Neue, Helvetica, Arial, sans-serif;
-  color: #777777;
-  line-height: 21px;
-  margin: 15px 0 0 0;
-  padding: 0;
+  background: url(../images/body-background.png) #eae6d1;
 }
 
 h1, h2, h3, h4, h5, h6 {
-/*  color: #333;*/
-  color: #000;
+  color: #333;
   margin: 0 0 10px;
 }
 
 p, ul, ol, table, pre, dl {
   margin: 0 0 20px;
-  
-  color: #777777;
-  font: 12px/21px Helvetica,Helvetica,Arial,sans-serif;
-  padding: 0;
-}
-
-section ul, section ol {
-  padding: 0 0 0 40px;
 }
 
 h1, h2, h3 {
@@ -546,13 +530,11 @@ h1 {
 
 h2 {
   font-size: 24px;
-/*  color: #393939;*/
-  color: #000;
+  color: #393939;
 }
 
 h3, h4, h5, h6 {
-/*  color: #666666;*/
-  color: #000;
+  color: #666666;
 }
 
 h3 {
@@ -617,10 +599,7 @@ code {
 
 pre {
   padding: 8px 15px;
-/*  background: #333333;*/
-  background: #222;
-  font-family: Consolas, "Lucida Sans", Monaco, Bitstream Vera Sans Mono, Lucida Console, Terminal;
-  font-size: 13px;
+  background: #333333;
   -moz-border-radius: 3px;
   -webkit-border-radius: 3px;
   -o-border-radius: 3px;
@@ -680,8 +659,7 @@ header {
   right: 0;
   width: 100%;
   text-align: center;
-  /*background: url(../images/background.png) #4276b6;*/
-  background: #1f1f1f;
+  background: url(../images/background.png) #4276b6;
   -moz-box-shadow: 1px 0px 2px rgba(0, 0, 0, 0.75);
   -webkit-box-shadow: 1px 0px 2px rgba(0, 0, 0, 0.75);
   -o-box-shadow: 1px 0px 2px rgba(0, 0, 0, 0.75);
@@ -693,8 +671,7 @@ header {
 header h1 {
   font: 40px/48px "Copse", "Helvetica Neue", Helvetica, Arial, sans-serif;
   color: #f3f3f3;
-  /*text-shadow: 0px 2px 0px #235796;*/
-  text-shadow: 0px 2px 0px #111111;
+  text-shadow: 0px 2px 0px #235796;
   margin: 0px;
   white-space: nowrap;
   overflow: hidden;
@@ -717,8 +694,7 @@ header p {
   margin-right: -382px;
   position: fixed;
   top: 115px;
-  /*background: #ffcc00;*/
-  background: #fbe365;
+  background: #ffcc00;
   border: 1px solid #f0b500;
   -moz-box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.25);
   -webkit-box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.25);
@@ -821,8 +797,7 @@ section {
   margin: 20px 0;
   margin-top: 190px;
   position: relative;
-/*  background: #fbfbfb;*/
-  background: #fff;
+  background: #fbfbfb;
   -moz-border-radius: 3px;
   -webkit-border-radius: 3px;
   -o-border-radius: 3px;
