@@ -950,7 +950,9 @@ class PDO4You extends PDO4You_pagination
         try {
             $json = mb_detect_encoding($json, 'UTF-8', true) ? $json : utf8_encode($json);
             $json = preg_replace('~[\n\r\t]~', '', $json);
-            $json = preg_replace('~(,?[{,])[[:space:]]*([^"]+?)[[:space:]]*:~', '$1"$2":', $json);
+            $json = preg_replace('~(,?[{,])[\s]*([^"]+?)[\s]*:~', '$1"$2":', $json);
+            $json = preg_replace('~(<\/?)(\w+)([^>]*>)~e', "'$1$2$3'", $json);
+            $json = preg_replace('~(?<!:|:\s)"(?=[^"]*?"(( [^:])|([,}])))~', '\\"', $json);
             $jarr = json_decode($json, true);
 
             if (version_compare(PHP_VERSION, '5.3.5') >= 0) {
