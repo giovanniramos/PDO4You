@@ -23,7 +23,7 @@ class DemoCRUD
      * Returns the SQL query to the appropriate driver
      * 
      * */
-    public function sql()
+    private function sql()
     {
         // Retrieves the name of the current driver
         $driver = PDO4You::getDriver();
@@ -61,7 +61,7 @@ class DemoCRUD
         $result = PDO4You::select($sql, $instance);
 
         echo '<div class="code">&nbsp;<strong>Demo with PDO4You::select()</strong></div>';
-        echo '<div class="code debug">PDO4You::select(' . $this->getSQL($sql) . ', ' . $this->getInstance() . ');' . $this->getResult($result, false) . '</div>';
+        echo '<div class="code debug">PDO4You::select(' . $this->getSQL($sql) . ', ' . $this->getInstance() . ');' . $this->getResult($result) . '</div>';
     }
 
     /**
@@ -81,16 +81,16 @@ class DemoCRUD
         $result_4 = PDO4You::selectAll($sql);
 
         echo '<div class="code">&nbsp;<strong>Demo with PDO4You::select()</strong></div>';
-        echo '<div class="code debug">PDO4You::select(' . $this->getSQL($sql) . ', ' . $this->getInstance() . ');' . $this->getResult($result_1, false) . '</div>';
+        echo '<div class="code debug">PDO4You::select(' . $this->getSQL($sql) . ', ' . $this->getInstance() . ');' . $this->getResult($result_1) . '</div>';
 
         echo '<div class="code">&nbsp;<strong>Demo with PDO4You::selectNum()</strong></div>';
-        echo '<div class="code debug">PDO4You::selectNum(' . $this->getSQL($sql) . ', ' . $this->getInstance() . ');' . $this->getResult($result_2, false) . '</div>';
+        echo '<div class="code debug">PDO4You::selectNum(' . $this->getSQL($sql) . ', ' . $this->getInstance() . ');' . $this->getResult($result_2) . '</div>';
 
         echo '<div class="code">&nbsp;<strong>Demo with PDO4You::selectObj()</strong></div>';
-        echo '<div class="code debug">PDO4You::selectObj(' . $this->getSQL($sql) . ', ' . $this->getInstance() . ');' . $this->getResult($result_3, false) . '</div>';
+        echo '<div class="code debug">PDO4You::selectObj(' . $this->getSQL($sql) . ', ' . $this->getInstance() . ');' . $this->getResult($result_3) . '</div>';
 
         echo '<div class="code">&nbsp;<strong>Demo with PDO4You::selectAll()</strong></div>';
-        echo '<div class="code debug">PDO4You::selectAll(' . $this->getSQL($sql) . ', ' . $this->getInstance() . ');' . $this->getResult($result_4, false) . '</div>';
+        echo '<div class="code debug">PDO4You::selectAll(' . $this->getSQL($sql) . ', ' . $this->getInstance() . ');' . $this->getResult($result_4) . '</div>';
     }
 
     /**
@@ -152,7 +152,7 @@ class DemoCRUD
         $result = PDO4You::update($json);
 
         echo '<div class="code">&nbsp;<strong>Demo with PDO4You::update()</strong></div>';
-        echo '<div class="code debug">PDO4You::update(' . $this->getSQL($json) . ', ' . $this->getInstance() . ');' . $this->getResult($result, false) . '</div>';
+        echo '<div class="code debug">PDO4You::update(' . $this->getSQL($json) . ', ' . $this->getInstance() . ');' . $this->getResult($result) . '</div>';
     }
 
     /**
@@ -184,7 +184,7 @@ class DemoCRUD
         $result = PDO4You::delete($json);
 
         echo '<div class="code">&nbsp;<strong>Demo with PDO4You::delete()</strong></div>';
-        echo '<div class="code debug">PDO4You::delete(' . $this->getSQL($json) . ', ' . $this->getInstance() . ');' . $this->getResult($result, false) . '</div>';
+        echo '<div class="code debug">PDO4You::delete(' . $this->getSQL($json) . ', ' . $this->getInstance() . ');' . $this->getResult($result) . '</div>';
     }
 
     /**
@@ -208,7 +208,7 @@ class DemoCRUD
         $result = PDO4You::update($json);
 
         echo '<div class="code">&nbsp;<strong>Demo with PDO4You::update()</strong></div>';
-        echo '<div class="code debug">PDO4You::update(' . $this->getSQL($json) . ', ' . $this->getInstance() . ');' . $this->getResult($result, false) . '</div>';
+        echo '<div class="code debug">PDO4You::update(' . $this->getSQL($json) . ', ' . $this->getInstance() . ');' . $this->getResult($result) . '</div>';
     }
 
     /**
@@ -217,7 +217,7 @@ class DemoCRUD
      */
     private function getSQL($sql)
     {
-        return '"<strong style="color:green;">' . $sql . '</strong>"';
+        return '"<strong style="color:green;">' . htmlspecialchars($sql) . '</strong>"';
     }
 
     /**
@@ -235,7 +235,7 @@ class DemoCRUD
      */
     private function getResult($result, $show_lastid = false)
     {
-        $s = '<br /><br />- The code above will output: <pre style="color:blue;">' . print_r($result, true) . '</pre>';
+        $s = '<br /><br />- The code above will output: <pre style="color:blue;">' . print_r($this->sanitize($result), true) . '</pre>';
         $s.= 'Total records affected: <strong style="color:red;">' . PDO4You::rowCount() . '</strong>';
         $s.= ($show_lastid) ? '&nbsp;&nbsp;&nbsp;&nbsp;Id of the last iteration: <strong style="color:red;">' . PDO4You::lastId() . '</strong>' : null;
 
@@ -243,10 +243,31 @@ class DemoCRUD
     }
 
     /**
+     * Sanitizes the result
+     * 
+     */
+    function sanitize($data)
+    {
+        if (is_array($data)) {
+            foreach ($data as $key => $value) {
+                $data[$key] = $this->sanitize($value);
+            }
+        } elseif (is_object($data)) {
+            foreach ($data as $key => $value) {
+                $data->$key = $this->sanitize($value);
+            }
+        } elseif (is_string($data)) {
+            $data = htmlspecialchars($data, ENT_QUOTES, 'UTF-8');
+        }
+
+        return $data;
+    }
+
+    /**
      * Random name generator
      * 
      * */
-    public function genFakeName()
+    private function genFakeName()
     {
         $v = array("a", "e", "i", "o", "u");
         $c = array("b", "c", "d", "f", "g", "h", "j", "l", "m", "n", "p", "q", "r", "s", "t", "v", "x", "z");

@@ -2,6 +2,9 @@
 // Loading all files required to run the library PDO4You
 require_once('../bootstrap.php');
 
+// Example with Pagination
+echo '<h2><a href=".">DEMOS</a> &rsaquo; PAGINATION</h2>';
+
 // Enable pagination
 PDO4You::setPagination();
 
@@ -16,9 +19,6 @@ $instance = new DemoRegister;
 
 // Starting the main method
 $instance->init();
-
-// Example with Read Records
-echo '<h2><a href=".">DEMOS</a> &rsaquo; READ RECORDS</h2>';
 ?>
 
 <div class="pdo4you">

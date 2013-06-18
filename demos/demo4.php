@@ -2,14 +2,14 @@
 // Loading all files required to run the library PDO4You
 require_once('../bootstrap.php');
 
+// Example with Read Records
+echo '<h2><a href=".">DEMOS</a> &rsaquo; READ RECORDS</h2>';
+
 // Creating an instance
 $instance = new DemoRegister;
 
 // Starting the main method
 $instance->init();
-
-// Example with Read Records
-echo '<h2><a href=".">DEMOS</a> &rsaquo; READ RECORDS</h2>';
 ?>
 
 <div class="pdo4you">
