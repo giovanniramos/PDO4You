@@ -6,10 +6,14 @@ PDO4You
 ==================================================
 
 Esta classe é baseada no PDO, que é uma extensão do PHP que permite aos desenvolvedores criar um código portável, de modo a atender a maioria das bases de dados mais populares.
-Sendo o MySQL, PostgreSQL, Oracle, MS SQL Server, Sybase.
+Sendo o MySQL, PostgreSQL, SQLite, Oracle, Microsoft SQL Server, Sybase.
 
-E agora a partir da versão 2.6, também oferecendo suporte ao banco de dados CUBRID.
-O mais novo sistema de gerenciamento de banco de dados altamente otimizado para aplicações Web.
+Alternativamente foi adicionado na versão 3.0 suporte para o banco de dados MariaDB.
+MariaDB está sendo considerado o futuro substituto livre do MySQL.
+Mais informações em: http://bit.ly/MARIADB
+
+E desde a versão 2.6 também tem prestado suporte para o banco de dados CUBRID.
+Um sistema de gerenciamento de banco de dados altamente otimizado para aplicações Web.
 Mais informações em: http://bit.ly/CUBRID
 
 O PDO4You provê uma camada abstrata de acesso a dados, que independentemente de qual base de dados você esteja utilizando, sempre poderá usar os mesmos métodos para emitir consultas e buscar dados.
@@ -19,6 +23,7 @@ O padrão de projeto Singleton foi adotado para otimizar a conexão, garantindo 
 
 **Vantagens em sua utilização:**
 * Abstração de conexão
+* Conexão a banco de dados via VCAP_SERVICES
 * Proteção contra SQL Injection
 * Métodos CRUD pré-definidos
 * Múltiplas conexões por base de dados
@@ -68,7 +73,7 @@ Para habilitar algum driver não instalado, localize o arquivo php.ini, abra e p
 
 ~~~ html
 ;extension=php_pdo.dll                  ; Esta DLL não será necessária a partir do PHP 5.3
-extension=php_pdo_mysql.dll             ; MySQL 3.x/4.x/5.x
+extension=php_pdo_mysql.dll             ; MySQL 3.x/4.x/5.x / MariaDB
 extension=php_pdo_pgsql.dll             ; PostgreSQL
 ;extension=php_pdo_cubrid.dll           ; CUBRID
 ;extension=php_pdo_oci.dll              ; Oracle Call Interface
@@ -103,7 +108,7 @@ PDO4You::getInstance(); // Os dados de acesso já foram definidos no arquivo de 
 
 // Conectando-se a outras fontes de dados através de um DSN
 
-# MySQL
+# MySQL / MariaDB
 PDO4You::getInstance('nome_da_instancia', 'mysql:host=localhost;dbname=pdo4you;port=3306', 'usuario', 'senha');
 
 # PostgreSQL

@@ -8,7 +8,7 @@
  * @author Giovanni Ramos <giovannilauro@gmail.com>
  * @copyright 2010-2013, Giovanni Ramos
  * @since 2010-09-07
- * @version 2.9
+ * @version 3.0
  * @license http://opensource.org/licenses/gpl-3.0.html GNU Public License
  * @link https://github.com/giovanniramos/PDO4You
  * 
@@ -243,6 +243,8 @@ class PDO4You extends PDO4You_pagination
 
                     $type = strtolower($type);
                     switch ($type) {
+                        case 'maria': $driver = 'mysql:' . (!(empty($base)) ? 'dbname=' . $base . ';' : null) . 'host=' . $host . ';port=' . $port . ';';
+                            break;
                         case 'mysql':
                         case 'pgsql':
                         case 'cubrid': $driver = $type . ':' . (!(empty($base)) ? 'dbname=' . $base . ';' : null) . 'host=' . $host . ';port=' . $port . ';';

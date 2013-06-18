@@ -6,10 +6,14 @@ PDO4You
 ==================================================
 
 This class is based on the PDO, which is a PHP extension that allows developers to create portable code, so as to cater for most popular databases.
-Being MySQL, PostgreSQL, Oracle, MS SQL Server, Sybase.
+Being MySQL, PostgreSQL, SQLite, Oracle, Microsoft SQL Server, Sybase.
 
-And now as of version 2.6, also offering support the CUBRID database.
-The newest management system database highly optimized for Web applications.
+Alternatively been added in version 3.0 support for the MariaDB database.
+MariaDB is being considered as the future replacement free of MySQL.
+More information at: http://bit.ly/MARIADB
+
+And since version 2.6 also has provided support for the CUBRID database.
+A management system database highly optimized for Web applications.
 More information at: http://bit.ly/CUBRID
 
 The PDO4You provides an abstraction layer for data access, that regardless of which database you're using, you can always use the same methods to issue queries and fetch data.
@@ -19,6 +23,7 @@ The Singleton design pattern was adopted to optimize the connection, ensuring a 
 
 **Advantages in use:**
 * Abstraction of connection
+* Connection to database via VCAP_SERVICES
 * Protection against SQL Injection
 * CRUD methods predefined
 * Multiple database connections
@@ -68,7 +73,7 @@ To enable any driver not installed, locate the php.ini file, open it and look fo
 
 ~~~ html
 ;extension=php_pdo.dll                  ; This DLL is not required as of PHP 5.3
-extension=php_pdo_mysql.dll             ; MySQL 3.x/4.x/5.x
+extension=php_pdo_mysql.dll             ; MySQL 3.x/4.x/5.x / MariaDB
 extension=php_pdo_pgsql.dll             ; PostgreSQL
 ;extension=php_pdo_cubrid.dll           ; CUBRID
 ;extension=php_pdo_oci.dll              ; Oracle Call Interface
@@ -103,7 +108,7 @@ PDO4You::getInstance(); // The data access have been defined in the initial conf
 
 // Connecting to other data sources through a DSN
 
-# MySQL
+# MySQL / MariaDB
 PDO4You::getInstance('instance_name', 'mysql:host=localhost;dbname=pdo4you;port=3306', 'user', 'pass');
 
 # PostgreSQL
