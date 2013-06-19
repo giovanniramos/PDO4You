@@ -43,10 +43,14 @@
 <a name="pdo4you" class="anchor" href="#pdo4you"><span class="octicon octicon-link"></span></a>PDO4You</h1>
 
 <p>This class is based on the PDO, which is a PHP extension that allows developers to create portable code, so as to cater for most popular databases.
-Being MySQL, PostgreSQL, Oracle, MS SQL Server, Sybase.</p>
+Being MySQL, PostgreSQL, SQLite, Oracle, Microsoft SQL Server, Sybase.</p>
 
-<p>And now as of version 2.6, also offering support the CUBRID database.
-The newest management system database highly optimized for Web applications.
+<p>Alternatively been added in version 3.0 support for the MariaDB database.
+MariaDB is being considered as the future replacement free of MySQL.
+More information at: <a href="http://bit.ly/MARIADB">http://bit.ly/MARIADB</a></p>
+
+<p>And since version 2.6 also has provided support for the CUBRID database.
+A management system database highly optimized for Web applications.
 More information at: <a href="http://bit.ly/CUBRID">http://bit.ly/CUBRID</a></p>
 
 <p>The PDO4You provides an abstraction layer for data access, that regardless of which database you're using, you can always use the same methods to issue queries and fetch data.</p>
@@ -57,6 +61,7 @@ More information at: <a href="http://bit.ly/CUBRID">http://bit.ly/CUBRID</a></p>
 
 <ul>
 <li>Abstraction of connection</li>
+<li>Connection to database via VCAP_SERVICES</li>
 <li>Protection against SQL Injection</li>
 <li>CRUD methods predefined</li>
 <li>Multiple database connections</li>
@@ -98,7 +103,7 @@ Supported drivers will be displayed on the screen.</p>
 <p>To enable any driver not installed, locate the php.ini file, open it and look for "extension=" without quotes, then uncomment the following lines according to your database preferably, removing the beginning of each line the "semicolon" and after changes, restart the server.</p>
 
 <div class="highlight"><pre>;extension=php_pdo.dll                  ; This DLL is not required as of PHP 5.3
-extension=php_pdo_mysql.dll             ; MySQL 3.x/4.x/5.x
+extension=php_pdo_mysql.dll             ; MySQL 3.x/4.x/5.x / MariaDB
 extension=php_pdo_pgsql.dll             ; PostgreSQL
 ;extension=php_pdo_cubrid.dll           ; CUBRID
 ;extension=php_pdo_oci.dll              ; Oracle Call Interface
@@ -131,7 +136,7 @@ MS SQL Server (Old version): <a href="http://bit.ly/PDO_MSSQL-PHP53">http://bit.
 
 <span class="c1">// Connecting to other data sources through a DSN</span>
 
-<span class="c1"># MySQL</span>
+<span class="c1"># MySQL / MariaDB</span>
 <span class="nx">PDO4You</span><span class="o">::</span><span class="na">getInstance</span><span class="p">(</span><span class="s1">'instance_name'</span><span class="p">,</span> <span class="s1">'mysql:host=localhost;dbname=pdo4you;port=3306'</span><span class="p">,</span> <span class="s1">'user'</span><span class="p">,</span> <span class="s1">'pass'</span><span class="p">);</span>
 
 <span class="c1"># PostgreSQL</span>
