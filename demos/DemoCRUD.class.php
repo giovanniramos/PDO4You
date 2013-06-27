@@ -49,7 +49,6 @@ class DemoCRUD
 
     /**
      * Default Select
-     * Usage: PDO4You::select()
      * 
      * */
     public function select($instance = null)
@@ -60,13 +59,12 @@ class DemoCRUD
         // Execute the SQL query in a "pre-defined instance" and store the result
         $result = PDO4You::select($sql, $instance);
 
-        echo '<div class="code">&nbsp;<strong>Demo with PDO4You::select()</strong></div>';
-        echo '<div class="code debug">PDO4You::select(' . $this->getSQL($sql) . ', ' . $this->getInstance() . ');' . $this->getResult($result) . '</div>';
+        echo '<div class="code title">Demo with the method PDO4You::select()</div>';
+        echo '<div class="code debug">PDO4You::select(' . $this->getQuery($sql) . '); ' . $this->getResult($result) . '</div>';
     }
 
     /**
      * All Selects
-     * Usage: PDO4You::select(), PDO4You::selectNum(), PDO4You::selectObj(), PDO4You::selectAll()
      * 
      * */
     public function allSelects()
@@ -80,54 +78,54 @@ class DemoCRUD
         $result_3 = PDO4You::selectObj($sql);
         $result_4 = PDO4You::selectAll($sql);
 
-        echo '<div class="code">&nbsp;<strong>Demo with PDO4You::select()</strong></div>';
-        echo '<div class="code debug">PDO4You::select(' . $this->getSQL($sql) . ', ' . $this->getInstance() . ');' . $this->getResult($result_1) . '</div>';
+        echo '<div class="code title">Demo with the method PDO4You::select()</div>';
+        echo '<div class="code debug">PDO4You::select(' . $this->getQuery($sql) . '); ' . $this->getResult($result_1) . '</div>';
 
-        echo '<div class="code">&nbsp;<strong>Demo with PDO4You::selectNum()</strong></div>';
-        echo '<div class="code debug">PDO4You::selectNum(' . $this->getSQL($sql) . ', ' . $this->getInstance() . ');' . $this->getResult($result_2) . '</div>';
+        echo '<div class="code title">Demo with the method PDO4You::selectNum()</div>';
+        echo '<div class="code debug">PDO4You::selectNum(' . $this->getQuery($sql) . '); ' . $this->getResult($result_2) . '</div>';
 
-        echo '<div class="code">&nbsp;<strong>Demo with PDO4You::selectObj()</strong></div>';
-        echo '<div class="code debug">PDO4You::selectObj(' . $this->getSQL($sql) . ', ' . $this->getInstance() . ');' . $this->getResult($result_3) . '</div>';
+        echo '<div class="code title">Demo with the method PDO4You::selectObj()</div>';
+        echo '<div class="code debug">PDO4You::selectObj(' . $this->getQuery($sql) . '); ' . $this->getResult($result_3) . '</div>';
 
-        echo '<div class="code">&nbsp;<strong>Demo with PDO4You::selectAll()</strong></div>';
-        echo '<div class="code debug">PDO4You::selectAll(' . $this->getSQL($sql) . ', ' . $this->getInstance() . ');' . $this->getResult($result_4) . '</div>';
+        echo '<div class="code title">Demo with the method PDO4You::selectAll()</div>';
+        echo '<div class="code debug">PDO4You::selectAll(' . $this->getQuery($sql) . '); ' . $this->getResult($result_4) . '</div>';
     }
 
     /**
      * Multiple Insert
-     * Usage: PDO4You::insert()
      * 
      * */
     public function multipleInsert()
     {
+        // SQL insertion in JSON format
         $json = '
-        { query : [
+        insert: [
             {
                 table: "users" ,
                 values: { firstname: "' . $this->genFakeName() . '", lastname: "' . $this->genFakeName() . '" }
             },{
                 table: "users" ,
                 values: { firstname: "' . $this->genFakeName() . '", lastname: "' . $this->genFakeName() . '" }
-            }
-        ] }
+            } 
+        ]
 		';
 
         // Store the result
-        $result = PDO4You::insert($json);
+        $result = PDO4You::execute($json);
 
-        echo '<div class="code">&nbsp;<strong>Demo with PDO4You::insert()</strong></div>';
-        echo '<div class="code debug">PDO4You::insert(' . $this->getSQL($json) . ', ' . $this->getInstance() . ');' . $this->getResult($result, true) . '</div>';
+        echo '<div class="code title">Demo with the method PDO4You::execute() using the INSERT command</div>';
+        echo '<div class="code debug">PDO4You::execute(' . $this->getQuery($json) . '); ' . $this->getResult($result, true) . '</div>';
     }
 
     /**
      * Multiple Update
-     * Usage: PDO4You::update()
      * 
      * */
     public function multipleUpdate()
     {
+        // SQL update in JSON format
         $json = '
-        { query : [
+        update: [
             {
                 table: "users" ,
                 values: { mail: "' . strtolower($this->genFakeName()) . '@gmail.com" } ,
@@ -144,26 +142,26 @@ class DemoCRUD
                 table: "users" ,
                 values: { mail: "' . strtolower($this->genFakeName()) . '@gmail.com" } ,
                 where: { id: 1 }
-            }
-        ] }
-		';
+            } 
+        ]
+        ';
 
         // Store the result
-        $result = PDO4You::update($json);
+        $result = PDO4You::execute($json);
 
-        echo '<div class="code">&nbsp;<strong>Demo with PDO4You::update()</strong></div>';
-        echo '<div class="code debug">PDO4You::update(' . $this->getSQL($json) . ', ' . $this->getInstance() . ');' . $this->getResult($result) . '</div>';
+        echo '<div class="code title">Demo with the method PDO4You::execute() using the UPDATE command</div>';
+        echo '<div class="code debug">PDO4You::execute(' . $this->getQuery($json) . '); ' . $this->getResult($result) . '</div>';
     }
 
     /**
      * Multiple Delete
-     * Usage: PDO4You::delete()
      * 
      * */
     public function multipleDelete()
     {
+        // SQL delete in JSON format
         $json = '
-        { query : [
+        delete: [
             {
                 table: "users" , 
                 where: { id: 4 }
@@ -176,57 +174,43 @@ class DemoCRUD
             },{
                 table: "books" ,
                 where: { id: 10 }
-            }
-        ] }
-		';
+            } 
+        ]
+        ';
 
         // Store the result
-        $result = PDO4You::delete($json);
+        $result = PDO4You::execute($json);
 
-        echo '<div class="code">&nbsp;<strong>Demo with PDO4You::delete()</strong></div>';
-        echo '<div class="code debug">PDO4You::delete(' . $this->getSQL($json) . ', ' . $this->getInstance() . ');' . $this->getResult($result) . '</div>';
+        echo '<div class="code title">Demo with the method PDO4You::execute() using the DELETE command</div>';
+        echo '<div class="code debug">PDO4You::execute(' . $this->getQuery($json) . '); ' . $this->getResult($result) . '</div>';
     }
 
     /**
      * Update Where
-     * Usage: PDO4You::update()
      * 
      * */
     public function updateWhere($s, $i)
     {
-        $json = '
-        { query : [
-            {
-                table: "books" ,
-                values: { description: "' . $s . '" } ,
-                where: { id: ' . $i . ' }
-            }
-        ] }
-		';
+        // SQL update in JSON format
+        $json = ' query: [ { table: "books" , values: { description: "' . $s . '" } , where: { id: ' . $i . ' } } ] ';
 
         // Store the result
         $result = PDO4You::update($json);
 
-        echo '<div class="code">&nbsp;<strong>Demo with PDO4You::update()</strong></div>';
-        echo '<div class="code debug">PDO4You::update(' . $this->getSQL($json) . ', ' . $this->getInstance() . ');' . $this->getResult($result) . '</div>';
+        echo '<div class="code title">Demo with the old method PDO4You::update()</div>';
+        echo '<div class="code debug">PDO4You::update(' . $this->getQuery($json) . '); ' . $this->getResult($result) . '</div>';
     }
 
     /**
      * Format the Query
      * 
      */
-    private function getSQL($sql)
+    private function getQuery($sql)
     {
-        return '"<strong style="color:green;">' . htmlspecialchars($sql) . '</strong>"';
-    }
+        $x = '<strong style="color:green;">' . htmlspecialchars($sql) . '</strong>';
+        $y = '<strong style="color:red;">' . PDO4You::getConnection() . '</strong>';
 
-    /**
-     * Format the Instance of Connection
-     * 
-     */
-    private function getInstance()
-    {
-        return '"<strong style="color:red;">' . PDO4You::getConnection() . '</strong>"';
+        return '"' . $x . '", "' . $y . '"';
     }
 
     /**
@@ -235,9 +219,9 @@ class DemoCRUD
      */
     private function getResult($result, $show_lastid = false)
     {
-        $s = '<br /><br />- The code above will output: <pre style="color:blue;">' . print_r($this->sanitize($result), true) . '</pre>';
+        $s = '<br /><br /> - The code above will output: <pre style="color:blue;">' . print_r($this->sanitize($result), true) . '</pre>';
         $s.= 'Total records affected: <strong style="color:red;">' . PDO4You::rowCount() . '</strong>';
-        $s.= ($show_lastid) ? '&nbsp;&nbsp;&nbsp;&nbsp;Id of the last iteration: <strong style="color:red;">' . PDO4You::lastId() . '</strong>' : null;
+        $s.= ($show_lastid) ? '&nbsp;&nbsp; Id of the last iteration: <strong style="color:red;">' . PDO4You::lastId() . '</strong>' : null;
 
         return $s;
     }
@@ -246,7 +230,7 @@ class DemoCRUD
      * Sanitizes the result
      * 
      */
-    function sanitize($data)
+    private function sanitize($data)
     {
         if (is_array($data)) {
             foreach ($data as $key => $value) {

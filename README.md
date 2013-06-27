@@ -130,13 +130,13 @@ Create(INSERT), Retrieve(SELECT), Update(UPDATE) e Destroy(DELETE)
 
 Query statements:
 
-`PDO4You::select()`: returns an array indexed by column name. Equals to PDO::FETCH_ASSOC
+`PDO4You::select()`: returns an array indexed by column name.
 
-`PDO4You::selectNum()`: returns an array indexed by the numerical position of the column. Equals to PDO::FETCH_NUM
+`PDO4You::selectNum()`: returns an array indexed by the numerical position of the column.
 
-`PDO4You::selectObj()`: returns an object with column names as properties. Equals to PDO::FETCH_OBJ
+`PDO4You::selectObj()`: returns an object with column names as properties.
 
-`PDO4You::selectAll()`: returns an array indexed by name and numerical position of the column. Equals to PDO::FETCH_BOTH
+`PDO4You::selectAll()`: returns an array indexed by name and numerical position of the column.
 
 
 Below are examples of how to perform these operations.
@@ -164,16 +164,16 @@ PDO4You::select('SELECT * FROM books LIMIT 2', 'instance_name');
 // Query statement
 $sql = 'SELECT * FROM books LIMIT 2';
 
-// Selecting records with FETCH_ASSOC
+// Selecting records with PDO::FETCH_ASSOC
 $result = PDO4You::select($sql);
 
-// Selecting records with FETCH_NUM
+// Selecting records with PDO::FETCH_NUM
 $result = PDO4You::selectNum($sql);
 
-// Selecting records with FETCH_OBJ
+// Selecting records with PDO::FETCH_OBJ
 $result = PDO4You::selectObj($sql);
 
-// Selecting records with FETCH_BOTH
+// Selecting records with PDO::FETCH_BOTH
 $result = PDO4You::selectAll($sql);
 
 
@@ -193,6 +193,8 @@ echo '<pre><h3>Query Result:</h3> ' , print_r($result, true) , '</pre>';
 
 The methods insert(), update() and delete() of the PDO4You class, are nestled between transactions, these being beginTransaction() and commit(). This ensures that the system can roll back an unsuccessful operation and all changes made ​​since the start of a transaction.
 
+Was added in version 3.1 the execute() method, as an alternative to methods (insert, update and delete).
+
 A serious error in the execution results in invoke rollBack(), undoing the whole operation. Consequently one Exception is thrown, tracing the path of all classes and methods involved in the operation, speeding in an environment of "production", the debug process and thus ensuring the database of the risk becoming unstable.
 
 In MySQL, transaction support is available for InnoDB type tables.
@@ -210,20 +212,18 @@ Inserting a single row in the database
 ~~~ php
 <?php
 
-// Query
+// SQL insert in JSON format
 $json = '
-{
-	query : [
+	insert : [
 		{
 			table: "users" ,
 			values: { mail: "pdo4you@gmail.com" }
 		}
 	] 
-}
 ';
 
 // The $result variable stores as return of the method, an array with the number of rows affected by the insert operation
-$result = PDO4You::insert($json);
+$result = PDO4You::execute($json);
 
 // Just after insertion, use the method PDO4You::lastId() to get the ID of the last insert operation in the database
 $lastInsertId = PDO4You::lastId();
@@ -242,10 +242,9 @@ Inserting multiple records
 ~~~ php
 <?php
 
-// Query
+// SQL insert in JSON format
 $json = '
-{
-	query : [
+	insert : [
 		{
 			table: "users" ,
 			values: { mail: "mail_1@domain.com" }
@@ -257,11 +256,10 @@ $json = '
 			values: { title: "title", author: "author" }
 		}
 	] 
-}
 ';
 
 // The $result variable stores an array with the number of rows affected by the insert operation
-$result = PDO4You::insert($json);
+$result = PDO4You::execute($json);
 
 ?>
 ~~~ 
@@ -274,10 +272,9 @@ Updating multiple records
 ~~~ php
 <?php
 
-// Query
+// SQL update in JSON format
 $json = '
-{
-	query : [
+	update : [
 		{
 			table: "users" ,
 			values: { mail: "mail_1@domain.com" } ,
@@ -292,11 +289,10 @@ $json = '
 			where: { id: 1 }
 		}
 	] 
-}
 ';
 
 // The $result variable stores an array with the number of rows affected by the update operation
-$result = PDO4You::update($json);
+$result = PDO4You::execute($json);
 
 ?>
 ~~~ 
@@ -309,10 +305,9 @@ Deleting multiple records
 ~~~ php
 <?php
 
-// Query
+// SQL delete in JSON format
 $json = '
-{
-	query : [
+	delete : [
 		{
 			table: "users" ,
 			where: { id: 2 }
@@ -327,11 +322,10 @@ $json = '
 			where: { id: 10 }
 		}
 	] 
-}
 ';
 
 // The $result variable stores an array with the number of rows affected by the delete operation
-$result = PDO4You::delete($json);
+$result = PDO4You::execute($json);
 
 ?>
 ~~~ 

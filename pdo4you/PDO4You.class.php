@@ -8,7 +8,7 @@
  * @author Giovanni Ramos <giovannilauro@gmail.com>
  * @copyright 2010-2013, Giovanni Ramos
  * @since 2010-09-07
- * @version 3.0
+ * @version 3.1
  * @license http://opensource.org/licenses/gpl-3.0.html GNU Public License
  * @link https://github.com/giovanniramos/PDO4You
  * 
@@ -515,6 +515,8 @@ class PDO4You extends PDO4You_pagination
         $style.= '.trace,.debug { background:#FFF; border:solid 1px #BBB; border-left-color:#DDD; border-top:none; margin:0 10px 15px 10px; }';
         $style.= '.trace div    { clear:both; }';
         $style.= '.debug        { padding:5px; }';
+        $style.= '.title        { padding-left:6px; font-weight:bold; }';
+        $style.= '.title span   { font-weight:normal; }';
         $style.= '.number       { color:#AAA; background:#EFEFEF; min-width:40px; padding:0 5px; margin-right:5px; float:left; text-align:right; cursor:default; }';
         $style.= '.highlight    { background:#FFC; }';
         $style.= '</style>';
@@ -557,10 +559,10 @@ class PDO4You extends PDO4You_pagination
 
             $count = 0;
             $stack = '<div class="pdo4you">';
-            $stack.= '<strong>Exception:</strong> ' . $e->getMessage() . '<br />';
+            $stack.= '<strong>&nbsp;Exception:</strong> ' . $e->getMessage() . '<br />';
             if ($show) {
                 foreach ($e->getTrace() as $t) {
-                    $stack.= '<div class="code">&nbsp;<strong>#' . $count++ . '</strong> ' . $t['file'] . ':' . $t['line'] . '</div><div class="code trace">' . self::highlightSource($t['file'], $t['line']) . '</div>';
+                    $stack.= '<div class="code title">#' . $count++ . ' <span>' . $t['file'] . ':' . $t['line'] . '</span></div><div class="code trace">' . self::highlightSource($t['file'], $t['line']) . '</div>';
                 }
             }
             $stack.= '</div>';
@@ -843,6 +845,31 @@ class PDO4You extends PDO4You_pagination
     }
 
     /**
+     * Method to execute a statement in the database
+     * 
+     * @access public static
+     * @param string $json SQL statement in JSON format
+     * @param string $use OPTIONAL Name of the database defined as a new connection instance
+     * @return array Returns an array with the number of rows affected by type of operation
+     * 
+     * */
+    public static function execute($json, $use = null)
+    {
+        preg_match('~([[:alnum:]]+)[\s\n\r\t]{0,}?:~', $json, $match);
+        $command = $match[1];
+
+        try {
+            if (!in_array($command, array('insert', 'update', 'delete', 'query'))) {
+                throw new PDOException(self::$exception['not-implemented'] . ' PDO4You::' . $command . '()');
+            } else {
+                return self::executeQuery($json, $command, $use);
+            }
+        } catch (PDOException $e) {
+            self::stackTrace($e, false);
+        }
+    }
+
+    /**
      * Method to insert a new record in the database
      * 
      * @access public static
@@ -950,7 +977,15 @@ class PDO4You extends PDO4You_pagination
     private static function parseJSON($json)
     {
         try {
+            preg_match('~([[:alnum:]]+)[\s\n\r\t]{0,}?:~', $json, $match);
+            $command = $match[1];
+            if ($command != 'query') {
+                $json = preg_replace('~' . $command . '~', 'query', $json, 1);
+            }
+
             $json = mb_detect_encoding($json, 'UTF-8', true) ? $json : utf8_encode($json);
+            $json = preg_match('~[{]+~', substr($json, 0, 2)) ? $json : '{ ' . $json . ' }';
+            $json = preg_replace('~[\s]{2,}~', ' ', $json);
             $json = preg_replace('~[\n\r\t]~', '', $json);
             $json = preg_replace('~(,?[{,])[\s]*([^"]+?)[\s]*:~', '$1"$2":', $json);
             $json = preg_replace('~(<\/?)(\w+)([^>]*>)~e', "'$1$2$3'", $json);
@@ -1004,7 +1039,7 @@ class PDO4You extends PDO4You_pagination
             foreach ($v1 as $k2 => $v2) {
                 $desc = self::select("DESCRIBE " . $database . "." . $v2);
 
-                $html.= '<div class="code">&nbsp;<strong>Table</strong>: ' . $v2 . '</div>';
+                $html.= '<div class="code title">Table: <span>' . $v2 . '</span></div>';
                 $html.= '<div class="code trace">';
                 foreach ($desc as $k3 => $v3) {
                     $html.= '<div class="number">&nbsp;</div> <span><i style="color:#00B;">' . $v3['field'] . "</i> - " . strtoupper($v3['type']) . '</span><br />';
@@ -1038,7 +1073,7 @@ class PDO4You extends PDO4You_pagination
         foreach ($tables as $k1 => $v1) {
             $desc = self::select("SELECT d.datname, n.nspname, a.attname AS field, t.typname AS type FROM pg_database d, pg_namespace n, pg_class c, pg_attribute a, pg_type t WHERE d.datname = '" . $v1['table_catalog'] . "' AND n.nspname = '" . $v1['table_schema'] . "' AND c.relname = '" . $v1['table_name'] . "' AND c.relnamespace = n.oid AND a.attnum > 0 AND not a.attisdropped AND a.attrelid = c.oid AND a.atttypid = t.oid ORDER BY a.attnum");
 
-            $html.= '<div class="code">&nbsp;<strong>Table</strong>: ' . $v1['table_schema'] . '.' . $v1['table_name'] . '</div>';
+            $html.= '<div class="code title">Table: <span>' . $v1['table_schema'] . '.' . $v1['table_name'] . '</span></div>';
             $html.= '<div class="code trace">';
             foreach ($desc as $k2 => $v2) {
                 $html.= '<div class="number">&nbsp;</div> <span><i style="color:#00B;">' . $v2['field'] . "</i> - " . strtoupper($v2['type']) . '</span><br />';
@@ -1072,7 +1107,7 @@ class PDO4You extends PDO4You_pagination
             foreach ($v1 as $k2 => $v2) {
                 $desc = self::select("SHOW COLUMNS IN " . $v2);
 
-                $html.= '<div class="code">&nbsp;<strong>Table</strong>: ' . $v2 . '</div>';
+                $html.= '<div class="code title">Table: <span>' . $v2 . '</span></div>';
                 $html.= '<div class="code trace">';
                 foreach ($desc as $k3 => $v3) {
                     $html.= '<div class="number">&nbsp;</div> <span><i style="color:#00B;">' . $v3['Field'] . "</i> - " . strtoupper($v3['Type']) . '</span><br />';
@@ -1106,7 +1141,7 @@ class PDO4You extends PDO4You_pagination
         foreach ($tables as $k1 => $v1) {
             $desc = self::select("SELECT table_catalog, table_schema, table_name, column_name AS field, data_type AS type FROM information_schema.columns WHERE table_catalog = '" . $v1['table_catalog'] . "' AND table_name = '" . $v1['table_name'] . "';");
 
-            $html.= '<div class="code">&nbsp;<strong>Table</strong>: ' . $v1['table_schema'] . '.' . $v1['table_name'] . '</div>';
+            $html.= '<div class="code title">Table: <span>' . $v1['table_schema'] . '.' . $v1['table_name'] . '</span></div>';
             $html.= '<div class="code trace">';
             foreach ($desc as $k2 => $v2) {
                 $html.= '<div class="number">&nbsp;</div> <span><i style="color:#00B;">' . $v2['field'] . "</i> - " . strtoupper($v2['type']) . '</span><br />';

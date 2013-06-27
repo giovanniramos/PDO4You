@@ -130,13 +130,13 @@ Create(INSERT), Retrieve(SELECT), Update(UPDATE) e Destroy(DELETE)
 
 Instruções de consulta:
 
-`PDO4You::select()`: retorna um array indexado pelo nome da coluna. Equivale a PDO::FETCH_ASSOC
+`PDO4You::select()`: retorna um array indexado pelo nome da coluna.
 
-`PDO4You::selectNum()`: retorna um array indexado pela posição numérica da coluna. Equivale a PDO::FETCH_NUM
+`PDO4You::selectNum()`: retorna um array indexado pela posição numérica da coluna.
 
-`PDO4You::selectObj()`: retorna um objeto com nomes de coluna como propriedades. Equivale a PDO::FETCH_OBJ
+`PDO4You::selectObj()`: retorna um objeto com nomes de coluna como propriedades.
 
-`PDO4You::selectAll()`: retorna um array indexado pelo nome e pela posição numérica da coluna. Equivale a PDO::FETCH_BOTH
+`PDO4You::selectAll()`: retorna um array indexado pelo nome e pela posição numérica da coluna.
 
 
 Abaixo seguem exemplos de como realizar essas operações.
@@ -164,16 +164,16 @@ PDO4You::select('SELECT * FROM books LIMIT 2', 'nome_da_instancia');
 // Instrução de consulta
 $sql = 'SELECT * FROM books LIMIT 2';
 
-// Selecionando registros com FETCH_ASSOC
+// Selecionando registros com PDO::FETCH_ASSOC
 $result = PDO4You::select($sql);
 
-// Selecionando registros com FETCH_NUM
+// Selecionando registros com PDO::FETCH_NUM
 $result = PDO4You::selectNum($sql);
 
-// Selecionando registros com FETCH_OBJ
+// Selecionando registros com PDO::FETCH_OBJ
 $result = PDO4You::selectObj($sql);
 
-// Selecionando registros com FETCH_BOTH
+// Selecionando registros com PDO::FETCH_BOTH
 $result = PDO4You::selectAll($sql);
 
 
@@ -193,6 +193,8 @@ echo '<pre><h3>Resultado da consulta:</h3> ' , print_r($result, true) , '</pre>'
 
 Os métodos insert(), update() e delete() da classe PDO4You estão aninhadas entre transações, sendo elas beginTransaction() e commit(). Isto garante que o sistema consiga reverter uma operação mal sucedida e todas as alterações feitas desde o início de uma transação.
 
+Foi adicionado na versão 3.1 o método execute(), como uma alternativa aos métodos (insert, update and delete).
+
 Um erro grave na execução resulta em invocar o rollBack(), desfazendo toda a operação. Consequentemente será lançada uma Exception, rastreando o caminho de todas as classes e métodos envolvidos na operação, agilizando em ambiente de "produção" o processo de debug e com isso, assegurando a base de dados do risco de se tornar instável.
 
 No MySQL, o suporte a transações está disponível em tabelas do tipo InnoDB.
@@ -210,20 +212,18 @@ Inserindo um simples registro na base de dados
 ~~~ php
 <?php
 
-// Query
+// SQL insert no formato JSON
 $json = '
-{
-	query : [
+	insert : [
 		{
 			table: "users" ,
 			values: { mail: "pdo4you@gmail.com" }
 		}
 	] 
-}
 ';
 
 // A variável $result armazena como retorno do método, um array com o número de linhas afetadas por operação de inserção
-$result = PDO4You::insert($json);
+$result = PDO4You::execute($json);
 
 // Logo após a inserção, utilize o método PDO4You::lastId() para obter o ID da última operação de inserção na base de dados
 $lastInsertId = PDO4You::lastId();
@@ -242,10 +242,9 @@ Inserindo múltiplos registros
 ~~~ php
 <?php
 
-// Query
+// SQL insert no formato JSON
 $json = '
-{
-	query : [
+	insert : [
 		{
 			table: "users" ,
 			values: { mail: "mail_1@domain.com" }
@@ -257,11 +256,10 @@ $json = '
 			values: { title: "title", author: "author" }
 		}
 	] 
-}
 ';
 
 // A variável $result armazena um array com o número de linhas afetadas por operação de inserção
-$result = PDO4You::insert($json);
+$result = PDO4You::execute($json);
 
 ?>
 ~~~ 
@@ -274,10 +272,9 @@ Atualizando múltiplos registros
 ~~~ php
 <?php
 
-// Query
+// SQL update no formato JSON
 $json = '
-{
-	query : [
+	update : [
 		{
 			table: "users" ,
 			values: { mail: "mail_1@domain.com" } ,
@@ -292,11 +289,10 @@ $json = '
 			where: { id: 1 }
 		}
 	] 
-}
 ';
 
 // A variável $result armazena um array com o número de linhas afetadas por operação de atualização
-$result = PDO4You::update($json);
+$result = PDO4You::execute($json);
 
 ?>
 ~~~ 
@@ -309,10 +305,9 @@ Excluindo múltiplos registros
 ~~~ php
 <?php
 
-// Query
+// SQL delete no formato JSON
 $json = '
-{
-	query : [
+	delete : [
 		{
 			table: "users" ,
 			where: { id: 2 }
@@ -327,11 +322,10 @@ $json = '
 			where: { id: 10 }
 		}
 	] 
-}
 ';
 
 // A variável $result armazena um array com o número de linhas afetadas por operação de exclusão
-$result = PDO4You::delete($json);
+$result = PDO4You::execute($json);
 
 ?>
 ~~~ 
