@@ -39,7 +39,9 @@
         <ul></ul>
       </nav>
       <section>
-        <h1>
+        <p><em><a href="https://github.com/giovanniramos/PDO4YOU/blob/master/README-pt.md">Leia a documentação em Português</a></em></p>
+
+<hr><h1>
 <a name="pdo4you" class="anchor" href="#pdo4you"><span class="octicon octicon-link"></span></a>PDO4You</h1>
 
 <p>This class is based on the PDO, which is a PHP extension that allows developers to create portable code, so as to cater for most popular databases.
@@ -156,13 +158,13 @@ Create(INSERT), Retrieve(SELECT), Update(UPDATE) e Destroy(DELETE)</p>
 
 <p>Query statements:</p>
 
-<p><code>PDO4You::select()</code>: returns an array indexed by column name. Equals to PDO::FETCH_ASSOC</p>
+<p><code>PDO4You::select()</code>: returns an array indexed by column name.</p>
 
-<p><code>PDO4You::selectNum()</code>: returns an array indexed by the numerical position of the column. Equals to PDO::FETCH_NUM</p>
+<p><code>PDO4You::selectNum()</code>: returns an array indexed by the numerical position of the column.</p>
 
-<p><code>PDO4You::selectObj()</code>: returns an object with column names as properties. Equals to PDO::FETCH_OBJ</p>
+<p><code>PDO4You::selectObj()</code>: returns an object with column names as properties.</p>
 
-<p><code>PDO4You::selectAll()</code>: returns an array indexed by name and numerical position of the column. Equals to PDO::FETCH_BOTH</p>
+<p><code>PDO4You::selectAll()</code>: returns an array indexed by name and numerical position of the column.</p>
 
 <p>Below are examples of how to perform these operations.</p>
 
@@ -187,16 +189,16 @@ Create(INSERT), Retrieve(SELECT), Update(UPDATE) e Destroy(DELETE)</p>
 <span class="c1">// Query statement</span>
 <span class="nv">$sql</span> <span class="o">=</span> <span class="s1">'SELECT * FROM books LIMIT 2'</span><span class="p">;</span>
 
-<span class="c1">// Selecting records with FETCH_ASSOC</span>
+<span class="c1">// Selecting records with PDO::FETCH_ASSOC</span>
 <span class="nv">$result</span> <span class="o">=</span> <span class="nx">PDO4You</span><span class="o">::</span><span class="na">select</span><span class="p">(</span><span class="nv">$sql</span><span class="p">);</span>
 
-<span class="c1">// Selecting records with FETCH_NUM</span>
+<span class="c1">// Selecting records with PDO::FETCH_NUM</span>
 <span class="nv">$result</span> <span class="o">=</span> <span class="nx">PDO4You</span><span class="o">::</span><span class="na">selectNum</span><span class="p">(</span><span class="nv">$sql</span><span class="p">);</span>
 
-<span class="c1">// Selecting records with FETCH_OBJ</span>
+<span class="c1">// Selecting records with PDO::FETCH_OBJ</span>
 <span class="nv">$result</span> <span class="o">=</span> <span class="nx">PDO4You</span><span class="o">::</span><span class="na">selectObj</span><span class="p">(</span><span class="nv">$sql</span><span class="p">);</span>
 
-<span class="c1">// Selecting records with FETCH_BOTH</span>
+<span class="c1">// Selecting records with PDO::FETCH_BOTH</span>
 <span class="nv">$result</span> <span class="o">=</span> <span class="nx">PDO4You</span><span class="o">::</span><span class="na">selectAll</span><span class="p">(</span><span class="nv">$sql</span><span class="p">);</span>
 
 
@@ -214,6 +216,8 @@ Create(INSERT), Retrieve(SELECT), Update(UPDATE) e Destroy(DELETE)</p>
 
 <p>The methods insert(), update() and delete() of the PDO4You class, are nestled between transactions, these being beginTransaction() and commit(). This ensures that the system can roll back an unsuccessful operation and all changes made ​​since the start of a transaction.</p>
 
+<p>Was added in version 3.1 the execute() method, as an alternative to methods (insert, update and delete).</p>
+
 <p>A serious error in the execution results in invoke rollBack(), undoing the whole operation. Consequently one Exception is thrown, tracing the path of all classes and methods involved in the operation, speeding in an environment of "production", the debug process and thus ensuring the database of the risk becoming unstable.</p>
 
 <p>In MySQL, transaction support is available for InnoDB type tables.</p>
@@ -227,20 +231,18 @@ Create(INSERT), Retrieve(SELECT), Update(UPDATE) e Destroy(DELETE)</p>
 
 <div class="highlight"><pre><span class="o">&lt;?</span><span class="nx">php</span>
 
-<span class="c1">// Query</span>
+<span class="c1">// SQL insert in JSON format</span>
 <span class="nv">$json</span> <span class="o">=</span> <span class="s1">'</span>
-<span class="s1">{</span>
-<span class="s1">    query : [</span>
+<span class="s1">    insert : [</span>
 <span class="s1">        {</span>
 <span class="s1">            table: "users" ,</span>
 <span class="s1">            values: { mail: "pdo4you@gmail.com" }</span>
 <span class="s1">        }</span>
 <span class="s1">    ] </span>
-<span class="s1">}</span>
 <span class="s1">'</span><span class="p">;</span>
 
 <span class="c1">// The $result variable stores as return of the method, an array with the number of rows affected by the insert operation</span>
-<span class="nv">$result</span> <span class="o">=</span> <span class="nx">PDO4You</span><span class="o">::</span><span class="na">insert</span><span class="p">(</span><span class="nv">$json</span><span class="p">);</span>
+<span class="nv">$result</span> <span class="o">=</span> <span class="nx">PDO4You</span><span class="o">::</span><span class="na">execute</span><span class="p">(</span><span class="nv">$json</span><span class="p">);</span>
 
 <span class="c1">// Just after insertion, use the method PDO4You::lastId() to get the ID of the last insert operation in the database</span>
 <span class="nv">$lastInsertId</span> <span class="o">=</span> <span class="nx">PDO4You</span><span class="o">::</span><span class="na">lastId</span><span class="p">();</span>
@@ -256,10 +258,9 @@ Create(INSERT), Retrieve(SELECT), Update(UPDATE) e Destroy(DELETE)</p>
 
 <div class="highlight"><pre><span class="o">&lt;?</span><span class="nx">php</span>
 
-<span class="c1">// Query</span>
+<span class="c1">// SQL insert in JSON format</span>
 <span class="nv">$json</span> <span class="o">=</span> <span class="s1">'</span>
-<span class="s1">{</span>
-<span class="s1">    query : [</span>
+<span class="s1">    insert : [</span>
 <span class="s1">        {</span>
 <span class="s1">            table: "users" ,</span>
 <span class="s1">            values: { mail: "mail_1@domain.com" }</span>
@@ -271,11 +272,10 @@ Create(INSERT), Retrieve(SELECT), Update(UPDATE) e Destroy(DELETE)</p>
 <span class="s1">            values: { title: "title", author: "author" }</span>
 <span class="s1">        }</span>
 <span class="s1">    ] </span>
-<span class="s1">}</span>
 <span class="s1">'</span><span class="p">;</span>
 
 <span class="c1">// The $result variable stores an array with the number of rows affected by the insert operation</span>
-<span class="nv">$result</span> <span class="o">=</span> <span class="nx">PDO4You</span><span class="o">::</span><span class="na">insert</span><span class="p">(</span><span class="nv">$json</span><span class="p">);</span>
+<span class="nv">$result</span> <span class="o">=</span> <span class="nx">PDO4You</span><span class="o">::</span><span class="na">execute</span><span class="p">(</span><span class="nv">$json</span><span class="p">);</span>
 
 <span class="cp">?&gt;</span><span class="x"></span>
 </pre></div>
@@ -285,10 +285,9 @@ Create(INSERT), Retrieve(SELECT), Update(UPDATE) e Destroy(DELETE)</p>
 
 <div class="highlight"><pre><span class="o">&lt;?</span><span class="nx">php</span>
 
-<span class="c1">// Query</span>
+<span class="c1">// SQL update in JSON format</span>
 <span class="nv">$json</span> <span class="o">=</span> <span class="s1">'</span>
-<span class="s1">{</span>
-<span class="s1">    query : [</span>
+<span class="s1">    update : [</span>
 <span class="s1">        {</span>
 <span class="s1">            table: "users" ,</span>
 <span class="s1">            values: { mail: "mail_1@domain.com" } ,</span>
@@ -303,11 +302,10 @@ Create(INSERT), Retrieve(SELECT), Update(UPDATE) e Destroy(DELETE)</p>
 <span class="s1">            where: { id: 1 }</span>
 <span class="s1">        }</span>
 <span class="s1">    ] </span>
-<span class="s1">}</span>
 <span class="s1">'</span><span class="p">;</span>
 
 <span class="c1">// The $result variable stores an array with the number of rows affected by the update operation</span>
-<span class="nv">$result</span> <span class="o">=</span> <span class="nx">PDO4You</span><span class="o">::</span><span class="na">update</span><span class="p">(</span><span class="nv">$json</span><span class="p">);</span>
+<span class="nv">$result</span> <span class="o">=</span> <span class="nx">PDO4You</span><span class="o">::</span><span class="na">execute</span><span class="p">(</span><span class="nv">$json</span><span class="p">);</span>
 
 <span class="cp">?&gt;</span><span class="x"></span>
 </pre></div>
@@ -317,10 +315,9 @@ Create(INSERT), Retrieve(SELECT), Update(UPDATE) e Destroy(DELETE)</p>
 
 <div class="highlight"><pre><span class="o">&lt;?</span><span class="nx">php</span>
 
-<span class="c1">// Query</span>
+<span class="c1">// SQL delete in JSON format</span>
 <span class="nv">$json</span> <span class="o">=</span> <span class="s1">'</span>
-<span class="s1">{</span>
-<span class="s1">    query : [</span>
+<span class="s1">    delete : [</span>
 <span class="s1">        {</span>
 <span class="s1">            table: "users" ,</span>
 <span class="s1">            where: { id: 2 }</span>
@@ -335,11 +332,10 @@ Create(INSERT), Retrieve(SELECT), Update(UPDATE) e Destroy(DELETE)</p>
 <span class="s1">            where: { id: 10 }</span>
 <span class="s1">        }</span>
 <span class="s1">    ] </span>
-<span class="s1">}</span>
 <span class="s1">'</span><span class="p">;</span>
 
 <span class="c1">// The $result variable stores an array with the number of rows affected by the delete operation</span>
-<span class="nv">$result</span> <span class="o">=</span> <span class="nx">PDO4You</span><span class="o">::</span><span class="na">delete</span><span class="p">(</span><span class="nv">$json</span><span class="p">);</span>
+<span class="nv">$result</span> <span class="o">=</span> <span class="nx">PDO4You</span><span class="o">::</span><span class="na">execute</span><span class="p">(</span><span class="nv">$json</span><span class="p">);</span>
 
 <span class="cp">?&gt;</span><span class="x"></span>
 </pre></div>
@@ -362,7 +358,7 @@ See also the list of <a href="https://github.com/giovanniramos/PDO4YOU/contribut
       </section>
       <footer>
         <p>Project maintained by <a href="https://github.com/giovanniramos">giovanniramos</a></p>
-        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="http://twitter.com/#!/michigangraham">mattgraham</a></small></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://twitter.com/michigangraham">mattgraham</a></small></p>
       </footer>
     </div>
     <!--[if !IE]><script>fixScale(document);</script><![endif]-->
