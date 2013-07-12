@@ -22,12 +22,12 @@ O padrão de projeto Singleton foi adotado para otimizar a conexão, garantindo 
 
 
 **Vantagens em sua utilização:**
-* Abstração de conexão
-* Conexão a banco de dados via VCAP_SERVICES
-* Proteção contra SQL Injection
-* Métodos CRUD pré-definidos
-* Múltiplas conexões por base de dados
 * Instrução SQL compacta, usando notação JSON
+* Abstração de conexão
+* Proteção contra SQL Injection
+* Múltiplas conexões por base de dados
+* Métodos/Comandos CRUD pré-definidos
+* Opção de se conectar com VCAP_SERVICES
 * Tratamento de erros com Stack Trace
 
 

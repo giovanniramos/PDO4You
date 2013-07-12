@@ -141,7 +141,7 @@ class PDO4You extends PDO4You_pagination
         try {
             try {
                 $instance = @ new PDO($driver, $user, $pass, $option);
-                $instance->setAttribute(PDO::ATTR_ERRMODE, ($_SERVER['SERVER_ADDR'] == '127.0.0.1') ? PDO::ERRMODE_EXCEPTION : PDO::ERRMODE_SILENT);
+                $instance->setAttribute(PDO::ATTR_ERRMODE, ($_SERVER['SERVER_ADDR'] == '127.0.0.1' || $_SERVER['SERVER_ADDR'] == '::1') ? PDO::ERRMODE_EXCEPTION : PDO::ERRMODE_SILENT);
 
                 self::setHandle($alias, $instance);
                 self::setInstance($alias);

@@ -21,14 +21,14 @@ The PDO4You provides an abstraction layer for data access, that regardless of wh
 The Singleton design pattern was adopted to optimize the connection, ensuring a single instance of the connection object.
 
 
-**Advantages in use:**
+**Advantages in their use:**
+* Instruction SQL compact using JSON notation
 * Abstraction of connection
-* Connection to database via VCAP_SERVICES
 * Protection against SQL Injection
-* CRUD methods predefined
 * Multiple database connections
-* SQL compact using JSON notation
-* Handling errors with Stack Trace
+* Methods/Commands CRUD predefined
+* Option to connect with VCAP_SERVICES
+* Error Handling with Stack Trace
 
 
 

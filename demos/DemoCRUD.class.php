@@ -108,7 +108,7 @@ class DemoCRUD
                 values: { firstname: "' . $this->genFakeName() . '", lastname: "' . $this->genFakeName() . '" }
             } 
         ]
-		';
+        ';
 
         // Store the result
         $result = PDO4You::execute($json);
