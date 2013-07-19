@@ -343,11 +343,13 @@ Collaborators
 --------------------------------------------------
 
 Giovanni Ramos - <giovannilauro@gmail.com> - <http://twitter.com/giovanni_ramos><br />
-See also the list of [colaboradores](https://github.com/giovanniramos/PDO4YOU/contributors) who participated in this project.
+See also the list of [colaboradores](http://github.com/giovanniramos/PDO4YOU/contributors) who participated in this project.
 
 
 
 License
 --------------------------------------------------
 
-PDO4You is licensed under the [GNU General Public License, version 3 (GPL-3.0)](http://opensource.org/licenses/gpl-3.0.html) 
+Copyright (c) 2013 [Giovanni Ramos](http://github.com/giovanniramos)
+
+PDO4You is open-sourced software licensed under the [MIT License](http://www.opensource.org/licenses/MIT) (MIT-LICENSE.txt)

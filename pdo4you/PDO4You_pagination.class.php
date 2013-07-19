@@ -3,11 +3,12 @@
 /**
  * Pagination class
  * 
- * @package PDO4You
  * @author Giovanni Ramos <giovannilauro@gmail.com>
  * @copyright 2010-2013, Giovanni Ramos
- * @license http://opensource.org/licenses/gpl-3.0.html GNU Public License
- * @link https://github.com/giovanniramos/PDO4You
+ * @since 2010-09-07
+ * @license http://opensource.org/licenses/MIT
+ * @link http://github.com/giovanniramos/PDO4YOU
+ * @package PDO4YOU
  * 
  * */
 class PDO4You_pagination
