@@ -10,7 +10,7 @@
  * @link http://github.com/giovanniramos/PDO4YOU
  * @package PDO4YOU
  * @category PDO
- * @version 3.1
+ * @version 3.2
  * 
  * */
 class PDO4You extends PDO4You_pagination
@@ -118,9 +118,9 @@ class PDO4You extends PDO4You_pagination
      * @access private
      * 
      * */
-    private function PDO4You()
+    private function __construct()
     {
-        
+        exit;
     }
 
     /**
@@ -140,8 +140,22 @@ class PDO4You extends PDO4You_pagination
     {
         try {
             try {
+                $server_addr = $_SERVER['SERVER_ADDR'];
+
+                // Force column names to lower case
+                $option[PDO::ATTR_CASE] = PDO::CASE_LOWER;
+
+                // Establishes a persistent connection to the database
+                $option[PDO::ATTR_PERSISTENT] = self::$persistent;
+
+                // Throws exceptions in development environment and report errors in production
+                $option[PDO::ATTR_ERRMODE] = ($server_addr == '127.0.0.1' || $server_addr == '::1') ? PDO::ERRMODE_EXCEPTION : PDO::ERRMODE_SILENT;
+
+                // Executes a command on the MySQL server to set the charset to UTF-8
+                $option[defined(PDO::MYSQL_ATTR_INIT_COMMAND) ? PDO::MYSQL_ATTR_INIT_COMMAND : 1002] = "SET NAMES utf8";
+
+                // Creates the instance with the settings
                 $instance = @ new PDO($driver, $user, $pass, $option);
-                $instance->setAttribute(PDO::ATTR_ERRMODE, ($_SERVER['SERVER_ADDR'] == '127.0.0.1' || $_SERVER['SERVER_ADDR'] == '::1') ? PDO::ERRMODE_EXCEPTION : PDO::ERRMODE_SILENT);
 
                 self::setHandle($alias, $instance);
                 self::setInstance($alias);
@@ -199,13 +213,20 @@ class PDO4You extends PDO4You_pagination
             try {
                 if (!array_key_exists($alias, self::$handle)) {
                     if ($alias == 'standard') {
+                        // Current file directory
                         $dir = dirname(__FILE__);
+
+                        // INI file containing the initial settings of the adapters the database
                         $file = $dir . '/PDO4You.settings.ini';
 
+                        // Checks if the INI file exists
                         if (file_exists($file)) {
+                            // Checks whether the file is readable
                             if (is_readable($file)) {
+                                // Interprets the file containing the initial settings
                                 $datafile = parse_ini_file_advanced($file);
 
+                                // Initial settings for database adapters
                                 if (isset($datafile['adapter'])) {
                                     if (PDO4YOU_ADAPTER == 'vcap') {
                                         $json = json_decode(getenv("VCAP_SERVICES"), true);
@@ -241,6 +262,7 @@ class PDO4You extends PDO4You_pagination
                         }
                     }
 
+                    // Checks the type of adapter and mounts the DNS
                     $type = strtolower($type);
                     switch ($type) {
                         case 'maria': $driver = 'mysql:' . (!(empty($base)) ? 'dbname=' . $base . ';' : null) . 'host=' . $host . ';port=' . $port . ';';
@@ -262,8 +284,7 @@ class PDO4You extends PDO4You_pagination
                         default: $driver = $type;
                     }
 
-                    $option = !is_null($option) ? $option : array(PDO::ATTR_PERSISTENT => self::$persistent, PDO::ATTR_CASE => PDO::CASE_LOWER);
-
+                    // Initializes the Singleton connection
                     self::singleton($alias, $driver, $user, $pass, $option);
                 }
             } catch (PDOException $e) {
@@ -983,7 +1004,7 @@ class PDO4You extends PDO4You_pagination
                 $json = preg_replace('~' . $command . '~', 'query', $json, 1);
             }
 
-            $json = mb_detect_encoding($json, 'UTF-8', true) ? $json : utf8_encode($json);
+//            $json = mb_detect_encoding($json, 'UTF-8', true) ? $json : utf8_encode($json);
             $json = preg_match('~[{]+~', substr($json, 0, 2)) ? $json : '{ ' . $json . ' }';
             $json = preg_replace('~[\s]{2,}~', ' ', $json);
             $json = preg_replace('~[\n\r\t]~', '', $json);
