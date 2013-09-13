@@ -1,7 +1,8 @@
 <?php
 
 /**
- * PDO4You is a class that implements the Singleton design pattern for connecting the database using the PDO extension (PHP Data Objects)
+ * PDO4You is a class that implements the Singleton design pattern for 
+ * connecting the database using the PDO extension (PHP Data Objects)
  * 
  * @author Giovanni Ramos <giovannilauro@gmail.com>
  * @copyright 2010-2013, Giovanni Ramos
@@ -10,7 +11,7 @@
  * @link http://github.com/giovanniramos/PDO4YOU
  * @package PDO4YOU
  * @category PDO
- * @version 3.2
+ * @version 3.3
  * 
  * */
 class PDO4You extends PDO4You_pagination
@@ -1004,8 +1005,8 @@ class PDO4You extends PDO4You_pagination
                 $json = preg_replace('~' . $command . '~', 'query', $json, 1);
             }
 
-//            $json = mb_detect_encoding($json, 'UTF-8', true) ? $json : utf8_encode($json);
-            $json = preg_match('~[{]+~', substr($json, 0, 2)) ? $json : '{ ' . $json . ' }';
+            $json = '{ ' . $json . ' }';
+            $json = mb_detect_encoding($json, 'UTF-8', true) ? $json : utf8_encode($json);
             $json = preg_replace('~[\s]{2,}~', ' ', $json);
             $json = preg_replace('~[\n\r\t]~', '', $json);
             $json = preg_replace('~(,?[{,])[\s]*([^"]+?)[\s]*:~', '$1"$2":', $json);

@@ -1,4 +1,4 @@
-*[Leia a documentação em Português](https://github.com/giovanniramos/PDO4YOU/blob/master/README-pt.md)*
+*[Leia a documenta&ccedil;&atilde;o em Portugu&ecirc;s](https://github.com/giovanniramos/PDO4YOU/blob/master/README-pt.md)*
 
 ---
 

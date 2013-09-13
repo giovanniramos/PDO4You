@@ -43,17 +43,18 @@ class DemoRegister
             if (isset($error)) {
                 self::$message = '<i style="color: #f50;">ERROR: ' . $error . '</i><br />';
             } else {
-                $sql = '
-                    { query : [
-                        {
-                            table: "users" ,
-                            values: { firstname: "' . $firstName . '", lastname: "' . $lastName . '", mail: "' . $mail . '"  }
-                        }
-                    ] }
-					';
+                // SQL insertion in JSON format
+                $json = '
+                insert : [
+                    {
+                        table: "users" ,
+                        values: { firstname: "' . $firstName . '", lastname: "' . $lastName . '", mail: "' . $mail . '"  }
+                    }
+                ]
+                ';
 
-                // Performs the new record
-                $result = PDO4You::insert($sql);
+                // Performs the new record and store the result
+                $result = PDO4You::execute($json);
 
                 self::$message = 'Register #' . $result[0] . ' added successfully!!<br />';
             }
