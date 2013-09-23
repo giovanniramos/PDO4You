@@ -1,26 +1,17 @@
 <?php
 
+// Importing classes
+use PDO4You\PDO4You;
+
 /**
  * DemoCRUD
- * 
- * @category Demo
  * 
  * */
 class DemoCRUD
 {
 
     /**
-     * Main method
-     * 
-     * */
-    public function init()
-    {
-        // Connection instance started and available
-        PDO4You::getInstance();
-    }
-
-    /**
-     * Returns the SQL query to the appropriate driver
+     * Checks and returns the SQL query to the appropriate driver
      * 
      * */
     private function sql()
@@ -54,12 +45,12 @@ class DemoCRUD
     public function select($instance = null)
     {
         // SQL query
-        $sql = $this->sql();
+        $sql = self::sql();
 
         // Execute the SQL query in a "pre-defined instance" and store the result
         $result = PDO4You::select($sql, $instance);
 
-        echo '<div class="code title">Demo with the method PDO4You::select()</div>';
+        echo '<div class="code title">Demo with the method - PDO4You::select()</div>';
         echo '<div class="code debug">PDO4You::select(' . $this->getQuery($sql) . '); ' . $this->getResult($result) . '</div>';
     }
 
@@ -70,7 +61,7 @@ class DemoCRUD
     public function allSelects()
     {
         // SQL query
-        $sql = $this->sql();
+        $sql = self::sql();
 
         // Execute the SQL query in a instance and store the result
         $result_1 = PDO4You::select($sql);
@@ -78,16 +69,16 @@ class DemoCRUD
         $result_3 = PDO4You::selectObj($sql);
         $result_4 = PDO4You::selectAll($sql);
 
-        echo '<div class="code title">Demo with the method PDO4You::select()</div>';
+        echo '<div class="code title">Demo with the method - PDO4You::select()</div>';
         echo '<div class="code debug">PDO4You::select(' . $this->getQuery($sql) . '); ' . $this->getResult($result_1) . '</div>';
 
-        echo '<div class="code title">Demo with the method PDO4You::selectNum()</div>';
+        echo '<div class="code title">Demo with the method - PDO4You::selectNum()</div>';
         echo '<div class="code debug">PDO4You::selectNum(' . $this->getQuery($sql) . '); ' . $this->getResult($result_2) . '</div>';
 
-        echo '<div class="code title">Demo with the method PDO4You::selectObj()</div>';
+        echo '<div class="code title">Demo with the method - PDO4You::selectObj()</div>';
         echo '<div class="code debug">PDO4You::selectObj(' . $this->getQuery($sql) . '); ' . $this->getResult($result_3) . '</div>';
 
-        echo '<div class="code title">Demo with the method PDO4You::selectAll()</div>';
+        echo '<div class="code title">Demo with the method - PDO4You::selectAll()</div>';
         echo '<div class="code debug">PDO4You::selectAll(' . $this->getQuery($sql) . '); ' . $this->getResult($result_4) . '</div>';
     }
 
@@ -113,7 +104,7 @@ class DemoCRUD
         // Store the result
         $result = PDO4You::execute($json);
 
-        echo '<div class="code title">Demo with the method PDO4You::execute() using the INSERT command</div>';
+        echo '<div class="code title">Demo with the method - PDO4You::execute() using the INSERT command</div>';
         echo '<div class="code debug">PDO4You::execute(' . $this->getQuery($json) . '); ' . $this->getResult($result, true) . '</div>';
     }
 
@@ -149,7 +140,7 @@ class DemoCRUD
         // Store the result
         $result = PDO4You::execute($json);
 
-        echo '<div class="code title">Demo with the method PDO4You::execute() using the UPDATE command</div>';
+        echo '<div class="code title">Demo with the method - PDO4You::execute() using the UPDATE command</div>';
         echo '<div class="code debug">PDO4You::execute(' . $this->getQuery($json) . '); ' . $this->getResult($result) . '</div>';
     }
 
@@ -181,7 +172,7 @@ class DemoCRUD
         // Store the result
         $result = PDO4You::execute($json);
 
-        echo '<div class="code title">Demo with the method PDO4You::execute() using the DELETE command</div>';
+        echo '<div class="code title">Demo with the method - PDO4You::execute() using the DELETE command</div>';
         echo '<div class="code debug">PDO4You::execute(' . $this->getQuery($json) . '); ' . $this->getResult($result) . '</div>';
     }
 

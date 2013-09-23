@@ -1,5 +1,16 @@
 <?php
 
+// Defining namespaces
+namespace PDO4You;
+
+// Importing classes
+use PDO;
+use PDOException;
+use PDO4You\Pagination;
+
+// Loading the configuration file
+require_once('PDO4You.config.php');
+
 /**
  * PDO4You is a class that implements the Singleton design pattern for 
  * connecting the database using the PDO extension (PHP Data Objects)
@@ -8,13 +19,12 @@
  * @copyright 2010-2013, Giovanni Ramos
  * @since 2010-09-07
  * @license http://opensource.org/licenses/MIT
- * @link http://github.com/giovanniramos/PDO4YOU
- * @package PDO4YOU
- * @category PDO
- * @version 3.3
+ * @link http://github.com/giovanniramos/PDO4You
+ * @package PDO4You
+ * @version 4.0
  * 
  * */
-class PDO4You extends PDO4You_pagination
+class PDO4You implements Config
 {
     /**
      * Stores the name of the server machine on which the database resides
@@ -91,11 +101,11 @@ class PDO4You extends PDO4You_pagination
     /**
      * Stores messages Exception thrown
      * 
-     * @access private
+     * @access public
      * @var array
      * 
      * */
-    private static $exception = array(
+    public static $exception = array(
         'code-1044' => 'Access denied for user: \'%1$s\'',
         'code-1045' => 'Failed communication with the database using: \'%1$s\'@\'%2$s\'',
         'code-2002' => 'No connection could be made because the destination machine actively refused. This host is not known.',
@@ -114,14 +124,14 @@ class PDO4You extends PDO4You_pagination
     );
 
     /**
-     * The constructor is set to private, preventing direct instance of the class
+     * The constructor
      * 
-     * @access private
+     * @access public
      * 
      * */
-    private function __construct()
+    public function __construct()
     {
-        exit;
+        self::getInstance();
     }
 
     /**
@@ -225,13 +235,13 @@ class PDO4You extends PDO4You_pagination
                             // Checks whether the file is readable
                             if (is_readable($file)) {
                                 // Interprets the file containing the initial settings
-                                $datafile = parse_ini_file_advanced($file);
+                                $datafile = self::parse_ini_file_advanced($file);
 
                                 // Initial settings for database adapters
-                                if (isset($datafile['adapter'])) {
-                                    if (PDO4YOU_ADAPTER == 'vcap') {
+                                if (isset($datafile['PDO4YOU_ADAPTER'])) {
+                                    if (static::PDO4YOU_ADAPTER == 'vcap') {
                                         $json = json_decode(getenv("VCAP_SERVICES"), true);
-                                        $data = $datafile['adapter']['vcap'];
+                                        $data = $datafile['PDO4YOU_ADAPTER']['vcap'];
                                         $part = preg_split('~[|]~', $data['vcap']);
                                         $conf = $json[$part[0]][$part[1]]['credentials'];
 
@@ -242,8 +252,8 @@ class PDO4You extends PDO4You_pagination
                                         $pass = isset($conf['password']) ? $conf['password'] : null;
                                         $base = isset($conf['name']) ? $conf['name'] : null;
                                     } else {
-                                        $part = preg_split('~[.]~', preg_replace('~[\s]{1,}~', null, PDO4YOU_ADAPTER));
-                                        $conf = count($part) == 2 ? @$datafile['adapter'][$part[0]][$part[1]] : @$datafile['adapter'][$part[0]];
+                                        $part = preg_split('~[.]~', preg_replace('~[\s]{1,}~', null, static::PDO4YOU_ADAPTER));
+                                        $conf = count($part) == 2 ? @$datafile['PDO4YOU_ADAPTER'][$part[0]][$part[1]] : @$datafile['PDO4YOU_ADAPTER'][$part[0]];
 
                                         $type = isset($conf['type']) ? $conf['type'] : null;
                                         $host = isset($conf['host']) ? $conf['host'] : null;
@@ -427,14 +437,14 @@ class PDO4You extends PDO4You_pagination
      * Method to capture the error information of an Exception
      * 
      * @access public static
-     * @param Exception $e Gets the message from the exception thrown
+     * @param PDOException $e Gets the message from the exception thrown
      * @param boolean $debug Enables the display of the captured values
      * @return array
      * 
      * */
-    public static function getErrorInfo(Exception $e, $debug = false)
+    public static function getErrorInfo(PDOException $e, $debug = false)
     {
-        if (defined(PDO4YOU_WEBMASTER)) {
+        if (defined(static::PDO4YOU_WEBMASTER)) {
             self::fireAlert(self::$exception['critical-error'], $e);
         }
 
@@ -480,8 +490,6 @@ class PDO4You extends PDO4You_pagination
     {
         try {
             if (self::$instance instanceof PDO) {
-                self::setStyle();
-
                 $driver = self::getDriver();
 
                 $info = ($driver == 'sqlite' || $driver == 'mssql') ? 'not available' : self::$instance->getAttribute(PDO::ATTR_SERVER_INFO);
@@ -506,8 +514,6 @@ class PDO4You extends PDO4You_pagination
     {
         try {
             if (self::$instance instanceof PDO) {
-                self::setStyle();
-
                 $info = self::$instance->getAvailableDrivers();
                 echo '<h7>Available Drivers: ', implode(', ', $info), '</h7>';
             } else {
@@ -526,11 +532,10 @@ class PDO4You extends PDO4You_pagination
      * @return void
      * 
      * */
-    public static function setStyle()
+    public static function css()
     {
         $style = '<style type="text/css">';
         $style.= 'body,.code    { background:#FAFAFA; font:normal 12px/1.7em Bitstream Vera Sans Mono,Courier New,Monospace; margin:0; padding:0; }';
-        $style.= '#pdo4you h2   { display:block; color:#000; background:#FFF; font-size:20px; margin:0; padding:10px; border-bottom:solid 1px #999; }';
         $style.= '#pdo4you h7   { display:block; color:#FFF; background:#000; font-size:12px; margin:0; padding:2px 5px; }';
         $style.= '.pdo4you      { margin:8px; padding:0; }';
         $style.= '.code         { font:inherit; background:#EFEFEF; border:solid 1px #DDD; border-right-color:#BBB; border-bottom:none; margin:10px 10px 0 10px; overflow:auto; }';
@@ -550,12 +555,12 @@ class PDO4You extends PDO4You_pagination
      * Method to display the stack trace of an error Exception
      * 
      * @access public static
-     * @param Exception $e Gets the error stack generated by the exception
+     * @param PDOException $e Gets the error stack generated by the exception
      * @param boolean $show Enables the display of the error stack
      * @return void
      * 
      * */
-    public static function stackTrace(Exception $e, $show = true)
+    public static function stackTrace(PDOException $e, $show = true)
     {
         if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
             $jarr['timer'] = '15000';
@@ -569,13 +574,13 @@ class PDO4You extends PDO4You_pagination
 
             exit($json);
         } else {
-            self::setStyle();
+            self::css();
 
-            if (!PDO4YOU_FIREDEBUG) {
+            if (!static::PDO4YOU_FIREDEBUG) {
                 return;
             }
 
-            if (defined(PDO4YOU_WEBMASTER)) {
+            if (defined(static::PDO4YOU_WEBMASTER)) {
                 self::fireAlert(self::$exception['critical-error'], $e);
             }
 
@@ -651,14 +656,15 @@ class PDO4You extends PDO4You_pagination
             if (!$pdo instanceof PDO) {
                 throw new PDOException(self::$exception['no-instance']);
             } else {
-                if (PDO4You_pagination::$paging == true) {
+                if (Pagination::getPaging() == true) {
                     $pre = $pdo->prepare($query);
                     $pre->execute();
                     $result = $pre->fetchAll(PDO::FETCH_ASSOC);
 
-                    PDO4You_pagination::setTotalPagingRecords($result);
+                    Pagination::setLimit($query);
+                    Pagination::setTotalPagingRecords($result);
 
-                    $query = PDO4You_pagination::setLimit($query);
+                    $query = Pagination::getQuery();
                 }
 
                 $pre = $pdo->prepare($query);
@@ -983,7 +989,7 @@ class PDO4You extends PDO4You_pagination
      * */
     public static function rowCount()
     {
-        $count = is_array(self::$rowCount) ? countWhere(self::$rowCount, '>', 0) : self::$rowCount;
+        $count = is_array(self::$rowCount) ? self::countWhere(self::$rowCount, '>', 0) : self::$rowCount;
 
         return $count;
     }
@@ -1040,173 +1046,6 @@ class PDO4You extends PDO4You_pagination
     }
 
     /**
-     * MySQL method to display the tables of the database
-     * 
-     * @access private static
-     * @param void 
-     * @return void
-     * 
-     * */
-    private static function showMySqlTables()
-    {
-        self::setStyle();
-
-        $tables = self::select("SHOW TABLES;");
-        $index = array_keys($tables[0]);
-        $database = preg_replace('~tables_in_~i', '', $index[0]);
-
-        $html = '<div class="pdo4you">';
-        $html.= '<strong>Database:</strong> ' . $database . ' &nbsp;<strong>Total of tables:</strong> ' . count($tables) . '<br />';
-        foreach ($tables as $k1 => $v1) {
-            foreach ($v1 as $k2 => $v2) {
-                $desc = self::select("DESCRIBE " . $database . "." . $v2);
-
-                $html.= '<div class="code title">Table: <span>' . $v2 . '</span></div>';
-                $html.= '<div class="code trace">';
-                foreach ($desc as $k3 => $v3) {
-                    $html.= '<div class="number">&nbsp;</div> <span><i style="color:#00B;">' . $v3['field'] . "</i> - " . strtoupper($v3['type']) . '</span><br />';
-                }
-                $html.= '</div>';
-            }
-        }
-        $html.= '</div>';
-
-        echo $html;
-    }
-
-    /**
-     * PostgreSQL method to display the tables of the database
-     * 
-     * @access private static
-     * @param string $schema Name of scheme
-     * @return void
-     * 
-     * */
-    private static function showPgSqlTables($schema)
-    {
-        self::setStyle();
-
-        $table_schema = !is_null($schema) ? "table_schema = '" . $schema . "'" : "table_schema NOT SIMILAR TO '(information_schema|pg_%)'";
-        $tables = self::select("SELECT table_catalog, table_schema, table_name FROM information_schema.tables WHERE table_type = 'BASE TABLE' AND " . $table_schema . ";");
-        $database = $tables[0]['table_catalog'];
-
-        $html = '<div class="pdo4you">';
-        $html.= '<strong>Database:</strong> ' . $database . ' &nbsp;<strong>Total of tables:</strong> ' . count($tables) . '<br />';
-        foreach ($tables as $k1 => $v1) {
-            $desc = self::select("SELECT d.datname, n.nspname, a.attname AS field, t.typname AS type FROM pg_database d, pg_namespace n, pg_class c, pg_attribute a, pg_type t WHERE d.datname = '" . $v1['table_catalog'] . "' AND n.nspname = '" . $v1['table_schema'] . "' AND c.relname = '" . $v1['table_name'] . "' AND c.relnamespace = n.oid AND a.attnum > 0 AND not a.attisdropped AND a.attrelid = c.oid AND a.atttypid = t.oid ORDER BY a.attnum");
-
-            $html.= '<div class="code title">Table: <span>' . $v1['table_schema'] . '.' . $v1['table_name'] . '</span></div>';
-            $html.= '<div class="code trace">';
-            foreach ($desc as $k2 => $v2) {
-                $html.= '<div class="number">&nbsp;</div> <span><i style="color:#00B;">' . $v2['field'] . "</i> - " . strtoupper($v2['type']) . '</span><br />';
-            }
-            $html.= '</div>';
-        }
-        $html.= '</div>';
-
-        echo $html;
-    }
-
-    /**
-     * CUBRID method to display the tables of the database
-     * 
-     * @access private static
-     * @param void 
-     * @return void
-     * 
-     * */
-    private static function showCubridTables()
-    {
-        self::setStyle();
-
-        $tables = self::select("SHOW TABLES;");
-        $index = array_keys($tables[0]);
-        $database = preg_replace('~tables_in_~i', '', $index[0]);
-
-        $html = '<div class="pdo4you">';
-        $html.= '<strong>Database:</strong> ' . $database . ' &nbsp;<strong>Total of tables:</strong> ' . count($tables) . '<br />';
-        foreach ($tables as $k1 => $v1) {
-            foreach ($v1 as $k2 => $v2) {
-                $desc = self::select("SHOW COLUMNS IN " . $v2);
-
-                $html.= '<div class="code title">Table: <span>' . $v2 . '</span></div>';
-                $html.= '<div class="code trace">';
-                foreach ($desc as $k3 => $v3) {
-                    $html.= '<div class="number">&nbsp;</div> <span><i style="color:#00B;">' . $v3['Field'] . "</i> - " . strtoupper($v3['Type']) . '</span><br />';
-                }
-                $html.= '</div>';
-            }
-        }
-        $html.= '</div>';
-
-        echo $html;
-    }
-
-    /**
-     * Microsoft SQL Server method to display the tables of the database
-     * 
-     * @access private static
-     * @param string $schema Name of scheme
-     * @return void
-     * 
-     * */
-    private static function showMsSqlTables($schema)
-    {
-        self::setStyle();
-
-        $table_schema = !is_null($schema) ? "table_schema = '" . $schema . "'" : "table_schema IS NOT NULL";
-        $tables = self::select("SELECT table_catalog, table_schema, table_name FROM information_schema.tables WHERE table_type = 'BASE TABLE' AND " . $table_schema . ";");
-        $database = $tables[0]['table_catalog'];
-
-        $html = '<div class="pdo4you">';
-        $html.= '<strong>Database:</strong> ' . $database . ' &nbsp;<strong>Total of tables:</strong> ' . count($tables) . '<br />';
-        foreach ($tables as $k1 => $v1) {
-            $desc = self::select("SELECT table_catalog, table_schema, table_name, column_name AS field, data_type AS type FROM information_schema.columns WHERE table_catalog = '" . $v1['table_catalog'] . "' AND table_name = '" . $v1['table_name'] . "';");
-
-            $html.= '<div class="code title">Table: <span>' . $v1['table_schema'] . '.' . $v1['table_name'] . '</span></div>';
-            $html.= '<div class="code trace">';
-            foreach ($desc as $k2 => $v2) {
-                $html.= '<div class="number">&nbsp;</div> <span><i style="color:#00B;">' . $v2['field'] . "</i> - " . strtoupper($v2['type']) . '</span><br />';
-            }
-            $html.= '</div>';
-        }
-        $html.= '</div>';
-
-        echo $html;
-    }
-
-    /**
-     * Method which shows and describes the tables of the database
-     * 
-     * @access public static
-     * @param string $schema Name of the schema used
-     * @return void
-     * 
-     * */
-    public static function showTables($schema = null)
-    {
-        try {
-            $driver = self::getDriver();
-
-            switch ($driver) {
-                case 'mysql': self::showMySqlTables();
-                    break;
-                case 'pgsql': self::showPgSqlTables($schema);
-                    break;
-                case 'cubrid': self::showCubridTables();
-                    break;
-                case 'mssql':
-                case 'sqlsrv': self::showMsSqlTables($schema);
-                    break;
-                default:
-                    throw new PDOException(self::$exception['not-implemented'] . ' PDO4You::showTables()');
-            }
-        } catch (PDOException $e) {
-            self::stackTrace($e, false);
-        }
-    }
-
-    /**
      * Triggers a warning via email to the system administrator
      * 
      * @access public static
@@ -1223,9 +1062,97 @@ class PDO4You extends PDO4You_pagination
         $head.= 'Return-Path: Automatic Alert <firealert@noreply.com>' . PHP_EOL;
         $body = 'Diagnostic alert:<br /><br /><b>' . $error->getMessage() . '</b><br />' . $error->getFile() . ' : ' . $error->getLine();
 
-        if (PDO4YOU_FIREALERT) {
-            @mail(PDO4YOU_WEBMASTER, $text, $body, $head);
+        if (static::PDO4YOU_FIREALERT) {
+            @mail(static::PDO4YOU_WEBMASTER, $text, $body, $head);
         }
+    }
+
+    /**
+     * Interprets an INI file with heritage section
+     * 
+     * @access private static
+     * @param string $filename Filename
+     * @return array
+     * @link https://gist.github.com/4217717
+     * 
+     */
+    private static function parse_ini_file_advanced($filename)
+    {
+        $nArr = array();
+        $oArr = parse_ini_file($filename, true);
+
+        if (is_array($oArr)) {
+            foreach ($oArr as $k => $v) {
+                $k = preg_split('~[:]~', preg_replace('~[\s]{1,}~', null, $k));
+                $t = &$nArr;
+                foreach ($k as $x) {
+                    $t = &$t[$x];
+                }
+                $t = $v;
+            }
+        }
+
+        return $nArr;
+    }
+
+    /**
+     * Returns the sum of occurrences, in an array of a given condition satisfied
+     * 
+     * @access private static
+     * @param mixed $value The value or array to be evaluated
+     * @param string $operator Operator of evaluation
+     * @param string $conditional Conditional assignment
+     * @return integer
+     * @link https://gist.github.com/3100679
+     * 
+     * */
+    private static function countWhere($value = 1, $operator = '==', $conditional = 1)
+    {
+        $array = is_array($value) ? $value : (array) $value;
+        $operator = !in_array($operator, array('<', '>', '<=', '>=', '==', '!=')) ? '==' : $operator;
+
+        $i = 0;
+        foreach ($array as $current) {
+            $match = null;
+
+            eval('$match = (bool)("' . $current . '"' . $operator . '"' . $conditional . '");');
+
+            $i = $match ? ++$i : $i;
+        }
+
+        return $i;
+    }
+
+    /**
+     * Removes the style markup in html tags, derived from a text editor
+     * 
+     * @access public static
+     * @param string $value The input string
+     * @return string
+     * @link https://gist.github.com/3078188
+     * 
+     * */
+    public static function clearStyle($value)
+    {
+        $value = preg_replace("~<(a|ol|ul|li|h[1-6r]|d[dlt]|em|p|i|b|s|strong|span|div|table|t[dhr])\s?(style.*)?/>~i", "<$1>", $value);
+
+        return $value;
+    }
+
+    /**
+     * Converts a character from a colon to HTML
+     * 
+     * @access public static
+     * @param string $value The input string
+     * @return string
+     * @link https://gist.github.com/5716880
+     * 
+     * */
+    public static function htmlColon($value)
+    {
+        $value = preg_replace('~[:]~', '&#58;', htmlentities($value));
+
+        return $value;
     }
 
     /**

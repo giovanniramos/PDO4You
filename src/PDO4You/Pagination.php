@@ -1,5 +1,8 @@
 <?php
 
+// Defining namespaces
+namespace PDO4You;
+
 /**
  * Pagination class
  * 
@@ -7,20 +10,21 @@
  * @copyright 2010-2013, Giovanni Ramos
  * @since 2010-09-07
  * @license http://opensource.org/licenses/MIT
- * @link http://github.com/giovanniramos/PDO4YOU
- * @package PDO4YOU
+ * @link http://github.com/giovanniramos/PDO4You
+ * @package PDO4You
  * 
  * */
-class PDO4You_pagination
+class Pagination
 {
-    static $link;
-    static $slug;
-    static $limit = -1;
-    static $paging = false;
-    static $page;
-    static $page_nave;
-    static $total_records = 0;
-    static $total_per_page = 0;
+    static private $link;
+    static private $slug;
+    static private $limit = -1;
+    static private $query;
+    static private $paging = false;
+    static private $page;
+    static private $page_nave;
+    static private $total_records = 0;
+    static private $total_per_page = 0;
 
     /**
      * Enables and sets the number of records in paging
@@ -29,8 +33,27 @@ class PDO4You_pagination
      */
     public static function setPagination($limit = 5)
     {
-        self::$paging = true;
+        self::setPaging(true);
         self::$limit = $limit;
+    }
+
+    /**
+     * Sets the activation of paging
+     * 
+     * @param boolean $paging Enables paging
+     */
+    public static function setPaging($paging)
+    {
+        self::$paging = $paging;
+    }
+
+    /**
+     * Gets the activation of paging
+     * 
+     */
+    public static function getPaging()
+    {
+        return self::$paging;
     }
 
     /**
@@ -38,7 +61,7 @@ class PDO4You_pagination
      * 
      * @param int $records Total records in paging
      */
-    protected static function setTotalPagingRecords($records)
+    public static function setTotalPagingRecords($records)
     {
         self::$total_records = count($records);
         self::$total_per_page = ceil(self::$total_records / self::$limit);
@@ -56,17 +79,35 @@ class PDO4You_pagination
     /**
      * Sets the limit of records in the query
      * 
-     * @param string $sql SQL query
+     * @param string $query SQL query
      */
-    public static function setLimit($sql)
+    public static function setLimit($query)
     {
         $limit = self::$limit;
-        $offset = (self::$page - 1) * $limit;
-        $offset = abs($offset);
+        $offset = abs((self::$page - 1) * $limit);
 
-        $query = $sql . ($limit == -1 ? null : ' LIMIT ' . $limit . ' OFFSET ' . $offset);
+        $query = $query . ($limit == -1 ? null : ' LIMIT ' . $limit . ' OFFSET ' . $offset);
 
-        return $query;
+        self::setQuery($query);
+    }
+
+    /**
+     * Sets the query
+     * 
+     * @param string $query SQL query
+     */
+    protected static function setQuery($query)
+    {
+        self::$query = $query;
+    }
+
+    /**
+     * Gets the query 
+     * 
+     */
+    public static function getQuery()
+    {
+        return self::$query;
     }
 
     /**
@@ -74,7 +115,7 @@ class PDO4You_pagination
      * 
      * @param string $link Page link
      */
-    public static function setLink($link)
+    public static function setPageLink($link)
     {
         self::$link = $link;
     }
@@ -108,7 +149,7 @@ class PDO4You_pagination
      */
     public static function getPagination($link = null, $slug = null)
     {
-        if (self::$paging == false) {
+        if (self::$paging == false || self::$page == 0) {
             return null;
         }
 
@@ -117,10 +158,6 @@ class PDO4You_pagination
         $page = self::$page;
         $total_per_page = self::$total_per_page;
         $url = self::$page_nave . $link;
-
-        if ($page == 0) {
-            return null;
-        }
 
         $nave = '<div class="pagination">';
 

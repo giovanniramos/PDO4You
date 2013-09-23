@@ -1,32 +1,15 @@
 <?php
-// Loading all files required to run the library PDO4You
-require_once('../bootstrap.php');
+// Loading demo class
+require 'DemoCRUD.php';
 
-// Example with Read Records
-echo '<h2><a href=".">DEMOS</a> &rsaquo; READ RECORDS</h2>';
+// Example with text from HTML Editor
+echo '<h2><a href=".">DEMOS</a> &rsaquo; HTML EDITOR</h2>';
 
 // Creating an instance
-$instance = new DemoRegister;
+$demo = new DemoCRUD;
 
-// Starting the main method
-$instance->init();
-?>
+// Sample text
+$sample_text = '<p style="color: #CBF;">Lorem ipsum "dolor" sit amet</p>';
 
-<div class="pdo4you">
-    <form method="post">
-        <h3><?php echo $instance::ADD_NEW_USER; ?></h3>
-
-        <div><?php echo $instance::FIRST_NAME; ?>: <input type="text" name="firstname" /></div>
-        <div><?php echo $instance::LAST_NAME; ?>: <input type="text" name="lastname" /></div>
-        <div><?php echo $instance::MAIL; ?>: <input type="text" name="mail" /></div>
-        <div><input type="submit" value="Register" /></div>
-    </form>
-
-    <?php echo $instance->getMessage(); ?>
-
-    <br />
-
-    <?php echo $instance::TOTAL_USERS; ?>: <?php echo $instance->getTotalRecords(); ?>
-
-    <?php echo $instance->getRecords(); ?>
-</div>
+// UPDATE books SET description = ? WHERE id = 1
+$demo->updateWhere($sample_text, 1);

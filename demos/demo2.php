@@ -1,21 +1,18 @@
 <?php
-// Loading all files required to run the library PDO4You
-require_once('../bootstrap.php');
+// Loading demo class
+require 'DemoCRUD.php';
 
 // Example with Insert, Update and Delete
 echo '<h2><a href=".">DEMOS</a> &rsaquo; INSERT/UPDATE/DELETE</h2>';
 
 // Creating an instance
-$instance = new DemoCRUD;
-
-// Starting the main method
-$instance->init();
+$demo = new DemoCRUD;
 
 // Example with inserting multiple records
-$instance->multipleInsert();
+$demo->multipleInsert();
 
 // Example to update multiple records
-$instance->multipleUpdate();
+$demo->multipleUpdate();
 
 // Example with multiple exclusion of records
-$instance->multipleDelete();
+$demo->multipleDelete();

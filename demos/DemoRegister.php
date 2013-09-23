@@ -1,9 +1,11 @@
 <?php
 
+// Importing classes
+use PDO4You\PDO4You;
+use PDO4You\Pagination;
+
 /**
  * DemoRegister
- * 
- * @category Demo
  * 
  * */
 class DemoRegister
@@ -21,11 +23,8 @@ class DemoRegister
      * Main method
      * 
      * */
-    public function init()
+    public function __construct()
     {
-        // Connection instance started and available
-        PDO4You::getInstance();
-
         // Validates the form input submitted, before writing to database
         if ($_POST) {
             $firstName = filter_input(INPUT_POST, 'firstname', FILTER_SANITIZE_STRING);
@@ -41,7 +40,7 @@ class DemoRegister
 
             // Displays a message in case of errors
             if (isset($error)) {
-                self::$message = '<i style="color: #f50;">ERROR: ' . $error . '</i><br />';
+                self::$message = '<i style="color: #f50;">ERROR: ' . $error . '</i><br /><br />';
             } else {
                 // SQL insertion in JSON format
                 $json = '
@@ -54,9 +53,10 @@ class DemoRegister
                 ';
 
                 // Performs the new record and store the result
-                $result = PDO4You::execute($json);
+                list($total) = PDO4You::execute($json);
 
-                self::$message = 'Register #' . $result[0] . ' added successfully!!<br />';
+                // Displays a success message
+                self::$message = 'Register #' . $total . ' added successfully!!<br /><br />';
             }
         }
 
@@ -70,7 +70,9 @@ class DemoRegister
      * */
     public function getMessage()
     {
-        return self::$message;
+        $message = self::$message;
+
+        return $message;
     }
 
     /**
@@ -80,19 +82,20 @@ class DemoRegister
     public function getTotalRecords()
     {
         // Returns the total number of records in paging 
-        if (PDO4You_pagination::$paging == true) {
-            return PDO4You_pagination::getTotalPagingRecords();
+        if (Pagination::getPaging() == true) {
+            return Pagination::getTotalPagingRecords();
         } else {
             return count(self::$hasRecords);
         }
     }
 
     /**
-     * Displays all records
+     * Displays the records
      * 
      * */
-    public function getRecords()
+    public function showRecords()
     {
+        // Displays the records if there
         if (self::$hasRecords) {
             $html = null;
 

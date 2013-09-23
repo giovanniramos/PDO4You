@@ -1,4 +1,4 @@
-*[Read the documentation in English](https://github.com/giovanniramos/PDO4YOU/blob/master/README.md)*
+*[Read the documentation in English](https://github.com/giovanniramos/PDO4You/blob/master/README.md)*
 
 ---
 
@@ -32,64 +32,31 @@ O padrão de projeto Singleton foi adotado para otimizar a conexão, garantindo 
 
 
 
-Carregando o arquivo de inicialização
+Introdução
 --------------------------------------------------
+
+O bootstrap é o arquivo responsável por carregar o autoloader e todas as dependências do projeto.
+Se não estiver disponível, será exibida uma mensagem de confirmação para iniciar a instalação com Composer.
 
 ~~~ php
 <?php
 
-// Apenas um arquivo é necessário pelo carregamento dos arquivos responsáveis pelo funcionamento da classe.
-require_once('bootstrap.php');
+// Carrega o autoloader e todas as dependências do projeto
+require __DIR__.'/bootstrap.php';
 
 ?>
 ~~~ 
 
-`PDO4You.class.php`: contém a implementação do objeto PDO de conexão.
+`PDO4You.php`: classe que contém a implementação do objeto PDO de conexão.
 
 `PDO4You.config.php`: arquivo de configuração inicial, de acesso ao servidor e base de dados.
 
-`PDO4You.library.php`: arquivo contendo um autoloading de classes, e funções internas da classe.
-
 `PDO4You.settings.ini`: contém as definições para cada adaptador de conexão com uma base de dados.
 
+`Describe.php`: Describe é uma classe usada para listar todos os campos em uma tabela e o formato de dados de cada campo.
 
+`Pagination.php`: Pagination é uma classe que permite listar os registros de forma paginada, semelhante ao Google.
 
-Drivers suportados pelo servidor
---------------------------------------------------
-
-Execute o método abaixo para verificar se o servidor tem suporte a um driver PDO específico de sua base de dados. 
-Os drivers suportados serão exibidos na tela.
-
-~~~ php
-<?php
-
-// O método abaixo exibe todos os drivers instalados e que são suportados pelo servidor
-PDO4You::getAvailableDrivers();
-
-?>
-~~~
-
-Para habilitar algum driver não instalado, localize o arquivo php.ini, abra e procure por "extension=" sem as aspas, depois descomente as linhas a seguir conforme sua base de dados de preferência, removendo no início de cada linha o "ponto-e-vírgula" e após mudanças, reinicie o servidor.
-
-~~~ html
-;extension=php_pdo.dll                  ; Esta DLL não será necessária a partir do PHP 5.3
-extension=php_pdo_mysql.dll             ; MySQL 3.x/4.x/5.x / MariaDB
-extension=php_pdo_pgsql.dll             ; PostgreSQL
-;extension=php_pdo_cubrid.dll           ; CUBRID
-;extension=php_pdo_oci.dll              ; Oracle Call Interface
-;extension=php_pdo_sqlsrv.dll           ; Microsoft SQL Server / SQL Azure
-;extension=php_pdo_dblib.dll            ; Microsoft SQL Server / Sybase / FreeTDS
-;extension=php_pdo_mssql.dll            ; Microsoft SQL Server "Versão antiga"
-;extension=php_pdo_sqlite.dll           ; SQLite 2/3
-
-~~~
-
-Drivers PDO para o servidor Xampp:<br />
-CUBRID (PHP 5.4): http://bit.ly/PDO_CUBRID-PHP54<br />
-CUBRID (PHP 5.3): http://bit.ly/PDO_CUBRID-PHP53<br />
-MS SQL Server 3.0 (PHP 5.4): http://bit.ly/PDO_SQLSRV-PHP54<br />
-MS SQL Server 2.0 (PHP 5.2/5.3): http://bit.ly/PDO_SQLSRV-PHP53<br />
-MS SQL Server (Versão antiga): http://bit.ly/PDO_MSSQL-PHP53
 
 
 Estabelecendo uma conexão com a base de dados
@@ -99,6 +66,14 @@ Para abstrair nossos mecanismos de acesso aos dados, usamos um DSN (Data Source 
 
 ~~~ php
 <?php
+
+// Carrega todos os arquivos necessários
+require __DIR__.'/bootstrap.php';
+
+// Instância de conexão importada e disponível para uso
+use PDO4You\PDO4You;
+new PDO4You;
+
 
 // Principais meios de se iniciar uma instância de conexão
 
@@ -142,11 +117,19 @@ Instruções de consulta:
 Abaixo seguem exemplos de como realizar essas operações.
 
 
+
 Selecionando registros na base de dados
 --------------------------------------------------
 
 ~~~ php
 <?php
+
+// Carrega todos os arquivos necessários
+require __DIR__.'/bootstrap.php';
+
+// Instância de conexão importada e disponível para uso
+use PDO4You\PDO4You;
+new PDO4You;
 
 // Iniciando uma instância de conexão. O padrão de conexão é não-persistente
 PDO4You::getInstance();
@@ -332,10 +315,49 @@ $result = PDO4You::execute($json);
 
 
 
-Requerimentos
+Drivers suportados pelo servidor
 --------------------------------------------------
 
-PHP 5.3 ou superior
+Execute o método abaixo para verificar se o servidor tem suporte a um driver PDO específico de sua base de dados. 
+Os drivers suportados serão exibidos na tela.
+
+~~~ php
+<?php
+
+// O método abaixo exibe todos os drivers instalados e que são suportados pelo servidor
+PDO4You::getAvailableDrivers();
+
+?>
+~~~
+
+Para habilitar algum driver não instalado, localize o arquivo php.ini, abra e procure por "extension=" sem as aspas, depois descomente as linhas a seguir conforme sua base de dados de preferência, removendo no início de cada linha o "ponto-e-vírgula" e após mudanças, reinicie o servidor.
+
+~~~ html
+;extension=php_pdo.dll                  ; Esta DLL não será necessária a partir do PHP 5.3
+extension=php_pdo_mysql.dll             ; MySQL 3.x/4.x/5.x / MariaDB
+extension=php_pdo_pgsql.dll             ; PostgreSQL
+;extension=php_pdo_cubrid.dll           ; CUBRID
+;extension=php_pdo_oci.dll              ; Oracle Call Interface
+;extension=php_pdo_sqlsrv.dll           ; Microsoft SQL Server / SQL Azure
+;extension=php_pdo_dblib.dll            ; Microsoft SQL Server / Sybase / FreeTDS
+;extension=php_pdo_mssql.dll            ; Microsoft SQL Server "Versão antiga"
+;extension=php_pdo_sqlite.dll           ; SQLite 2/3
+
+~~~
+
+Drivers PDO para o servidor Xampp:<br />
+CUBRID (PHP 5.4): http://bit.ly/PDO_CUBRID-PHP54<br />
+CUBRID (PHP 5.3): http://bit.ly/PDO_CUBRID-PHP53<br />
+MS SQL Server 3.0 (PHP 5.4): http://bit.ly/PDO_SQLSRV-PHP54<br />
+MS SQL Server 2.0 (PHP 5.2/5.3): http://bit.ly/PDO_SQLSRV-PHP53<br />
+MS SQL Server (Versão antiga): http://bit.ly/PDO_MSSQL-PHP53
+
+
+
+Dependências
+--------------------------------------------------
+
+PHP >= 5.3.2
 
 
 
@@ -343,13 +365,13 @@ Colaboradores
 --------------------------------------------------
 
 Giovanni Ramos - <giovannilauro@gmail.com> - <http://twitter.com/giovanni_ramos><br />
-Veja também a lista de [colaboradores](http://github.com/giovanniramos/PDO4YOU/contributors) que participaram deste projeto.
+Veja também a lista de [colaboradores](http://github.com/giovanniramos/PDO4You/contributors) que participaram deste projeto.
 
 
 
 Licença
 --------------------------------------------------
 
-Copyright (c) 2013 [Giovanni Ramos](http://github.com/giovanniramos)
+Copyright (c) 2010-2013 [Giovanni Ramos](http://github.com/giovanniramos)
 
-PDO4You é um software open-source licenciado sob a [MIT License](http://www.opensource.org/licenses/MIT) (MIT-LICENSE.txt)
+PDO4You é um software open-source licenciado sob a [MIT License](http://www.opensource.org/licenses/MIT)
