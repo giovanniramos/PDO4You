@@ -24,12 +24,12 @@
       <div id="banner">
         <span id="logo"></span>
 
-        <a href="https://github.com/giovanniramos/PDO4YOU" class="button fork"><strong>View On GitHub</strong></a>
+        <a href="https://github.com/giovanniramos/PDO4You" class="button fork"><strong>View On GitHub</strong></a>
         <div class="downloads">
           <span>Downloads:</span>
           <ul>
-            <li><a href="https://github.com/giovanniramos/PDO4YOU/zipball/master" class="button">ZIP</a></li>
-            <li><a href="https://github.com/giovanniramos/PDO4YOU/tarball/master" class="button">TAR</a></li>
+            <li><a href="https://github.com/giovanniramos/PDO4You/zipball/master" class="button">ZIP</a></li>
+            <li><a href="https://github.com/giovanniramos/PDO4You/tarball/master" class="button">TAR</a></li>
           </ul>
         </div>
       </div><!-- end banner -->
@@ -39,7 +39,7 @@
         <ul></ul>
       </nav>
       <section>
-        <p><em><a href="https://github.com/giovanniramos/PDO4YOU/blob/master/README-pt.md">Leia a documentação em Português</a></em></p>
+        <p><em><a href="https://github.com/giovanniramos/PDO4You/blob/master/README-pt.md">Leia a documentação em Português</a></em></p>
 
 <hr><h1>
 <a name="pdo4you" class="anchor" href="#pdo4you"><span class="octicon octicon-link"></span></a>PDO4You</h1>
@@ -70,65 +70,43 @@ More information at: <a href="http://bit.ly/CUBRID">http://bit.ly/CUBRID</a></p>
 <li>Option to connect with VCAP_SERVICES</li>
 <li>Error Handling with Stack Trace</li>
 </ul><h2>
-<a name="loading-the-bootstrap-file" class="anchor" href="#loading-the-bootstrap-file"><span class="octicon octicon-link"></span></a>Loading the bootstrap file</h2>
+<a name="getting-started" class="anchor" href="#getting-started"><span class="octicon octicon-link"></span></a>Getting Started</h2>
 
-<div class="highlight"><pre><span class="o">&lt;?</span><span class="nx">php</span>
+<p>The bootstrap file is responsible for loading the autoloader and all project dependencies.
+If not available, you will receive a confirmation message to start installation with Composer.</p>
 
-<span class="c1">// Only one file is needed for loading the files responsible for the operation of the class.</span>
-<span class="k">require_once</span><span class="p">(</span><span class="s1">'bootstrap.php'</span><span class="p">);</span>
+<div class="highlight highlight-php"><pre><span class="o">&lt;?</span><span class="nx">php</span>
+
+<span class="c1">// Loads the autoloader and all project dependencies</span>
+<span class="k">require</span> <span class="nx">__DIR__</span><span class="o">.</span><span class="s1">'/bootstrap.php'</span><span class="p">;</span>
 
 <span class="cp">?&gt;</span><span class="x"></span>
 </pre></div>
 
-<p><code>PDO4You.class.php</code>: contains the implementation of the PDO object connection.</p>
+<p><code>PDO4You.php</code>: class that contains the implementation of the PDO object connection.</p>
 
 <p><code>PDO4You.config.php</code>: initial configuration file, server access and database.</p>
 
-<p><code>PDO4You.library.php</code>: file containing an autoloading class, and internal functions of the class.</p>
-
 <p><code>PDO4You.settings.ini</code>: contains the settings for each adapter of connection to the database.</p>
 
-<h2>
-<a name="drivers-supported-by-the-server" class="anchor" href="#drivers-supported-by-the-server"><span class="octicon octicon-link"></span></a>Drivers supported by the server</h2>
+<p><code>Describe.php</code>: Describe is a class used to list all the fields in a table and the data format of each field.</p>
 
-<p>Execute the method below to check if the server supports a PDO driver specific to your database.
-Supported drivers will be displayed on the screen.</p>
-
-<div class="highlight"><pre><span class="o">&lt;?</span><span class="nx">php</span>
-
-<span class="c1">// The method below shows all the drivers installed and that are supported by the server</span>
-<span class="nx">PDO4You</span><span class="o">::</span><span class="na">getAvailableDrivers</span><span class="p">();</span>
-
-<span class="cp">?&gt;</span><span class="x"></span>
-</pre></div>
-
-<p>To enable any driver not installed, locate the php.ini file, open it and look for "extension=" without quotes, then uncomment the following lines according to your database preferably, removing the beginning of each line the "semicolon" and after changes, restart the server.</p>
-
-<div class="highlight"><pre>;extension=php_pdo.dll                  ; This DLL is not required as of PHP 5.3
-extension=php_pdo_mysql.dll             ; MySQL 3.x/4.x/5.x / MariaDB
-extension=php_pdo_pgsql.dll             ; PostgreSQL
-;extension=php_pdo_cubrid.dll           ; CUBRID
-;extension=php_pdo_oci.dll              ; Oracle Call Interface
-;extension=php_pdo_sqlsrv.dll           ; Microsoft SQL Server / SQL Azure
-;extension=php_pdo_dblib.dll            ; Microsoft SQL Server / Sybase / FreeTDS
-;extension=php_pdo_mssql.dll            ; Microsoft SQL Server "Old version"
-;extension=php_pdo_sqlite.dll           ; SQLite 2/3
-
-</pre></div>
-
-<p>PDO drivers for the server Xampp:<br>
-CUBRID (PHP 5.4): <a href="http://bit.ly/PDO_CUBRID-PHP54">http://bit.ly/PDO_CUBRID-PHP54</a><br>
-CUBRID (PHP 5.3): <a href="http://bit.ly/PDO_CUBRID-PHP53">http://bit.ly/PDO_CUBRID-PHP53</a><br>
-MS SQL Server 3.0 (PHP 5.4): <a href="http://bit.ly/PDO_SQLSRV-PHP54">http://bit.ly/PDO_SQLSRV-PHP54</a><br>
-MS SQL Server 2.0 (PHP 5.2/5.3): <a href="http://bit.ly/PDO_SQLSRV-PHP53">http://bit.ly/PDO_SQLSRV-PHP53</a><br>
-MS SQL Server (Old version): <a href="http://bit.ly/PDO_MSSQL-PHP53">http://bit.ly/PDO_MSSQL-PHP53</a></p>
+<p><code>Pagination.php</code>: Pagination is a class that allows you to list the records so as paged, similar to Google.</p>
 
 <h2>
 <a name="establishing-a-connection-to-the-database" class="anchor" href="#establishing-a-connection-to-the-database"><span class="octicon octicon-link"></span></a>Establishing a connection to the database</h2>
 
 <p>To abstract our data access mechanisms, we use a DSN (Data Source Name = Data Source) that stores the information needed to initiate communication with other data sources, such as: type of technology, server name or location, database name, user, password, and other settings. This allows portability of the project, facilitating the exchange of access to the database during a migration.</p>
 
-<div class="highlight"><pre><span class="o">&lt;?</span><span class="nx">php</span>
+<div class="highlight highlight-php"><pre><span class="o">&lt;?</span><span class="nx">php</span>
+
+<span class="c1">// Load all the files needed</span>
+<span class="k">require</span> <span class="nx">__DIR__</span><span class="o">.</span><span class="s1">'/bootstrap.php'</span><span class="p">;</span>
+
+<span class="c1">// Connection instance imported and available for use</span>
+<span class="k">use</span> <span class="nx">PDO4You\PDO4You</span><span class="p">;</span>
+<span class="k">new</span> <span class="nx">PDO4You</span><span class="p">;</span>
+
 
 <span class="c1">// Main ways to start a connection instance</span>
 
@@ -171,7 +149,14 @@ Create(INSERT), Retrieve(SELECT), Update(UPDATE) e Destroy(DELETE)</p>
 <h2>
 <a name="selecting-records-in-the-database" class="anchor" href="#selecting-records-in-the-database"><span class="octicon octicon-link"></span></a>Selecting records in the database</h2>
 
-<div class="highlight"><pre><span class="o">&lt;?</span><span class="nx">php</span>
+<div class="highlight highlight-php"><pre><span class="o">&lt;?</span><span class="nx">php</span>
+
+<span class="c1">// Load all the files needed</span>
+<span class="k">require</span> <span class="nx">__DIR__</span><span class="o">.</span><span class="s1">'/bootstrap.php'</span><span class="p">;</span>
+
+<span class="c1">// Connection instance imported and available for use</span>
+<span class="k">use</span> <span class="nx">PDO4You\PDO4You</span><span class="p">;</span>
+<span class="k">new</span> <span class="nx">PDO4You</span><span class="p">;</span>
 
 <span class="c1">// Starting a connection instance. The default connection is not persistent</span>
 <span class="nx">PDO4You</span><span class="o">::</span><span class="na">getInstance</span><span class="p">();</span>
@@ -229,7 +214,7 @@ Create(INSERT), Retrieve(SELECT), Update(UPDATE) e Destroy(DELETE)</p>
 <h2>
 <a name="inserting-a-single-row-in-the-database" class="anchor" href="#inserting-a-single-row-in-the-database"><span class="octicon octicon-link"></span></a>Inserting a single row in the database</h2>
 
-<div class="highlight"><pre><span class="o">&lt;?</span><span class="nx">php</span>
+<div class="highlight highlight-php"><pre><span class="o">&lt;?</span><span class="nx">php</span>
 
 <span class="c1">// SQL insert in JSON format</span>
 <span class="nv">$json</span> <span class="o">=</span> <span class="s1">'</span>
@@ -256,7 +241,7 @@ Create(INSERT), Retrieve(SELECT), Update(UPDATE) e Destroy(DELETE)</p>
 <h2>
 <a name="inserting-multiple-records" class="anchor" href="#inserting-multiple-records"><span class="octicon octicon-link"></span></a>Inserting multiple records</h2>
 
-<div class="highlight"><pre><span class="o">&lt;?</span><span class="nx">php</span>
+<div class="highlight highlight-php"><pre><span class="o">&lt;?</span><span class="nx">php</span>
 
 <span class="c1">// SQL insert in JSON format</span>
 <span class="nv">$json</span> <span class="o">=</span> <span class="s1">'</span>
@@ -283,7 +268,7 @@ Create(INSERT), Retrieve(SELECT), Update(UPDATE) e Destroy(DELETE)</p>
 <h2>
 <a name="updating-multiple-records" class="anchor" href="#updating-multiple-records"><span class="octicon octicon-link"></span></a>Updating multiple records</h2>
 
-<div class="highlight"><pre><span class="o">&lt;?</span><span class="nx">php</span>
+<div class="highlight highlight-php"><pre><span class="o">&lt;?</span><span class="nx">php</span>
 
 <span class="c1">// SQL update in JSON format</span>
 <span class="nv">$json</span> <span class="o">=</span> <span class="s1">'</span>
@@ -313,7 +298,7 @@ Create(INSERT), Retrieve(SELECT), Update(UPDATE) e Destroy(DELETE)</p>
 <h2>
 <a name="deleting-multiple-records" class="anchor" href="#deleting-multiple-records"><span class="octicon octicon-link"></span></a>Deleting multiple records</h2>
 
-<div class="highlight"><pre><span class="o">&lt;?</span><span class="nx">php</span>
+<div class="highlight highlight-php"><pre><span class="o">&lt;?</span><span class="nx">php</span>
 
 <span class="c1">// SQL delete in JSON format</span>
 <span class="nv">$json</span> <span class="o">=</span> <span class="s1">'</span>
@@ -341,22 +326,57 @@ Create(INSERT), Retrieve(SELECT), Update(UPDATE) e Destroy(DELETE)</p>
 </pre></div>
 
 <h2>
-<a name="requirements" class="anchor" href="#requirements"><span class="octicon octicon-link"></span></a>Requirements</h2>
+<a name="drivers-supported-by-the-server" class="anchor" href="#drivers-supported-by-the-server"><span class="octicon octicon-link"></span></a>Drivers supported by the server</h2>
 
-<p>PHP 5.3 or higher</p>
+<p>Execute the method below to check if the server supports a PDO driver specific to your database.
+Supported drivers will be displayed on the screen.</p>
+
+<div class="highlight highlight-php"><pre><span class="o">&lt;?</span><span class="nx">php</span>
+
+<span class="c1">// The method below shows all the drivers installed and that are supported by the server</span>
+<span class="nx">PDO4You</span><span class="o">::</span><span class="na">getAvailableDrivers</span><span class="p">();</span>
+
+<span class="cp">?&gt;</span><span class="x"></span>
+</pre></div>
+
+<p>To enable any driver not installed, locate the php.ini file, open it and look for "extension=" without quotes, then uncomment the following lines according to your database preferably, removing the beginning of each line the "semicolon" and after changes, restart the server.</p>
+
+<div class="highlight highlight-html"><pre>;extension=php_pdo.dll                  ; This DLL is not required as of PHP 5.3
+extension=php_pdo_mysql.dll             ; MySQL 3.x/4.x/5.x / MariaDB
+extension=php_pdo_pgsql.dll             ; PostgreSQL
+;extension=php_pdo_cubrid.dll           ; CUBRID
+;extension=php_pdo_oci.dll              ; Oracle Call Interface
+;extension=php_pdo_sqlsrv.dll           ; Microsoft SQL Server / SQL Azure
+;extension=php_pdo_dblib.dll            ; Microsoft SQL Server / Sybase / FreeTDS
+;extension=php_pdo_mssql.dll            ; Microsoft SQL Server "Old version"
+;extension=php_pdo_sqlite.dll           ; SQLite 2/3
+
+</pre></div>
+
+<p>PDO drivers for the server Xampp:<br>
+CUBRID (PHP 5.4): <a href="http://bit.ly/PDO_CUBRID-PHP54">http://bit.ly/PDO_CUBRID-PHP54</a><br>
+CUBRID (PHP 5.3): <a href="http://bit.ly/PDO_CUBRID-PHP53">http://bit.ly/PDO_CUBRID-PHP53</a><br>
+MS SQL Server 3.0 (PHP 5.4): <a href="http://bit.ly/PDO_SQLSRV-PHP54">http://bit.ly/PDO_SQLSRV-PHP54</a><br>
+MS SQL Server 2.0 (PHP 5.2/5.3): <a href="http://bit.ly/PDO_SQLSRV-PHP53">http://bit.ly/PDO_SQLSRV-PHP53</a><br>
+MS SQL Server (Old version): <a href="http://bit.ly/PDO_MSSQL-PHP53">http://bit.ly/PDO_MSSQL-PHP53</a></p>
+
+<h2>
+<a name="dependencies" class="anchor" href="#dependencies"><span class="octicon octicon-link"></span></a>Dependencies</h2>
+
+<p>PHP &gt;= 5.3.2</p>
 
 <h2>
 <a name="collaborators" class="anchor" href="#collaborators"><span class="octicon octicon-link"></span></a>Collaborators</h2>
 
 <p>Giovanni Ramos - <a href="mailto:giovannilauro@gmail.com">giovannilauro@gmail.com</a> - <a href="http://twitter.com/giovanni_ramos">http://twitter.com/giovanni_ramos</a><br>
-See also the list of <a href="http://github.com/giovanniramos/PDO4YOU/contributors">colaboradores</a> who participated in this project.</p>
+See also the list of <a href="http://github.com/giovanniramos/PDO4You/contributors">colaboradores</a> who participated in this project.</p>
 
 <h2>
 <a name="license" class="anchor" href="#license"><span class="octicon octicon-link"></span></a>License</h2>
 
-<p>Copyright (c) 2013 <a href="http://github.com/giovanniramos">Giovanni Ramos</a></p>
+<p>Copyright (c) 2010-2013 <a href="http://github.com/giovanniramos">Giovanni Ramos</a></p>
 
-<p>PDO4You is open-sourced software licensed under the <a href="http://www.opensource.org/licenses/MIT">MIT License</a> (MIT-LICENSE.txt)</p>
+<p>PDO4You is open-sourced software licensed under the <a href="http://www.opensource.org/licenses/MIT">MIT License</a></p>
       </section>
       <footer>
         <p>Project maintained by <a href="https://github.com/giovanniramos">giovanniramos</a></p>
