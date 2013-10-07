@@ -5,6 +5,10 @@
 PDO4You
 ==================================================
 
+[![Latest Stable Version](https://poser.pugx.org/giovanniramos/pdo4you/v/stable.png)](https://packagist.org/packages/giovanniramos/pdo4you)
+[![Build Status](https://travis-ci.org/giovanniramos/PDO4You.png?branch=master)](https://travis-ci.org/giovanniramos/PDO4You)
+
+
 This class is based on the PDO, which is a PHP extension that allows developers to create portable code, so as to cater for most popular databases.
 Being MySQL, PostgreSQL, SQLite, Oracle, Microsoft SQL Server, Sybase.
 
