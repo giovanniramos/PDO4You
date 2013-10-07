@@ -325,7 +325,7 @@ Os drivers suportados serão exibidos na tela.
 <?php
 
 // O método abaixo exibe todos os drivers instalados e que são suportados pelo servidor
-PDO4You::getAvailableDrivers();
+PDO4You::showAvailableDrivers();
 
 ?>
 ~~~
@@ -357,7 +357,8 @@ MS SQL Server (Versão antiga): http://bit.ly/PDO_MSSQL-PHP53
 Dependências
 --------------------------------------------------
 
-PHP >= 5.3.2
+PHP >= 5.3.2<br />
+PHPUnit >= 3.7.0 (necessário para executar o conjunto de testes)
 
 
 

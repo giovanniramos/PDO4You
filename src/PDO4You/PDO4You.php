@@ -486,7 +486,7 @@ class PDO4You implements Config
      * @return void
      * 
      * */
-    public static function getServerInfo()
+    public static function showServerInfo()
     {
         try {
             if (self::$instance instanceof PDO) {
@@ -510,7 +510,7 @@ class PDO4You implements Config
      * @return void
      * 
      * */
-    public static function getAvailableDrivers()
+    public static function showAvailableDrivers()
     {
         try {
             if (self::$instance instanceof PDO) {
@@ -570,15 +570,19 @@ class PDO4You implements Config
                 $jarr['info']['stack'][$i] = '#' . $i++ . ' ' . basename($t['file']) . ':' . $t['line'];
             }
 
-            $json = json_encode($jarr, true);
+            $json_stack = json_encode($jarr, true);
 
-            exit($json);
+            exit($json_stack);
         } else {
-            self::css();
-
-            if (!static::PDO4YOU_FIREDEBUG) {
+            if (defined('PHPUnit_MAIN_METHOD')) {
                 return;
             }
+
+            if (static::PDO4YOU_FIREDEBUG == FALSE) {
+                return;
+            }
+
+            self::css();
 
             if (defined(static::PDO4YOU_WEBMASTER)) {
                 self::fireAlert(self::$exception['critical-error'], $e);
@@ -652,6 +656,7 @@ class PDO4You implements Config
                 self::setInstance($use);
             }
 
+            $result = null;
             $pdo = self::$instance;
             if (!$pdo instanceof PDO) {
                 throw new PDOException(self::$exception['no-instance']);
@@ -668,7 +673,11 @@ class PDO4You implements Config
                 }
 
                 $pre = $pdo->prepare($query);
-                $pre->execute();
+                if (!is_object($pre)) {
+                    return;
+                } else {
+                    $pre->execute();
+                }
 
                 switch ($type) {
                     case 'num': $result = $pre->fetchAll(PDO::FETCH_NUM);
@@ -883,10 +892,13 @@ class PDO4You implements Config
      * */
     public static function execute($json, $use = null)
     {
-        preg_match('~([[:alnum:]]+)[\s\n\r\t]{0,}?:~', $json, $match);
-        $command = $match[1];
+        // Finds a word that is at the beginning, in quotation marks or not
+        $match = null;
+        preg_match('~["]?([[:alnum:]]+)["]?[\s\n\r\t]{0,}?:~', $json, $match);
 
         try {
+            // Checks the word if found, is among the allowed commands for execution
+            $command = $match[1];
             if (!in_array($command, array('insert', 'update', 'delete', 'query'))) {
                 throw new PDOException(self::$exception['not-implemented'] . ' PDO4You::' . $command . '()');
             } else {
@@ -1005,19 +1017,30 @@ class PDO4You implements Config
     private static function parseJSON($json)
     {
         try {
-            preg_match('~([[:alnum:]]+)[\s\n\r\t]{0,}?:~', $json, $match);
+            // Format JSON
+            $json = '{' . $json . '}';
+
+            // Finds a word that is at the beginning, in quotation marks or not and replaces
+            $match = null;
+            preg_match('~["]?([[:alnum:]]+)["]?[\s\n\r\t]{0,}?:~', $json, $match);
             $command = $match[1];
             if ($command != 'query') {
                 $json = preg_replace('~' . $command . '~', 'query', $json, 1);
             }
-
-            $json = '{ ' . $json . ' }';
+ 
+            // Converts the encoding
             $json = mb_detect_encoding($json, 'UTF-8', true) ? $json : utf8_encode($json);
-            $json = preg_replace('~[\s]{2,}~', ' ', $json);
-            $json = preg_replace('~[\n\r\t]~', '', $json);
-            $json = preg_replace('~(,?[{,])[\s]*([^"]+?)[\s]*:~', '$1"$2":', $json);
-            $json = preg_replace('~(<\/?)(\w+)([^>]*>)~e', "'$1$2$3'", $json);
-            $json = preg_replace('~(?<!:|:\s)"(?=[^"]*?"(( [^:])|([,}])))~', '\\"', $json);
+
+            // Replaces the excess whitespace and line breaks
+            $json = preg_replace(array('~\s+~', '~[\r\n]+~'), array(' ', ''), $json);
+
+            // Fixes whitespace bug
+            $json = preg_replace('~(}[\s]?,[\s]?{)~', '},{', $json);
+
+            // Formats the JSON string
+            $json = preg_replace('~\s?(,?[{,])\s*([^"]+?)\s*:\s?~', '$1"$2":', $json);
+
+            // Decoded array
             $jarr = json_decode($json, true);
 
             if (version_compare(PHP_VERSION, '5.3.5') >= 0) {
@@ -1168,6 +1191,49 @@ class PDO4You implements Config
         
     }
 
+    public static function exec($query)
+    {
+        try {
+            if (!self::$instance instanceof PDO) {
+                throw new PDOException(self::$exception['no-instance']);
+            }
+
+            return self::$instance->exec($query);
+        } catch (PDOException $e) {
+            self::stackTrace($e);
+        }
+    }
+
+    public static function query($query)
+    {
+        try {
+            if (!self::$instance instanceof PDO) {
+                throw new PDOException(self::$exception['no-instance']);
+            }
+
+            if (!self::$instance->query($query)) {
+                throw new PDOException(current(self::$instance->errorInfo()) . ' ' . end(self::$instance->errorInfo()));
+            }
+        } catch (PDOException $e) {
+            self::stackTrace($e);
+        }
+    }
+
+    public static function lastInsertId($name)
+    {
+        try {
+            if (!self::$instance instanceof PDO) {
+                throw new PDOException(self::$exception['no-instance']);
+            }
+
+            if (!self::$instance->lastInsertId($name)) {
+                throw new PDOException(current(self::$instance->errorInfo()) . ' ' . end(self::$instance->errorInfo()));
+            }
+        } catch (PDOException $e) {
+            self::stackTrace($e);
+        }
+    }
+
     public static function beginTransaction()
     {
         try {
@@ -1198,38 +1264,6 @@ class PDO4You implements Config
         }
     }
 
-    public static function exec($query)
-    {
-        try {
-            if (!self::$instance instanceof PDO) {
-                throw new PDOException(self::$exception['no-instance']);
-            }
-
-            if (!self::$instance->exec($query)) {
-                throw new PDOException(current(self::$instance->errorInfo()) . ' ' . end(self::$instance->errorInfo()));
-            } else {
-                return self::$instance->exec($query);
-            }
-        } catch (PDOException $e) {
-            self::stackTrace($e);
-        }
-    }
-
-    public static function query($query)
-    {
-        try {
-            if (!self::$instance instanceof PDO) {
-                throw new PDOException(self::$exception['no-instance']);
-            }
-
-            if (!self::$instance->query($query)) {
-                throw new PDOException(current(self::$instance->errorInfo()) . ' ' . end(self::$instance->errorInfo()));
-            }
-        } catch (PDOException $e) {
-            self::stackTrace($e);
-        }
-    }
-
     public static function rollBack()
     {
         try {
@@ -1238,21 +1272,6 @@ class PDO4You implements Config
             }
 
             if (!self::$instance->rollBack()) {
-                throw new PDOException(current(self::$instance->errorInfo()) . ' ' . end(self::$instance->errorInfo()));
-            }
-        } catch (PDOException $e) {
-            self::stackTrace($e);
-        }
-    }
-
-    public static function lastInsertId($name)
-    {
-        try {
-            if (!self::$instance instanceof PDO) {
-                throw new PDOException(self::$exception['no-instance']);
-            }
-
-            if (!self::$instance->lastInsertId($name)) {
                 throw new PDOException(current(self::$instance->errorInfo()) . ' ' . end(self::$instance->errorInfo()));
             }
         } catch (PDOException $e) {

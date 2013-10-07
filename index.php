@@ -1,6 +1,6 @@
 <?php
 // Load all the files needed
-require __DIR__.'/bootstrap.php';
+require __DIR__.'/src/bootstrap.php';
 
 // Connection instance imported and available for use
 use PDO4You\PDO4You;
@@ -10,7 +10,7 @@ new PDO4You;
 PDO4You::css();
 
 // Displaying details on the target server's database connected
-PDO4You::getServerInfo();
+PDO4You::showServerInfo();
 ?>
 <!doctype html>
 <html>
