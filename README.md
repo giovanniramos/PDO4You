@@ -71,18 +71,24 @@ To abstract our data access mechanisms, we use a DSN (Data Source Name = Data So
 ~~~ php
 <?php
 
-// Load all the files needed
+/**
+ * Loading all the necessary files
+ * - The data access have been defined in the 'initial configuration file'
+ */
 require __DIR__.'/bootstrap.php';
 
-// Connection instance imported and available for use
+// Connection class imported
 use PDO4You\PDO4You;
-new PDO4You;
 
 
-// Main ways to start a connection instance
+/**
+ * Main ways to start a connection instance
+ */
+
+// Connection instance started and available
 
 # DEFAULT 
-PDO4You::getInstance(); // The data access have been defined in the initial configuration
+PDO4You::getInstance();
 
 
 // Connecting to other data sources through a DSN

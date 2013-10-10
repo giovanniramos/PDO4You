@@ -71,18 +71,24 @@ Para abstrair nossos mecanismos de acesso aos dados, usamos um DSN (Data Source 
 ~~~ php
 <?php
 
-// Carrega todos os arquivos necessários
+/**
+ * Carregando todos os arquivos necessários
+ * - Os dados de acesso já foram definidos no 'arquivo de configuração inicial'
+ */
 require __DIR__.'/bootstrap.php';
 
-// Instância de conexão importada e disponível para uso
+// Classe de conexão importada
 use PDO4You\PDO4You;
-new PDO4You;
 
 
-// Principais meios de se iniciar uma instância de conexão
+/**
+ * Principais meios de se iniciar uma instância de conexão
+ */
+
+// Instância de conexão iniciada e disponível
 
 # PADRÃO 
-PDO4You::getInstance(); // Os dados de acesso já foram definidos no arquivo de configuração inicial
+PDO4You::getInstance(); 
 
 
 // Conectando-se a outras fontes de dados através de um DSN

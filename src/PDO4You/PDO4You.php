@@ -124,14 +124,14 @@ class PDO4You implements Config
     );
 
     /**
-     * The constructor
+     * The constructor is set to private, preventing direct instance of the class
      * 
-     * @access public
+     * @access private
      * 
      * */
-    public function __construct()
+    private function __construct()
     {
-        self::getInstance();
+        exit;
     }
 
     /**

@@ -1,10 +1,12 @@
 <?php
-// Load all the files needed
+// Loading all the necessary files
 require __DIR__.'/src/bootstrap.php';
 
-// Connection instance imported and available for use
+// Connection class imported
 use PDO4You\PDO4You;
-new PDO4You;
+
+// Connection instance started and available
+PDO4You::getInstance();
 
 // Applying styling on the page
 PDO4You::css();
