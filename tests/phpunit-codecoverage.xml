@@ -34,6 +34,5 @@
         <log type="coverage-html" target="../_reports/coverage" title="PDO4You PHP Project" charset="UTF-8" yui="true" highlight="true" lowUpperBound="35" highLowerBound="70"/>
         <log type="coverage-clover" target="../_reports/logs/clover.xml"/>
         <log type="junit" target="../_reports/logs/junit.xml" logIncompleteSkipped="false"/>
-        <log type="testdox-text" target="_reports/testdox/executed.txt"/>
     </logging>
 </phpunit>

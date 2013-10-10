@@ -2,6 +2,7 @@
 
 namespace PDO4You;
 
+// Connection class imported
 use PDO4You\PDO4You;
 
 /**
@@ -12,24 +13,24 @@ class PDO4YouTest extends \PHPUnit_Framework_TestCase
 
     protected function setUp()
     {
-        // Instance connection standard available for use
-        new PDO4You;
-
         // Creates and maintains a connection instance with a database
         $this->createDatabase();
 
-        // Creates a table in the database
-        $this->createTable();
+        // Creates tables in the database
+        $this->createTables();
     }
 
     public function createDatabase()
     {
+        // Connection instance started and available
         PDO4You::getInstance('test', 'sqlite::memory:');
     }
 
-    public function createTable()
+    public function createTables()
     {
+        // Creating tables Users and Books
         PDO4You::exec('CREATE TABLE users (id INTEGER PRIMARY KEY, firstname TEXT, lastname TEXT);');
+        PDO4You::exec('CREATE TABLE books (id INTEGER PRIMARY KEY, title TEXT, author TEXT, description TEXT);');
     }
 
     public function testMultipleInsert()
@@ -38,14 +39,15 @@ class PDO4YouTest extends \PHPUnit_Framework_TestCase
         $json = '
         insert: [
             { table: "users" , values: { firstname: "John", lastname: "Lennon" } } ,
-            { table: "users" , values: { firstname: "Paul", lastname: "McCartney" } }
+            { table: "users" , values: { firstname: "Paul", lastname: "McCartney" } } ,
+            { table: "books" , values: { title: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.", author: "Giovanni Ramos" } }
         ]
         ';
 
         // Executes the SQL and stores the result
         $result = PDO4You::execute($json);
 
-        $this->assertEquals(2, self::getNumRowsAffected($result), 'Test with Insert command');
+        $this->assertEquals(3, self::getNumRowsAffected($result), 'Test with Insert command');
     }
 
     public function testMultipleUpdate()
@@ -53,7 +55,8 @@ class PDO4YouTest extends \PHPUnit_Framework_TestCase
         // SQL Update in JSON format
         $json = '
         update: [
-            { table: "users" , values: { firstname: "John", lastname: "Doe" } , where: { id: 1 } } ,
+            { table: "books" , values: { author: "teste" } , where: { id: 1 } } ,
+            { table: "users" , values: { lastname: "Doe" } , where: { id: 1 } } ,
             { table: "users" , values: { firstname: "Sparta", lastname: "" } , where: { id: 300 } }
         ]
         ';
@@ -61,7 +64,7 @@ class PDO4YouTest extends \PHPUnit_Framework_TestCase
         // Executes the SQL and stores the result
         $result = PDO4You::execute($json);
 
-        $this->assertEquals(1, self::getNumRowsAffected($result), 'Test with Update command');
+        $this->assertEquals(2, self::getNumRowsAffected($result), 'Test with Update command');
     }
 
     public function testMultipleDelete()
@@ -69,6 +72,7 @@ class PDO4YouTest extends \PHPUnit_Framework_TestCase
         // SQL Delete in JSON format
         $json = '
         delete: [
+            { table: "books" , where: { id: 200 } } ,
             { table: "users" , where: { id: 1 } } ,
             { table: "users" , where: { id: 300 } } 
         ]
