@@ -1,4 +1,4 @@
-PDO4YOU
+PDO4You
 =======
 
 PDO4You is a class that implements the Singleton design pattern for connecting 
