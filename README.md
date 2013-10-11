@@ -25,7 +25,8 @@ The PDO4You provides an abstraction layer for data access, that regardless of wh
 The Singleton design pattern was adopted to optimize the connection, ensuring a single instance of the connection object.
 
 
-**Advantages in their use:**
+### What is the advantage in their use?
+
 * Instruction SQL compact using JSON notation
 * Abstraction of connection
 * Protection against SQL Injection
@@ -45,8 +46,11 @@ If not available, you will receive a confirmation message to start installation 
 ~~~ php
 <?php
 
-// Loads the autoloader and all project dependencies
-require __DIR__.'/bootstrap.php';
+/**
+ * Loads the autoloader and all project dependencies
+ * The data access have been defined in the 'initial configuration file'
+ */
+require __DIR__.'/src/bootstrap.php';
 
 ?>
 ~~~ 
@@ -71,11 +75,8 @@ To abstract our data access mechanisms, we use a DSN (Data Source Name = Data So
 ~~~ php
 <?php
 
-/**
- * Loading all the necessary files
- * - The data access have been defined in the 'initial configuration file'
- */
-require __DIR__.'/bootstrap.php';
+// Loading all the necessary files
+require __DIR__.'/src/bootstrap.php';
 
 // Connection class imported
 use PDO4You\PDO4You;
@@ -128,18 +129,16 @@ Below are examples of how to perform these operations.
 
 
 
-Selecting records in the database
---------------------------------------------------
+### Selecting records in the database
 
 ~~~ php
 <?php
 
-// Load all the files needed
-require __DIR__.'/bootstrap.php';
+// Loading all the necessary files
+require __DIR__.'/src/bootstrap.php';
 
-// Connection instance imported and available for use
+// Connection class imported
 use PDO4You\PDO4You;
-new PDO4You;
 
 // Starting a connection instance. The default connection is not persistent
 PDO4You::getInstance();
@@ -199,8 +198,7 @@ Below are excerpts from example in practice.
 
 
 
-Inserting a single row in the database
---------------------------------------------------
+### Inserting a single row in the database
 
 ~~~ php
 <?php
@@ -229,8 +227,7 @@ $lastInsertId = PDO4You::lastId('table_id_seq');
 
 
 
-Inserting multiple records
---------------------------------------------------
+### Inserting multiple records
 
 ~~~ php
 <?php
@@ -259,8 +256,7 @@ $result = PDO4You::execute($json);
 
 
 
-Updating multiple records
---------------------------------------------------
+### Updating multiple records
 
 ~~~ php
 <?php
@@ -292,8 +288,7 @@ $result = PDO4You::execute($json);
 
 
 
-Deleting multiple records
---------------------------------------------------
+### Deleting multiple records
 
 ~~~ php
 <?php

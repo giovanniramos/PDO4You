@@ -25,7 +25,8 @@ O PDO4You provê uma camada abstrata de acesso a dados, que independentemente de
 O padrão de projeto Singleton foi adotado para otimizar a conexão, garantindo uma única instância do objeto de conexão.
 
 
-**Vantagens em sua utilização:**
+## Qual a vantagem em sua utilização?
+
 * Instrução SQL compacta, usando notação JSON
 * Abstração de conexão
 * Proteção contra SQL Injection
@@ -45,8 +46,11 @@ Se não estiver disponível, será exibida uma mensagem de confirmação para in
 ~~~ php
 <?php
 
-// Carrega o autoloader e todas as dependências do projeto
-require __DIR__.'/bootstrap.php';
+/**
+ * Carrega o autoloader e todas as dependências do projeto
+ * Os dados de acesso já foram definidos no 'arquivo de configuração inicial'
+ */
+require __DIR__.'/src/bootstrap.php';
 
 ?>
 ~~~ 
@@ -71,11 +75,8 @@ Para abstrair nossos mecanismos de acesso aos dados, usamos um DSN (Data Source 
 ~~~ php
 <?php
 
-/**
- * Carregando todos os arquivos necessários
- * - Os dados de acesso já foram definidos no 'arquivo de configuração inicial'
- */
-require __DIR__.'/bootstrap.php';
+// Carregando todos os arquivos necessários
+require __DIR__.'/src/bootstrap.php';
 
 // Classe de conexão importada
 use PDO4You\PDO4You;
@@ -128,18 +129,16 @@ Abaixo seguem exemplos de como realizar essas operações.
 
 
 
-Selecionando registros na base de dados
---------------------------------------------------
+### Selecionando registros na base de dados
 
 ~~~ php
 <?php
 
-// Carrega todos os arquivos necessários
-require __DIR__.'/bootstrap.php';
+// Carregando todos os arquivos necessários
+require __DIR__.'/src/bootstrap.php';
 
-// Instância de conexão importada e disponível para uso
+// Classe de conexão importada
 use PDO4You\PDO4You;
-new PDO4You;
 
 // Iniciando uma instância de conexão. O padrão de conexão é não-persistente
 PDO4You::getInstance();
@@ -199,8 +198,7 @@ Abaixo seguem trechos de exemplo na prática.
 
 
 
-Inserindo um simples registro na base de dados
---------------------------------------------------
+### Inserindo um simples registro na base de dados
 
 ~~~ php
 <?php
@@ -229,8 +227,7 @@ $lastInsertId = PDO4You::lastId('table_id_seq');
 
 
 
-Inserindo múltiplos registros
---------------------------------------------------
+### Inserindo múltiplos registros
 
 ~~~ php
 <?php
@@ -259,8 +256,7 @@ $result = PDO4You::execute($json);
 
 
 
-Atualizando múltiplos registros
---------------------------------------------------
+### Atualizando múltiplos registros
 
 ~~~ php
 <?php
@@ -292,8 +288,7 @@ $result = PDO4You::execute($json);
 
 
 
-Excluindo múltiplos registros
---------------------------------------------------
+### Excluindo múltiplos registros
 
 ~~~ php
 <?php

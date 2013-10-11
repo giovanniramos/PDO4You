@@ -4,8 +4,6 @@
 namespace PDO4You;
 
 // Importing classes
-use PDO;
-use PDOException;
 use PDO4You\Pagination;
 
 // Loading the configuration file
@@ -154,40 +152,40 @@ class PDO4You implements Config
                 $server_addr = $_SERVER['SERVER_ADDR'];
 
                 // Force column names to lower case
-                $option[PDO::ATTR_CASE] = PDO::CASE_LOWER;
+                $option[\PDO::ATTR_CASE] = \PDO::CASE_LOWER;
 
                 // Establishes a persistent connection to the database
-                $option[PDO::ATTR_PERSISTENT] = self::$persistent;
+                $option[\PDO::ATTR_PERSISTENT] = self::$persistent;
 
                 // Throws exceptions in development environment and report errors in production
-                $option[PDO::ATTR_ERRMODE] = ($server_addr == '127.0.0.1' || $server_addr == '::1') ? PDO::ERRMODE_EXCEPTION : PDO::ERRMODE_SILENT;
+                $option[\PDO::ATTR_ERRMODE] = ($server_addr == '127.0.0.1' || $server_addr == '::1') ? \PDO::ERRMODE_EXCEPTION : \PDO::ERRMODE_SILENT;
 
                 // Executes a command on the MySQL server to set the charset to UTF-8
-                $option[defined(PDO::MYSQL_ATTR_INIT_COMMAND) ? PDO::MYSQL_ATTR_INIT_COMMAND : 1002] = "SET NAMES utf8";
+                $option[defined(\PDO::MYSQL_ATTR_INIT_COMMAND) ? \PDO::MYSQL_ATTR_INIT_COMMAND : 1002] = "SET NAMES utf8";
 
                 // Creates the instance with the settings
-                $instance = @ new PDO($driver, $user, $pass, $option);
+                $instance = @ new \PDO($driver, $user, $pass, $option);
 
                 self::setHandle($alias, $instance);
                 self::setInstance($alias);
-            } catch (PDOException $e) {
+            } catch (\PDOException $e) {
                 $error = self::getErrorInfo($e);
 
                 if ($e->getMessage() == 'could not find driver' || $e->getMessage() == 'invalid data source name') {
-                    throw new PDOException(self::$exception['unrecognized']);
+                    throw new \PDOException(self::$exception['unrecognized']);
                 } elseif ($error['code'] == '2005') {
-                    throw new PDOException(self::$exception['code-2005']);
+                    throw new \PDOException(self::$exception['code-2005']);
                 } elseif ($error['code'] == '2002') {
-                    throw new PDOException(self::$exception['code-2002']);
+                    throw new \PDOException(self::$exception['code-2002']);
                 } elseif ($error['code'] == '1044') {
-                    throw new PDOException(sprintf(self::$exception['code-1044'], $user));
+                    throw new \PDOException(sprintf(self::$exception['code-1044'], $user));
                 } elseif ($error['code'] == '1045') {
-                    throw new PDOException(sprintf(self::$exception['code-1045'], $user, $pass));
+                    throw new \PDOException(sprintf(self::$exception['code-1045'], $user, $pass));
                 } else {
                     throw $e;
                 }
             }
-        } catch (PDOException $e) {
+        } catch (\PDOException $e) {
             self::stackTrace($e);
         }
     }
@@ -298,16 +296,16 @@ class PDO4You implements Config
                     // Initializes the Singleton connection
                     self::singleton($alias, $driver, $user, $pass, $option);
                 }
-            } catch (PDOException $e) {
+            } catch (\PDOException $e) {
                 $error = self::getErrorInfo($e);
 
                 if ($error['state'] == '42000') {
-                    throw new PDOException(self::$exception['no-database']);
+                    throw new \PDOException(self::$exception['no-database']);
                 } else {
                     throw $e;
                 }
             }
-        } catch (PDOException $e) {
+        } catch (\PDOException $e) {
             self::stackTrace($e);
         }
 
@@ -322,7 +320,7 @@ class PDO4You implements Config
      * @return void
      * 
      */
-    private static function setHandle($alias, PDO $instance)
+    private static function setHandle($alias, \PDO $instance)
     {
         self::$handle[$alias] = $instance;
     }
@@ -442,7 +440,7 @@ class PDO4You implements Config
      * @return array
      * 
      * */
-    public static function getErrorInfo(PDOException $e, $debug = false)
+    public static function getErrorInfo(\PDOException $e, $debug = false)
     {
         if (defined(static::PDO4YOU_WEBMASTER)) {
             self::fireAlert(self::$exception['critical-error'], $e);
@@ -475,7 +473,7 @@ class PDO4You implements Config
      * */
     public static function getDriver()
     {
-        return self::$instance->getAttribute(PDO::ATTR_DRIVER_NAME);
+        return self::$instance->getAttribute(\PDO::ATTR_DRIVER_NAME);
     }
 
     /**
@@ -489,15 +487,15 @@ class PDO4You implements Config
     public static function showServerInfo()
     {
         try {
-            if (self::$instance instanceof PDO) {
+            if (self::$instance instanceof \PDO) {
                 $driver = self::getDriver();
 
-                $info = ($driver == 'sqlite' || $driver == 'mssql') ? 'not available' : self::$instance->getAttribute(PDO::ATTR_SERVER_INFO);
+                $info = ($driver == 'sqlite' || $driver == 'mssql') ? 'not available' : self::$instance->getAttribute(\PDO::ATTR_SERVER_INFO);
                 echo '<h7>Server Information - ', is_array($info) ? implode(', ', $info) : $info, '</h7>';
             } else {
-                throw new PDOException(self::$exception['no-instance']);
+                throw new \PDOException(self::$exception['no-instance']);
             }
-        } catch (PDOException $e) {
+        } catch (\PDOException $e) {
             self::stackTrace($e);
         }
     }
@@ -513,13 +511,13 @@ class PDO4You implements Config
     public static function showAvailableDrivers()
     {
         try {
-            if (self::$instance instanceof PDO) {
+            if (self::$instance instanceof \PDO) {
                 $info = self::$instance->getAvailableDrivers();
                 echo '<h7>Available Drivers: ', implode(', ', $info), '</h7>';
             } else {
-                throw new PDOException(self::$exception['no-instance']);
+                throw new \PDOException(self::$exception['no-instance']);
             }
-        } catch (PDOException $e) {
+        } catch (\PDOException $e) {
             self::stackTrace($e);
         }
     }
@@ -560,7 +558,7 @@ class PDO4You implements Config
      * @return void
      * 
      * */
-    public static function stackTrace(PDOException $e, $show = true)
+    public static function stackTrace(\PDOException $e, $show = true)
     {
         if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
             $jarr['timer'] = '15000';
@@ -649,7 +647,7 @@ class PDO4You implements Config
     {
         try {
             if (is_null($query)) {
-                throw new PDOException(self::$exception['no-argument-sql']);
+                throw new \PDOException(self::$exception['no-argument-sql']);
             }
 
             if (!is_null($use)) {
@@ -658,13 +656,13 @@ class PDO4You implements Config
 
             $result = null;
             $pdo = self::$instance;
-            if (!$pdo instanceof PDO) {
-                throw new PDOException(self::$exception['no-instance']);
+            if (!$pdo instanceof \PDO) {
+                throw new \PDOException(self::$exception['no-instance']);
             } else {
                 if (Pagination::getPaging() == true) {
                     $pre = $pdo->prepare($query);
                     $pre->execute();
-                    $result = $pre->fetchAll(PDO::FETCH_ASSOC);
+                    $result = $pre->fetchAll(\PDO::FETCH_ASSOC);
 
                     Pagination::setLimit($query);
                     Pagination::setTotalPagingRecords($result);
@@ -680,20 +678,20 @@ class PDO4You implements Config
                 }
 
                 switch ($type) {
-                    case 'num': $result = $pre->fetchAll(PDO::FETCH_NUM);
+                    case 'num': $result = $pre->fetchAll(\PDO::FETCH_NUM);
                         break;
-                    case 'obj': $result = $pre->fetchAll(PDO::FETCH_OBJ);
+                    case 'obj': $result = $pre->fetchAll(\PDO::FETCH_OBJ);
                         break;
-                    case 'all': $result = $pre->fetchAll(PDO::FETCH_BOTH);
+                    case 'all': $result = $pre->fetchAll(\PDO::FETCH_BOTH);
                         break;
-                    default: $result = $pre->fetchAll(PDO::FETCH_ASSOC);
+                    default: $result = $pre->fetchAll(\PDO::FETCH_ASSOC);
                 }
 
                 if ($count) {
                     self::$rowCount = count($result);
                 }
             }
-        } catch (PDOException $e) {
+        } catch (\PDOException $e) {
             self::stackTrace($e);
         }
 
@@ -774,7 +772,7 @@ class PDO4You implements Config
 
         try {
             if (is_null($json)) {
-                throw new PDOException(self::$exception['no-instruction-json']);
+                throw new \PDOException(self::$exception['no-instruction-json']);
             }
 
             if (!is_null($use)) {
@@ -782,8 +780,8 @@ class PDO4You implements Config
             }
 
             $pdo = self::$instance;
-            if (!$pdo instanceof PDO) {
-                throw new PDOException(self::$exception['no-instance']);
+            if (!$pdo instanceof \PDO) {
+                throw new \PDOException(self::$exception['no-instance']);
             } else {
                 $pdo->beginTransaction();
 
@@ -865,13 +863,13 @@ class PDO4You implements Config
                     self::$rowCount = $total;
 
                     $pdo->commit();
-                } catch (PDOException $e) {
+                } catch (\PDOException $e) {
                     $pdo->rollback();
 
                     throw $e;
                 }
             }
-        } catch (PDOException $e) {
+        } catch (\PDOException $e) {
             self::getErrorInfo($e);
             self::stackTrace($e);
         }
@@ -900,11 +898,11 @@ class PDO4You implements Config
             // Checks the word if found, is among the allowed commands for execution
             $command = $match[1];
             if (!in_array($command, array('insert', 'update', 'delete', 'query'))) {
-                throw new PDOException(self::$exception['not-implemented'] . ' PDO4You::' . $command . '()');
+                throw new \PDOException(self::$exception['not-implemented'] . ' PDO4You::' . $command . '()');
             } else {
                 return self::executeQuery($json, $command, $use);
             }
-        } catch (PDOException $e) {
+        } catch (\PDOException $e) {
             self::stackTrace($e, false);
         }
     }
@@ -980,13 +978,13 @@ class PDO4You implements Config
                 case 'oracle': $sql = "SELECT last_number AS lastId FROM user_sequences WHERE sequence_name = '" . $sequence . "';";
                     break;
                 default:
-                    throw new PDOException(self::$exception['not-implemented'] . ' PDO4You::lastId()');
+                    throw new \PDOException(self::$exception['not-implemented'] . ' PDO4You::lastId()');
             }
 
             self::$lastId = self::selectRecords($sql, null, null, false);
 
             return self::$lastId[0]['lastid'];
-        } catch (PDOException $e) {
+        } catch (\PDOException $e) {
             self::stackTrace($e);
         }
     }
@@ -1059,11 +1057,11 @@ class PDO4You implements Config
             }
 
             if (is_null($jarr)) {
-                throw new PDOException($json_error);
+                throw new \PDOException($json_error);
             }
 
             return $jarr;
-        } catch (PDOException $e) {
+        } catch (\PDOException $e) {
             self::stackTrace($e);
         }
     }
@@ -1194,12 +1192,12 @@ class PDO4You implements Config
     public static function exec($query)
     {
         try {
-            if (!self::$instance instanceof PDO) {
-                throw new PDOException(self::$exception['no-instance']);
+            if (!self::$instance instanceof \PDO) {
+                throw new \PDOException(self::$exception['no-instance']);
             }
 
             return self::$instance->exec($query);
-        } catch (PDOException $e) {
+        } catch (\PDOException $e) {
             self::stackTrace($e);
         }
     }
@@ -1207,14 +1205,14 @@ class PDO4You implements Config
     public static function query($query)
     {
         try {
-            if (!self::$instance instanceof PDO) {
-                throw new PDOException(self::$exception['no-instance']);
+            if (!self::$instance instanceof \PDO) {
+                throw new \PDOException(self::$exception['no-instance']);
             }
 
             if (!self::$instance->query($query)) {
-                throw new PDOException(current(self::$instance->errorInfo()) . ' ' . end(self::$instance->errorInfo()));
+                throw new \PDOException(current(self::$instance->errorInfo()) . ' ' . end(self::$instance->errorInfo()));
             }
-        } catch (PDOException $e) {
+        } catch (\PDOException $e) {
             self::stackTrace($e);
         }
     }
@@ -1222,14 +1220,14 @@ class PDO4You implements Config
     public static function lastInsertId($name)
     {
         try {
-            if (!self::$instance instanceof PDO) {
-                throw new PDOException(self::$exception['no-instance']);
+            if (!self::$instance instanceof \PDO) {
+                throw new \PDOException(self::$exception['no-instance']);
             }
 
             if (!self::$instance->lastInsertId($name)) {
-                throw new PDOException(current(self::$instance->errorInfo()) . ' ' . end(self::$instance->errorInfo()));
+                throw new \PDOException(current(self::$instance->errorInfo()) . ' ' . end(self::$instance->errorInfo()));
             }
-        } catch (PDOException $e) {
+        } catch (\PDOException $e) {
             self::stackTrace($e);
         }
     }
@@ -1237,14 +1235,14 @@ class PDO4You implements Config
     public static function beginTransaction()
     {
         try {
-            if (!self::$instance instanceof PDO) {
-                throw new PDOException(self::$exception['no-instance']);
+            if (!self::$instance instanceof \PDO) {
+                throw new \PDOException(self::$exception['no-instance']);
             }
 
             if (!self::$instance->beginTransaction()) {
-                throw new PDOException(current(self::$instance->errorInfo()) . ' ' . end(self::$instance->errorInfo()));
+                throw new \PDOException(current(self::$instance->errorInfo()) . ' ' . end(self::$instance->errorInfo()));
             }
-        } catch (PDOException $e) {
+        } catch (\PDOException $e) {
             self::stackTrace($e);
         }
     }
@@ -1252,14 +1250,14 @@ class PDO4You implements Config
     public static function commit()
     {
         try {
-            if (!self::$instance instanceof PDO) {
-                throw new PDOException(self::$exception['no-instance']);
+            if (!self::$instance instanceof \PDO) {
+                throw new \PDOException(self::$exception['no-instance']);
             }
 
             if (!self::$instance->commit()) {
-                throw new PDOException(current(self::$instance->errorInfo()) . ' ' . end(self::$instance->errorInfo()));
+                throw new \PDOException(current(self::$instance->errorInfo()) . ' ' . end(self::$instance->errorInfo()));
             }
-        } catch (PDOException $e) {
+        } catch (\PDOException $e) {
             self::stackTrace($e);
         }
     }
@@ -1267,14 +1265,14 @@ class PDO4You implements Config
     public static function rollBack()
     {
         try {
-            if (!self::$instance instanceof PDO) {
-                throw new PDOException(self::$exception['no-instance']);
+            if (!self::$instance instanceof \PDO) {
+                throw new \PDOException(self::$exception['no-instance']);
             }
 
             if (!self::$instance->rollBack()) {
-                throw new PDOException(current(self::$instance->errorInfo()) . ' ' . end(self::$instance->errorInfo()));
+                throw new \PDOException(current(self::$instance->errorInfo()) . ' ' . end(self::$instance->errorInfo()));
             }
-        } catch (PDOException $e) {
+        } catch (\PDOException $e) {
             self::stackTrace($e);
         }
     }
