@@ -3,7 +3,7 @@
 namespace PDO4You;
 
 // Connection class imported
-use PDO4You\PDO4You;
+use PDO4You\PDO4You as test;
 
 /**
  * Test class for PDO4You
@@ -23,17 +23,17 @@ class PDO4YouTest extends \PHPUnit_Framework_TestCase
     public function createDatabase()
     {
         // Connection instance started and available
-        PDO4You::getInstance('test', 'sqlite::memory:');
+        test::getInstance('test', 'sqlite::memory:');
     }
 
     public function createTables()
     {
         // Creating tables Users and Books
-        PDO4You::exec('CREATE TABLE users (id INTEGER PRIMARY KEY, firstname TEXT, lastname TEXT);');
-        PDO4You::exec('CREATE TABLE books (id INTEGER PRIMARY KEY, title TEXT, author TEXT, description TEXT);');
+        test::exec('CREATE TABLE users (id INTEGER PRIMARY KEY, firstname TEXT, lastname TEXT);');
+        test::exec('CREATE TABLE books (id INTEGER PRIMARY KEY, title TEXT, author TEXT, description TEXT);');
     }
 
-    public function testMultipleInsert()
+    public function testMultipleInsertInJsonFormat()
     {
         // SQL Insert in JSON format
         $json = '
@@ -45,12 +45,12 @@ class PDO4YouTest extends \PHPUnit_Framework_TestCase
         ';
 
         // Executes the SQL and stores the result
-        $result = PDO4You::execute($json);
+        $result = test::execute($json);
 
         $this->assertEquals(3, self::getNumRowsAffected($result), 'Test with Insert command');
     }
 
-    public function testMultipleUpdate()
+    public function testMultipleUpdateInJsonFormat()
     {
         // SQL Update in JSON format
         $json = '
@@ -62,12 +62,12 @@ class PDO4YouTest extends \PHPUnit_Framework_TestCase
         ';
 
         // Executes the SQL and stores the result
-        $result = PDO4You::execute($json);
+        $result = test::execute($json);
 
         $this->assertEquals(2, self::getNumRowsAffected($result), 'Test with Update command');
     }
 
-    public function testMultipleDelete()
+    public function testMultipleDeleteInJsonFormat()
     {
         // SQL Delete in JSON format
         $json = '
@@ -79,35 +79,54 @@ class PDO4YouTest extends \PHPUnit_Framework_TestCase
         ';
 
         // Executes the SQL and stores the result
-        $result = PDO4You::execute($json);
+        $result = test::execute($json);
 
         $this->assertEquals(1, self::getNumRowsAffected($result), 'Test with Delete command');
     }
 
-    public function testAllSelects()
+    public function testAllTypesSelects()
     {
         // SQL query
         $sql = 'SELECT * FROM users';
 
         // Executes the SQL and stores the result
-        $result = PDO4You::select($sql);
+        $result = test::select($sql);
 
         $this->assertEquals(1, self::getNumRows($result));
 
         // Executes the SQL and stores the result
-        $result_num = PDO4You::selectNum($sql);
+        $result_num = test::selectNum($sql);
 
         $this->assertEquals(1, self::getNumRows($result_num));
 
         // Executes the SQL and stores the result
-        $result_obj = PDO4You::selectObj($sql);
+        $result_obj = test::selectObj($sql);
 
         $this->assertEquals(1, self::getNumRows($result_obj));
 
         // Executes the SQL and stores the result
-        $result_all = PDO4You::selectAll($sql);
+        $result_all = test::selectAll($sql);
 
         $this->assertEquals(1, self::getNumRows($result_all));
+    }
+
+    public function testMultipleInsertInArrayFormat()
+    {
+        $array['query'] = array(
+            array(
+                'table' => 'users', 
+                'values' => array('firstname' => "John", 'lastname' => "Lennon")
+            ),
+            array(
+                'table' => 'users',
+                'values' => array('firstname' => "Paul", 'lastname' => "McCartney")
+            )
+        );
+
+        // Executes the SQL and stores the result
+        $result = test::insert($array);
+
+        $this->assertEquals(2, self::getNumRowsAffected($result), 'Test with Insert method');
     }
 
     private function getNumRows($result)

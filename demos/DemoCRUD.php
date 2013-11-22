@@ -198,6 +198,8 @@ class DemoCRUD
      */
     private function getQuery($sql)
     {
+        $sql = is_array($sql) ? json_encode($sql) : $sql;
+
         $sql = '<strong style="color:green;">' . htmlspecialchars($sql) . '</strong>';
         $conn = '<strong style="color:red;">' . PDO4You::getConnection() . '</strong>';
 
