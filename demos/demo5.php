@@ -21,7 +21,7 @@ $demo = new DemoRegister;
 
     <?php echo $demo->getMessage(); ?>
 
-    <?php echo $demo::TOTAL_USERS; ?>: <?php echo $demo->getTotalRecords(); ?>
+    <?php echo $demo::TOTAL_USERS; ?>: <?php echo $demo->getTotalOfRecords(); ?>
 
     <?php echo $demo->showRecords(); ?>
 </div>

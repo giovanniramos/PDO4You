@@ -1,6 +1,7 @@
 <?php
 
 // Defining namespaces
+
 namespace PDO4You;
 
 /**
@@ -16,40 +17,44 @@ namespace PDO4You;
  * */
 class Pagination
 {
-    static private $link;
-    static private $slug;
-    static private $limit = -1;
     static private $query;
-    static private $paging = false;
-    static private $page;
-    static private $page_nave;
+    static private $paging;
+    static private $paginator;
+    static private $friendly_url;
+    static private $limit_per_page = 5;
     static private $total_records = 0;
-    static private $total_per_page = 0;
-
-    /**
-     * Enables and sets the number of records in paging
-     * 
-     * @param integer $limit Maximum of records per page
-     */
-    public static function setPagination($limit = 5)
-    {
-        self::setPaging(true);
-        self::$limit = $limit;
-    }
+    static private $total_of_pages = 0;
+    static private $buttons = array(
+        'first' => 'FIRST',
+        'last' => 'LAST',
+    );
 
     /**
      * Sets the activation of paging
      * 
-     * @param boolean $paging Enables paging
+     * @param boolean $friendly_url OPTIONAL Enables URLs friendlies
      */
-    public static function setPaging($paging)
+    public static function setPagination($friendly_url = false)
+    {
+        self::setPaging(true);
+        self::setFriendlyUrl($friendly_url);
+    }
+
+    /**
+     * Enables paging of records
+     * 
+     * @param boolean $paging Enables pagination
+     */
+    private static function setPaging($paging)
     {
         self::$paging = $paging;
     }
 
     /**
-     * Gets the activation of paging
+     * Gets the activation of pagination
      * 
+     * @see PDO4You::selectRecords()
+     * @return boolean
      */
     public static function getPaging()
     {
@@ -57,153 +62,206 @@ class Pagination
     }
 
     /**
-     * Sets the total records in paging
+     * Enables navigation by URLs friendlies
      * 
-     * @param int $records Total records in paging
+     * @param boolean $friendly_url Enables URLs friendlies
      */
-    public static function setTotalPagingRecords($records)
+    private static function setFriendlyUrl($friendly_url)
     {
-        self::$total_records = count($records);
-        self::$total_per_page = ceil(self::$total_records / self::$limit);
+        self::$friendly_url = $friendly_url;
     }
 
     /**
-     * Gets the total records in paging
+     * Builds a query and sets the number of records per page
      * 
+     * @param string $query SQL query
+     * @param array $records Records of the query
+     * @see PDO4You::selectRecords()
+     * @return string
      */
-    public static function getTotalPagingRecords()
+    public static function buildQuery($query, $records)
+    {
+        $page = self::getCurrentPage();
+        $limit = self::getLimitPerPage();
+        $offset = abs(($page - 1) * $limit);
+
+        self::setTotalOfRecords($records);
+        self::setTotalOfPages($limit);
+
+        self::$query = $query . ($limit == -1 ? null : ' LIMIT ' . $limit . ' OFFSET ' . $offset);
+
+        return self::$query;
+    }
+
+    /**
+     * Sets the total number of records
+     * 
+     * @param array $records Records of the query
+     */
+    public static function setTotalOfRecords($records)
+    {
+        self::$total_records = count($records);
+    }
+
+    /**
+     * Gets the total number of records
+     * 
+     * @return integer
+     */
+    public static function getTotalOfRecords()
     {
         return self::$total_records;
     }
 
     /**
-     * Sets the limit of records in the query
+     * Sets the total number of pages
      * 
-     * @param string $query SQL query
+     * @param integer $limit Limit of records
      */
-    public static function setLimit($query)
+    private static function setTotalOfPages($limit)
     {
-        $limit = self::$limit;
-        $offset = abs((self::$page - 1) * $limit);
-
-        $query = $query . ($limit == -1 ? null : ' LIMIT ' . $limit . ' OFFSET ' . $offset);
-
-        self::setQuery($query);
+        self::$total_of_pages = ceil(self::$total_records / $limit);
     }
 
     /**
-     * Sets the query
+     * Gets the total number of pages
      * 
-     * @param string $query SQL query
+     * @param integer
      */
-    protected static function setQuery($query)
+    private static function getTotalOfPages()
     {
-        self::$query = $query;
+        return self::$total_of_pages;
     }
 
     /**
-     * Gets the query 
+     * Sets the number of records per page
      * 
+     * @param integer $limit Maximum of records per page
      */
-    public static function getQuery()
+    public static function setLimitPerPage($limit)
     {
-        return self::$query;
+        self::$limit_per_page = $limit;
     }
 
     /**
-     * Sets the page link
+     * Gets the number of records per page
      * 
-     * @param string $link Page link
+     * @return integer
      */
-    public static function setPageLink($link)
+    private static function getLimitPerPage()
     {
-        self::$link = $link;
+        return self::$limit_per_page;
     }
 
     /**
-     * Sets a slug for the page link
+     * Sets the paginator
      * 
-     * @param string $slug Slug for the page link
+     * @param string $paginator Parameter used as paginator
      */
-    public static function setSlug($slug)
+    public static function setPaginator($paginator)
     {
-        self::$slug = $slug;
+        self::$paginator = $paginator;
     }
 
     /**
-     * Sets the current page navigation
+     * Get the number of the current page
      * 
-     * @param integer $page Current page navigation
+     * @return integer
      */
-    public static function setPage($page)
+    private static function getCurrentPage()
     {
-        self::$page = $page;
+        return isset($_REQUEST[self::$paginator]) ? (int) $_REQUEST[self::$paginator] : 0;
+    }
+
+    /**
+     * Builds the paginator
+     * 
+     * @param integer $page Page number
+     * @return string
+     */
+    private static function buildPaginator($page)
+    {
+        $_R = $_REQUEST;
+        $_S = $_SERVER;
+        $http = isset($_S['HTTPS']) && strcasecmp($_S['HTTPS'], 'off') ? 'https://' : 'http://';
+        $host = isset($_S['HTTP_X_FORWARDED_HOST']) ? $_S['HTTP_X_FORWARDED_HOST'] : isset($_S['HTTP_HOST']) ? $_S['HTTP_HOST'] : $_S['SERVER_NAME'];
+        $path = pathinfo($_S['SCRIPT_NAME']);
+        $path_parts = $path['dirname'] . '/' . (self::$friendly_url ? $path['filename'] : $path['basename']);
+
+        $request = isset($_R[self::$paginator]) ? array_slice($_R, 1) : $_R;
+        $paginator = stripslashes($http . $host . $path_parts);
+
+        if (self::$friendly_url) {
+            array_walk($request, create_function('&$v,$k', '$v="$k/$v";'));
+            $params = implode($request, '/');
+            $paginator.= '/' . self::$paginator . '/' . (int) $page . ($params ? '/' . $params : '');
+        } else {
+            $params = http_build_query($request);
+            $paginator.= '?' . self::$paginator . '=' . (int) $page . ($params ? '&' . $params : '');
+        }
+
+        return $paginator;
     }
 
     /**
      * Displays the pagination
      * 
-     * @param string $link Page link
-     * @param string $slug Slug for the page link
      * @return null|string
      */
-    public static function getPagination($link = null, $slug = null)
+    public static function getPagination()
     {
-        if (self::$paging == false || self::$page == 0) {
+        if (self::getPaging() == false) {
             return null;
         }
 
-        $link = !is_null($link) ? $link : self::$link;
-        $slug = !is_null($slug) ? $slug : self::$slug;
-        $page = self::$page;
-        $total_per_page = self::$total_per_page;
-        $url = self::$page_nave . $link;
+        $page = self::getCurrentPage();
+        $total_of_pages = self::getTotalOfPages();
 
         $nave = '<div class="pagination">';
 
         if ($page != 1) {
-            $nave.= '<a href="' . $url . '1' . $slug . '">FIRST</a>';
+            $nave.= '<a class="first" href="' . self::buildPaginator('1') . '">' . self::$buttons['first'] . '</a>';
         } else {
-            $nave.= '<a class="nolink">FIRST</a>';
+            $nave.= '<a class="first nolink">' . self::$buttons['first'] . '</a>';
         }
 
-        if ($page != 1 && $total_per_page > 0) {
-            $nave.= '<a href="' . $url . ($page - 1) . $slug . '">&#9668;</a>';
+        if ($page != 1 && $total_of_pages > 0) {
+            $nave.= '<a class="previous" href="' . self::buildPaginator($page - 1) . '">&#9668;</a>';
         } else {
-            $nave.= '<a class="nolink">&#9668;</a>';
+            $nave.= '<a class="previous nolink">&#9668;</a>';
         }
 
-        if ($total_per_page == 0) {
+        if ($total_of_pages == 0) {
             $nave.= '<a class="selected">1</a>';
         } else {
-            for ($i = 1; $i <= $total_per_page; $i++) {
-                if ($page == $i + 3)
-                    $nave.= '<a href="' . $url . $i . $slug . '">' . $i . '</a>';
-                if ($page == $i + 2)
-                    $nave.= '<a href="' . $url . $i . $slug . '">' . $i . '</a>';
-                if ($page == $i + 1)
-                    $nave.= '<a href="' . $url . $i . $slug . '">' . $i . '</a>';
-                if ($page == $i)
-                    $nave.= '<a class="selected">' . $i . '</a>';
-                if ($page == $i - 1)
-                    $nave.= '<a href="' . $url . $i . $slug . '">' . $i . '</a>';
-                if ($page == $i - 2)
-                    $nave.= '<a href="' . $url . $i . $slug . '">' . $i . '</a>';
-                if ($page == $i - 3)
-                    $nave.= '<a href="' . $url . $i . $slug . '">' . $i . '</a>';
+            for ($x = 1; $x <= $total_of_pages; $x++) {
+                if ($page == $x + 3)
+                    $nave.= '<a href="' . self::buildPaginator($x) . '">' . $x . '</a>';
+                if ($page == $x + 2)
+                    $nave.= '<a href="' . self::buildPaginator($x) . '">' . $x . '</a>';
+                if ($page == $x + 1)
+                    $nave.= '<a href="' . self::buildPaginator($x) . '">' . $x . '</a>';
+                if ($page == $x)
+                    $nave.= '<a class="selected">' . $x . '</a>';
+                if ($page == $x - 1)
+                    $nave.= '<a href="' . self::buildPaginator($x) . '">' . $x . '</a>';
+                if ($page == $x - 2)
+                    $nave.= '<a href="' . self::buildPaginator($x) . '">' . $x . '</a>';
+                if ($page == $x - 3)
+                    $nave.= '<a href="' . self::buildPaginator($x) . '">' . $x . '</a>';
             }
         }
 
-        if ($page < $total_per_page) {
-            $nave.= '<a href="' . $url . ($page + 1) . $slug . '">&#9658;</a>';
+        if ($page < $total_of_pages) {
+            $nave.= '<a class="next" href="' . self::buildPaginator($page + 1) . '">&#9658;</a>';
         } else {
-            $nave.= '<a class="nolink">&#9658;</a>';
+            $nave.= '<a class="next nolink">&#9658;</a>';
         }
 
-        if ($page != $total_per_page && $total_per_page > 0) {
-            $nave.= '<a href="' . $url . ($total_per_page) . $slug . '">LAST</a>';
+        if ($page != $total_of_pages && $total_of_pages > 0) {
+            $nave.= '<a class="last" href="' . self::buildPaginator($total_of_pages) . '">' . self::$buttons['last'] . '</a>';
         } else {
-            $nave.= '<a class="nolink">LAST</a>';
+            $nave.= '<a class="last nolink">' . self::$buttons['last'] . '</a>';
         }
 
         $nave.= '</div>';

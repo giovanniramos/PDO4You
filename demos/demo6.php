@@ -8,14 +8,14 @@ echo '<h2><a href=".">DEMOS</a> &rsaquo; READING WITH PAGING</h2>';
 // Importing classes
 use PDO4You\Pagination as pager;
 
-// Enable pagination
-pager::setPagination();
+// Enable pagination: If the passed value is TRUE enables paging for friendly URLs
+pager::setPagination(false);
 
-// Sets the page link
-pager::setPageLink('?p=demos/demo6.php&n=');
+// Sets the number of records per page
+//pager::setLimitPerPage(2);
 
-// Sets the current page navigation
-pager::setPage(isset($_GET['n']) ? (int) $_GET['n'] : 1);
+// Sets the page navigation
+pager::setPaginator('n');
 
 // Creating an instance
 $demo = new DemoRegister;
@@ -33,7 +33,7 @@ $demo = new DemoRegister;
 
     <?php echo $demo->getMessage(); ?>
 
-    <?php echo $demo::TOTAL_USERS; ?>: <?php echo $demo->getTotalRecords(); ?>
+    <?php echo $demo::TOTAL_USERS; ?>: <?php echo $demo->getTotalOfRecords(); ?>
 
     <?php echo $demo->showRecords(); ?>
 

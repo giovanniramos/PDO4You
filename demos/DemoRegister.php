@@ -79,11 +79,11 @@ class DemoRegister
      * Displays the total number of records
      * 
      * */
-    public function getTotalRecords()
+    public function getTotalOfRecords()
     {
         // Returns the total number of records in paging 
         if (Pagination::getPaging() == true) {
-            return Pagination::getTotalPagingRecords();
+            return Pagination::getTotalOfRecords();
         } else {
             return count(self::$hasRecords);
         }
@@ -100,7 +100,7 @@ class DemoRegister
             $html = null;
 
             foreach (self::$hasRecords as $row) {
-                $html.= '<div>- #' . $row['id'] . ' ' . ucwords($row['firstname']) . ' ' . ucwords($row['lastname']) . ' [' . $row['mail'] . ']</div>';
+                $html.= '<div>- #' . $row['id'] . ' ' . ucwords($row['firstname']) . ' ' . ucwords($row['lastname']) . ($row['mail'] ? ' [' . $row['mail'] . ']' : NULL) . '</div>';
             }
 
             return $html;

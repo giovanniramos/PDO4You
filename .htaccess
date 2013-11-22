@@ -3,3 +3,20 @@
 	Order Allow,Deny
 	Deny from all
 </FilesMatch>
+
+# Friendly URL
+<IfModule mod_rewrite.c>
+	RewriteEngine On
+	# Ignoring any existing files
+	RewriteCond %{REQUEST_FILENAME} !-f
+	# Ignoring any existing directories
+	RewriteCond %{REQUEST_FILENAME} !-d
+	# Example 1 - Only pagination: http://localhost/PDO4You/index.php?n=1  OR  http://localhost/PDO4You/index/n/1
+	RewriteRule ^([A-Za-z]+)/([A-Za-z]+)/([0-9]+)/?$ $1.php?$2=$3 [L]
+	# Example 2 - Pagination + Id + Slug: http://localhost/PDO4You/index/paginator/number-current-page/id/some-title
+	RewriteRule ^([A-Za-z]+)/([A-Za-z]+)/([0-9]+)/([0-9]+)/([\w\-\.]+)/?$ $1.php?$2=$3&id=$4&slug=$5 [L]
+	# For demo page: http://localhost/PDO4You/index/paginator/number-current-page/page-demo/page-name-demo
+	RewriteRule ^(\w+)/(\w+)/(\d+)/(\w+)/([\w]+)/?$ $1.php?$2=$3&$4=$5 [L]
+	RewriteRule ^(\w+)/(\w+)/(\d+)/(\w+)/?$ $1.php [L]
+	RewriteRule ^(\w+)/?$ $1.php [L]
+</IfModule>
