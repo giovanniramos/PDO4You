@@ -6,7 +6,10 @@ PDO4You
 ==================================================
 
 [![Latest Stable Version](https://poser.pugx.org/giovanniramos/pdo4you/v/stable.png)](https://packagist.org/packages/giovanniramos/pdo4you)
-[![Build Status](https://travis-ci.org/giovanniramos/PDO4You.png?branch=master)](https://travis-ci.org/giovanniramos/PDO4You)
+[![Build Status](http://img.shields.io/travis-ci/giovanniramos/PDO4You.png?branch=master)](http://travis-ci.org/giovanniramos/PDO4You "Check this project's build status on TravisCI")
+[![Gittip donate button](http://img.shields.io/gittip/giovanniramos.png)](https://www.gittip.com/giovanniramos "Donate weekly to this project using Gittip")
+[![Flattr donate button](http://img.shields.io/flattr/donate.png?color=yellow)](https://flattr.com/profile/giovanniramos "Donate monthly to this project using Flattr")
+[![PayPal donate button](http://img.shields.io/paypal/donate.png?color=yellow)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=L2TJHDN263VWU "Donate once-off to this project using Paypal")
 
 
 Esta classe é baseada no PDO, que é uma extensão do PHP que permite aos desenvolvedores criar um código portável, de modo a atender a maioria das bases de dados mais populares.
