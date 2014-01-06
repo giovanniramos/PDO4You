@@ -7,7 +7,8 @@ if (function_exists('xdebug_disable')) {
 
 define('DEFAULT_LOADER', '../../../vendor/autoload.php');
 define('COMPOSER_LOADER', __DIR__ . '/../vendor/autoload.php');
-define('INSTALL', __DIR__ . '/../install.sh');
+define('INSTALL', '' . __DIR__ . '/../install.sh');
+putenv('DIRECTORY='. __DIR__ . '/../');
 
 // AUTOLOADER
 if (file_exists(COMPOSER_LOADER)) {
