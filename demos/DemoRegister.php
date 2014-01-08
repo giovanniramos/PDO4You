@@ -34,7 +34,7 @@ class DemoRegister
             // Performing validation
             if (empty($firstName) || empty($lastName)) {
                 $error = 'Enter your name and last name';
-            } else if (empty($mail)) {
+            } else if (isset($_POST['mail']) && !empty($_POST['mail']) && $mail == FALSE) {
                 $error = 'Enter a valid email address';
             }
 
@@ -82,7 +82,7 @@ class DemoRegister
     public function getTotalOfRecords()
     {
         // Returns the total number of records in paging 
-        if (Pagination::getPaging() == true) {
+        if (Pagination::getPaging() == TRUE) {
             return Pagination::getTotalOfRecords();
         } else {
             return count(self::$hasRecords);

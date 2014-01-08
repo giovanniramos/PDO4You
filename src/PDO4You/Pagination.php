@@ -1,7 +1,6 @@
 <?php
 
 // Defining namespaces
-
 namespace PDO4You;
 
 /**
@@ -66,9 +65,9 @@ class Pagination
      * 
      * @param boolean $friendly_url Enables URLs friendlies
      */
-    private static function setFriendlyUrl($friendly_url)
+    public static function setFriendlyUrl($friendly_url)
     {
-        self::$friendly_url = $friendly_url;
+        self::$friendly_url = (boolean) $friendly_url;
     }
 
     /**
@@ -98,7 +97,7 @@ class Pagination
      * 
      * @param array $records Records of the query
      */
-    public static function setTotalOfRecords($records)
+    private static function setTotalOfRecords($records)
     {
         self::$total_records = count($records);
     }
@@ -140,7 +139,7 @@ class Pagination
      */
     public static function setLimitPerPage($limit)
     {
-        self::$limit_per_page = $limit;
+        self::$limit_per_page = (int) $limit;
     }
 
     /**
@@ -160,7 +159,7 @@ class Pagination
      */
     public static function setPaginator($paginator)
     {
-        self::$paginator = $paginator;
+        self::$paginator = (string) $paginator;
     }
 
     /**

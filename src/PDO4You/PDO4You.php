@@ -19,11 +19,21 @@ require_once('PDO4You.config.php');
  * @license http://opensource.org/licenses/MIT
  * @link http://github.com/giovanniramos/PDO4You
  * @package PDO4You
- * @version 4.3
+ * @version 4.4
  * 
  * */
 class PDO4You implements Config
 {
+    /**
+     * Stores the path of the file that contains the settings for each adapter 
+     * to connect to a database
+     * 
+     * @access private static
+     * @var string
+     * 
+     * */
+    private static $settings;
+
     /**
      * Stores the name of the server machine on which the database resides
      * 
@@ -133,6 +143,39 @@ class PDO4You implements Config
     }
 
     /**
+     * Method to set the file path which contains the settings for each adapter 
+     * connection with a database
+     * 
+     * @access public static
+     * @param string $settings Path of the file that contains the configuration of adapters
+     * @return void
+     * 
+     * */
+    public static function setSettings($settings)
+    {
+        self::$settings = $settings;
+    }
+
+    /**
+     * Method to retrieve the path of the file that contains the configuration of adapters
+     * 
+     * @access public static
+     * @param void
+     * @return string
+     * 
+     * */
+    private static function getSettings()
+    {
+        // File directory
+        $directory = dirname(__FILE__);
+
+        // INI file of the default configuration
+        $settings = isset(self::$settings) ? self::$settings : $directory . '/PDO4You.settings.ini';
+
+        return $settings;
+    }
+
+    /**
      * Method Singleton connection
      * 
      * @access private static
@@ -221,53 +264,79 @@ class PDO4You implements Config
         try {
             try {
                 if (!array_key_exists($alias, self::$handle)) {
-                    if ($alias == 'standard') {
-                        // Current file directory
-                        $dir = dirname(__FILE__);
+                    // INI file containing the initial settings of the adapters the database
+                    $ini_file = self::getSettings();
 
-                        // INI file containing the initial settings of the adapters the database
-                        $file = $dir . '/PDO4You.settings.ini';
+                    // Checks if the INI file exists
+                    if (file_exists($ini_file)) {
+                        $_dir_file = dirname($ini_file);
+                        $_ini_file = basename($ini_file);
 
-                        // Checks if the INI file exists
-                        if (file_exists($file)) {
-                            // Checks whether the file is readable
-                            if (is_readable($file)) {
-                                // Interprets the file containing the initial settings
-                                $datafile = self::parse_ini_file_advanced($file);
+                        // Checks whether the file is readable
+                        if (is_readable($ini_file)) {
+                            // Interprets the file containing the initial settings
+                            $datafile = self::parse_ini_file_advanced($ini_file);
 
-                                // Initial settings for database adapters
-                                if (isset($datafile['PDO4YOU_ADAPTER'])) {
-                                    if (static::PDO4YOU_ADAPTER == 'vcap') {
-                                        $json = json_decode(getenv("VCAP_SERVICES"), true);
-                                        $data = $datafile['PDO4YOU_ADAPTER']['vcap'];
-                                        $part = preg_split('~[|]~', $data['vcap']);
-                                        $conf = $json[$part[0]][$part[1]]['credentials'];
-
-                                        $type = isset($data['type']) ? $data['type'] : null;
-                                        $host = isset($conf['hostname']) ? $conf['hostname'] : null;
-                                        $port = isset($conf['port']) ? $conf['port'] : null;
-                                        $user = isset($conf['username']) ? $conf['username'] : null;
-                                        $pass = isset($conf['password']) ? $conf['password'] : null;
-                                        $base = isset($conf['name']) ? $conf['name'] : null;
-                                    } else {
-                                        $part = preg_split('~[.]~', preg_replace('~[\s]{1,}~', null, static::PDO4YOU_ADAPTER));
-                                        $conf = count($part) == 2 ? @$datafile['PDO4YOU_ADAPTER'][$part[0]][$part[1]] : @$datafile['PDO4YOU_ADAPTER'][$part[0]];
-
-                                        $type = isset($conf['type']) ? $conf['type'] : null;
-                                        $host = isset($conf['host']) ? $conf['host'] : null;
-                                        $port = isset($conf['port']) ? $conf['port'] : null;
-                                        $user = isset($conf['user']) ? $conf['user'] : null;
-                                        $pass = isset($conf['pass']) ? $conf['pass'] : null;
-                                        $base = isset($conf['base']) ? $conf['base'] : null;
-                                    }
-                                } else {
-                                    exit('The settings for existing databases, were not configured in the <strong>PDO4You.settings.ini</strong>.');
-                                }
+                            // Initial settings for database adapters
+                            if (isset($datafile['PDO4YOU_ADAPTER'])) {
+                                // Captures all the names of the keys of an array
+                                $Keys = function($array) {
+                                            $keys = array();
+                                            foreach ($array as $key => $value) {
+                                                $slice_item = array_slice($value, 0, 1);
+                                                $first_item = array_shift($slice_item);
+                                                if (is_array($first_item)) {
+                                                    foreach ($value as $key2 => $value2) {
+                                                        $keys[] = $key . '.' . $key2;
+                                                    }
+                                                } else {
+                                                    $keys[] = $key;
+                                                }
+                                            }
+                                            return $keys;
+                                        };
+                                // List with the names of adapters available
+                                $adapters = $Keys($datafile['PDO4YOU_ADAPTER']);
                             } else {
-                                exit('The <strong>PDO4You.settings.ini</strong> file cannot be read.');
+                                exit('The settings for existing databases, were not configured in the <strong>' . $_ini_file . '</strong>.');
                             }
                         } else {
-                            exit('The <strong>PDO4You.settings.ini</strong> file could not be found in directory:<br /> ' . $dir);
+                            exit('The <strong>' . $_ini_file . '</strong> file can not be read in the directory:<br /> ' . $_dir_file);
+                        }
+                    }
+
+                    // Checks the selected adapter
+                    if (isset($adapters)) {
+                        $adapter = ($alias == 'standard') ? static::PDO4YOU_ADAPTER : $alias;
+
+                        if (empty($adapter))
+                            return;
+
+                        if ($adapter == 'vcap') {
+                            $json = json_decode(getenv("VCAP_SERVICES"), true);
+                            $data = $datafile['PDO4YOU_ADAPTER']['vcap'];
+                            $part = preg_split('~[|]~', $data['vcap']);
+                            $conf = $json[$part[0]][$part[1]]['credentials'];
+
+                            $type = isset($data['type']) ? $data['type'] : null;
+                            $host = isset($conf['hostname']) ? $conf['hostname'] : null;
+                            $port = isset($conf['port']) ? $conf['port'] : null;
+                            $user = isset($conf['username']) ? $conf['username'] : null;
+                            $pass = isset($conf['password']) ? $conf['password'] : null;
+                            $base = isset($conf['name']) ? $conf['name'] : null;
+                        } else {
+                            $part = preg_split('~[.]~', preg_replace('~[\s]{1,}~', null, $adapter));
+                            $conf = count($part) == 2 ? @$datafile['PDO4YOU_ADAPTER'][$part[0]][$part[1]] : @$datafile['PDO4YOU_ADAPTER'][$part[0]];
+
+                            // Checks if the selected adapter in the instance exists
+                            if (in_array($adapter, $adapters)) {
+                                $type = isset($conf['type']) ? $conf['type'] : null;
+                                $host = isset($conf['host']) ? $conf['host'] : null;
+                                $port = isset($conf['port']) ? $conf['port'] : null;
+                                $user = isset($conf['user']) ? $conf['user'] : null;
+                                $pass = isset($conf['pass']) ? $conf['pass'] : null;
+                                $base = isset($conf['base']) ? $conf['base'] : null;
+                            }
                         }
                     }
 
@@ -1022,7 +1091,7 @@ class PDO4You implements Config
             if ($command != 'query') {
                 $json = preg_replace('~' . $command . '~', 'query', $json, 1);
             }
- 
+
             // Converts the encoding
             $json = mb_detect_encoding($json, 'UTF-8', true) ? $json : utf8_encode($json);
 
