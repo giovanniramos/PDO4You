@@ -1,6 +1,5 @@
 <?php
 
-// Defining namespaces
 namespace PDO4You;
 
 // Importing classes
@@ -11,13 +10,12 @@ use PDO4You\Singleton;
  * Describe class
  * 
  * @author Giovanni Ramos <giovannilauro@gmail.com>
- * @copyright 2010-2013, Giovanni Ramos
+ * @copyright 2010-2014, Giovanni Ramos
  * @since 2010-09-07
  * @license http://opensource.org/licenses/MIT
  * @link http://github.com/giovanniramos/PDO4You
  * @package PDO4You
- * 
- * */
+ */
 class Describe
 {
 
@@ -27,8 +25,7 @@ class Describe
      * @access public static
      * @param string $schema Name of the schema used
      * @return void
-     * 
-     * */
+     */
     public static function showTables($schema = null)
     {
         try {
@@ -58,8 +55,7 @@ class Describe
      * @access private static
      * @param void 
      * @return void
-     * 
-     * */
+     */
     private static function showMySqlTables()
     {
         Singleton::setStyle();
@@ -93,8 +89,7 @@ class Describe
      * @access private static
      * @param string $schema Name of scheme
      * @return void
-     * 
-     * */
+     */
     private static function showPgSqlTables($schema)
     {
         Singleton::setStyle();
@@ -126,8 +121,7 @@ class Describe
      * @access private static
      * @param void 
      * @return void
-     * 
-     * */
+     */
     private static function showCubridTables()
     {
         Singleton::setStyle();
@@ -161,8 +155,7 @@ class Describe
      * @access private static
      * @param string $schema Name of scheme
      * @return void
-     * 
-     * */
+     */
     private static function showMsSqlTables($schema)
     {
         Singleton::setStyle();

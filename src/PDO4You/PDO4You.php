@@ -1,27 +1,25 @@
 <?php
 
-// Defining namespaces
 namespace PDO4You;
 
 // Importing classes
 use PDO4You\Pagination;
 
 // Loading the configuration file
-require_once('PDO4You.config.php');
+require_once 'PDO4You.config.php';
 
 /**
  * PDO4You is a class that implements the Singleton design pattern for 
  * connecting the database using the PDO extension (PHP Data Objects)
  * 
  * @author Giovanni Ramos <giovannilauro@gmail.com>
- * @copyright 2010-2013, Giovanni Ramos
+ * @copyright 2010-2014, Giovanni Ramos
  * @since 2010-09-07
  * @license http://opensource.org/licenses/MIT
  * @link http://github.com/giovanniramos/PDO4You
  * @package PDO4You
  * @version 4.4
- * 
- * */
+ */
 class PDO4You implements Config
 {
     /**
@@ -30,8 +28,7 @@ class PDO4You implements Config
      * 
      * @access private static
      * @var string
-     * 
-     * */
+     */
     private static $settings;
 
     /**
@@ -39,8 +36,7 @@ class PDO4You implements Config
      * 
      * @access private static
      * @var string
-     * 
-     * */
+     */
     private static $datahost;
 
     /**
@@ -48,8 +44,7 @@ class PDO4You implements Config
      * 
      * @access private static
      * @var string
-     * 
-     * */
+     */
     private static $dataport;
 
     /**
@@ -57,8 +52,7 @@ class PDO4You implements Config
      * 
      * @access private static
      * @var string
-     * 
-     * */
+     */
     private static $connection;
 
     /**
@@ -66,8 +60,7 @@ class PDO4You implements Config
      * 
      * @access private static
      * @var object
-     * 
-     * */
+     */
     private static $instance;
 
     /**
@@ -75,8 +68,7 @@ class PDO4You implements Config
      * 
      * @access private static
      * @var array
-     * 
-     * */
+     */
     private static $handle = array();
 
     /**
@@ -84,35 +76,31 @@ class PDO4You implements Config
      * 
      * @access private static
      * @var boolean
-     * 
-     * */
+     */
     private static $persistent = false;
 
     /**
      * Stores the ID of the last inserted row or sequence value
      * 
-     * @access private
+     * @access private static
      * @var string
-     * 
-     * */
+     */
     private static $lastId;
 
     /**
      * Stores the total of affected rows in last CRUD operation
      * 
-     * @access private
+     * @access private static
      * @var string
-     * 
-     * */
+     */
     private static $rowCount;
 
     /**
      * Stores messages Exception thrown
      * 
-     * @access public
+     * @access public static
      * @var array
-     * 
-     * */
+     */
     public static $exception = array(
         'code-1044' => 'Access denied for user: \'%1$s\'',
         'code-1045' => 'Failed communication with the database using: \'%1$s\'@\'%2$s\'',
@@ -135,8 +123,7 @@ class PDO4You implements Config
      * The constructor is set to private, preventing direct instance of the class
      * 
      * @access private
-     * 
-     * */
+     */
     private function __construct()
     {
         exit;
@@ -148,9 +135,7 @@ class PDO4You implements Config
      * 
      * @access public static
      * @param string $settings Path of the file that contains the configuration of adapters
-     * @return void
-     * 
-     * */
+     */
     public static function setSettings($settings)
     {
         self::$settings = $settings;
@@ -159,11 +144,9 @@ class PDO4You implements Config
     /**
      * Method to retrieve the path of the file that contains the configuration of adapters
      * 
-     * @access public static
-     * @param void
+     * @access private static
      * @return string
-     * 
-     * */
+     */
     private static function getSettings()
     {
         // File directory
@@ -183,11 +166,10 @@ class PDO4You implements Config
      * @param string $driver Driver DSN connection
      * @param string $user Username of the database
      * @param string $pass Password of the database
-     * @param string $option Configuration the connection driver
+     * @param array $option Configuration the connection driver
      * @return void
-     * @throws PDOException Throws an exception in case of connection failures
-     * 
-     * */
+     * @throws \PDOException Throws an exception in case of connection failures
+     */
     private static function singleton($alias, $driver, $user, $pass, $option)
     {
         try {
@@ -238,9 +220,7 @@ class PDO4You implements Config
      * 
      * @access public static
      * @param string $alias Pseudonym of a connection instance
-     * @return void
-     * 
-     * */
+     */
     public static function setInstance($alias)
     {
         self::$instance = self::getHandle($alias == null ? 'standard' : $alias);
@@ -254,11 +234,10 @@ class PDO4You implements Config
      * @param string $type Connection type if using "Initial Setup" or "Full DSN"
      * @param string $user Username of the database
      * @param string $pass Password of the database
-     * @param string $option Configuration the connection driver
+     * @param array $option Configuration the connection driver
      * @return object
-     * @throws Exception Throws an exception in case of connection failures
-     * 
-     * */
+     * @throws \PDOException Throws an exception in case of connection failures
+     */
     public static function getInstance($alias = 'standard', $type = null, $user = null, $pass = null, Array $option = null)
     {
         try {
@@ -383,11 +362,10 @@ class PDO4You implements Config
 
     /**
      * Method for assigning a new object instance PDO connection
-     *
-     * @param string $alias Pseudonym to identify the connection instance
-     * @param PDO $instance Object PDO connection
-     * @return void
      * 
+     * @access private static
+     * @param string $alias Pseudonym to identify the connection instance
+     * @param \PDO $instance Object PDO connection
      */
     private static function setHandle($alias, \PDO $instance)
     {
@@ -396,16 +374,16 @@ class PDO4You implements Config
 
     /**
      * Method to return an object PDO connection
-     *
+     * 
+     * @access private static
      * @param string $alias Pseudonym of a connection instance
      * @return object
-     * 
      */
     private static function getHandle($alias)
     {
         self::setConnection($alias);
 
-        return self::$handle[$alias];
+        return @ self::$handle[$alias];
     }
 
     /**
@@ -413,9 +391,7 @@ class PDO4You implements Config
      * 
      * @access private static
      * @param string $host Server name
-     * @return void
-     * 
-     * */
+     */
     private static function setDatahost($host)
     {
         self::$datahost = $host;
@@ -425,10 +401,8 @@ class PDO4You implements Config
      * Method to retrieve the server name
      * 
      * @access public static
-     * @param void
      * @return string
-     * 
-     * */
+     */
     public static function getDatahost()
     {
         return self::$datahost;
@@ -439,9 +413,7 @@ class PDO4You implements Config
      * 
      * @access private static
      * @param string $port Port number
-     * @return void
-     * 
-     * */
+     */
     private static function setDataport($port)
     {
         self::$dataport = $port;
@@ -451,10 +423,8 @@ class PDO4You implements Config
      * Method to retrieve the port number of the server
      * 
      * @access public static
-     * @param void
      * @return string
-     * 
-     * */
+     */
     public static function getDataport()
     {
         return self::$dataport;
@@ -465,9 +435,7 @@ class PDO4You implements Config
      * 
      * @access private static
      * @param string $alias Pseudonym of a connection instance
-     * @return void
-     * 
-     * */
+     */
     private static function setConnection($alias)
     {
         self::$connection = $alias;
@@ -477,10 +445,8 @@ class PDO4You implements Config
      * Method to retrieve the name of the current instance of connection
      * 
      * @access public static
-     * @param void
      * @return string
-     * 
-     * */
+     */
     public static function getConnection()
     {
         return self::$connection;
@@ -492,9 +458,7 @@ class PDO4You implements Config
      * 
      * @access public static
      * @param boolean $persistent Sets a persistent connection
-     * @return void
-     * 
-     * */
+     */
     public static function setPersistent($persistent = false)
     {
         self::$persistent = $persistent;
@@ -504,11 +468,10 @@ class PDO4You implements Config
      * Method to capture the error information of an Exception
      * 
      * @access private static
-     * @param PDOException $e Gets the message from the exception thrown
+     * @param \PDOException $e Gets the message from the exception thrown
      * @param boolean $debug Enables the display of the captured values
      * @return array
-     * 
-     * */
+     */
     private static function getErrorInfo(\PDOException $e, $debug = false)
     {
         if (defined(static::PDO4YOU_WEBMASTER)) {
@@ -536,10 +499,8 @@ class PDO4You implements Config
      * Method to retrieve the name of the current driver
      * 
      * @access public static
-     * @param void
      * @return string
-     * 
-     * */
+     */
     public static function getDriver()
     {
         return self::$instance->getAttribute(\PDO::ATTR_DRIVER_NAME);
@@ -551,8 +512,7 @@ class PDO4You implements Config
      * @access public static
      * @param void
      * @return void
-     * 
-     * */
+     */
     public static function showServerInfo()
     {
         try {
@@ -575,8 +535,7 @@ class PDO4You implements Config
      * @access public static 
      * @param void
      * @return void
-     * 
-     * */
+     */
     public static function showAvailableDrivers()
     {
         try {
@@ -597,8 +556,7 @@ class PDO4You implements Config
      * @access public static
      * @param void
      * @return void
-     * 
-     * */
+     */
     public static function css()
     {
         $style = '<style type="text/css">';
@@ -622,11 +580,10 @@ class PDO4You implements Config
      * Method to display the stack trace of an error Exception
      * 
      * @access private static
-     * @param PDOException $e Gets the error stack generated by the exception
+     * @param \PDOException $e Gets the error stack generated by the exception
      * @param boolean $show Enables the display of the error stack
      * @return void
-     * 
-     * */
+     */
     private static function stackTrace(\PDOException $e, $show = true)
     {
         if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
@@ -678,8 +635,7 @@ class PDO4You implements Config
      * @param string $showLines Sets the number of rows to display
      * @return string
      * @author Marcus Welz
-     * 
-     * */
+     */
     private static function highlightSource($fileName, $lineNumber, $showLines = 5)
     {
         $offset = max(0, $lineNumber - ceil($showLines / 2));
@@ -710,8 +666,8 @@ class PDO4You implements Config
      * @param string $use Pseudonym of a connection instance
      * @param boolean $count OPTIONAL Counts the number of rows affected
      * @return mixed
-     * 
-     * */
+     * @throws \PDOException
+     */
     private static function selectRecords($query, $type, $use, $count = true)
     {
         try {
@@ -773,8 +729,7 @@ class PDO4You implements Config
      * @param string $sql Instruction SQL of query of records
      * @param string $use OPTIONAL Name of the database defined as a new connection instance
      * @return array Returns an array indexed by column number
-     * 
-     * */
+     */
     public static function selectNum($sql, $use = null)
     {
         return self::selectRecords($sql, 'num', $use);
@@ -787,8 +742,7 @@ class PDO4You implements Config
      * @param string $sql Instruction SQL of query of records
      * @param string $use OPTIONAL Name of the database defined as a new connection instance
      * @return object Returns an object with column names as properties
-     * 
-     * */
+     */
     public static function selectObj($sql, $use = null)
     {
         return self::selectRecords($sql, 'obj', $use);
@@ -801,8 +755,7 @@ class PDO4You implements Config
      * @param string $sql Instruction SQL of query of records
      * @param string $use OPTIONAL Name of the database defined as a new connection instance
      * @return array Returns an array indexed both by the name as the column number
-     * 
-     * */
+     */
     public static function selectAll($sql, $use = null)
     {
         return self::selectRecords($sql, 'all', $use);
@@ -815,8 +768,7 @@ class PDO4You implements Config
      * @param string $sql Instruction SQL of query of records
      * @param string $use OPTIONAL Name of the database defined as a new connection instance
      * @return array Returns an array indexed by column name
-     * 
-     * */
+     */
     public static function select($sql, $use = null)
     {
         return self::selectRecords($sql, null, $use);
@@ -830,8 +782,8 @@ class PDO4You implements Config
      * @param string $type Type of operation in the database
      * @param string $use OPTIONAL Name of the database defined as a new connection instance
      * @return array Returns an array with the number of rows affected by the operation
-     * 
-     * */
+     * @throws \PDOException
+     */
     private static function executeQuery($jarr, $type, $use)
     {
         $total = null;
@@ -952,8 +904,8 @@ class PDO4You implements Config
      * @param string $json SQL statement in JSON format
      * @param string $use OPTIONAL Name of the database defined as a new connection instance
      * @return array Returns an array with the number of rows affected by type of operation
-     * 
-     * */
+     * @throws \PDOException
+     */
     public static function execute($json, $use = null)
     {
         // Finds a word that is at the beginning, in quotation marks or not
@@ -980,8 +932,7 @@ class PDO4You implements Config
      * @param string $jarr SQL insertion in JSON/ARRAY format
      * @param string $use OPTIONAL Name of the database defined as a new connection instance
      * @return array Returns an array with the number of rows affected by insert operation
-     * 
-     * */
+     */
     public static function insert($jarr, $use = null)
     {
         return self::executeQuery($jarr, 'insert', $use);
@@ -994,8 +945,7 @@ class PDO4You implements Config
      * @param string $jarr SQL update in JSON/ARRAY format
      * @param string $use OPTIONAL Name of the database defined as a new connection instance
      * @return array Returns an array with the number of rows affected by update operation
-     * 
-     * */
+     */
     public static function update($jarr, $use = null)
     {
         return self::executeQuery($jarr, 'update', $use);
@@ -1008,8 +958,7 @@ class PDO4You implements Config
      * @param string $jarr SQL exclusion in JSON/ARRAY format
      * @param string $use OPTIONAL Name of the database defined as a new connection instance
      * @return array Returns an array with the number of rows affected by delete operation
-     * 
-     * */
+     */
     public static function delete($jarr, $use = null)
     {
         return self::executeQuery($jarr, 'delete', $use);
@@ -1022,8 +971,8 @@ class PDO4You implements Config
      * @access public static
      * @param string $sequence Name of the variable sequence requested for some database
      * @return array
-     * 
-     * */
+     * @throws \PDOException
+     */
     public static function lastId($sequence = null)
     {
         try {
@@ -1061,8 +1010,7 @@ class PDO4You implements Config
      * @access public static
      * @param void
      * @return string
-     * 
-     * */
+     */
     public static function rowCount()
     {
         $count = is_array(self::$rowCount) ? self::countWhere(self::$rowCount, '>', 0) : self::$rowCount;
@@ -1076,8 +1024,8 @@ class PDO4You implements Config
      * @access private static
      * @param string $json String in JSON notation format
      * @return array
-     * 
-     * */
+     * @throws \PDOException
+     */
     private static function parseJSON($json)
     {
         try {
@@ -1139,8 +1087,7 @@ class PDO4You implements Config
      * @param string $text Error Message
      * @param object $error Object of diagnostic of the errors
      * @return void
-     * 
-     * */
+     */
     public static function fireAlert($text, $error)
     {
         $head = 'MIME-Version: 1.1' . PHP_EOL;
@@ -1161,7 +1108,6 @@ class PDO4You implements Config
      * @param string $filename Filename
      * @return array
      * @link https://gist.github.com/4217717
-     * 
      */
     private static function parse_ini_file_advanced($filename)
     {
@@ -1191,8 +1137,7 @@ class PDO4You implements Config
      * @param string $conditional Conditional assignment
      * @return integer
      * @link https://gist.github.com/3100679
-     * 
-     * */
+     */
     private static function countWhere($value = 1, $operator = '==', $conditional = 1)
     {
         $array = is_array($value) ? $value : (array) $value;
@@ -1217,8 +1162,7 @@ class PDO4You implements Config
      * @param string $value The input string
      * @return string
      * @link https://gist.github.com/3078188
-     * 
-     * */
+     */
     public static function clearStyle($value)
     {
         $value = preg_replace("~<(a|ol|ul|li|h[1-6r]|d[dlt]|em|p|i|b|s|strong|span|div|table|t[dhr])\s?(style.*)?/>~i", "<$1>", $value);
@@ -1229,11 +1173,8 @@ class PDO4You implements Config
     /**
      * As the builder, we make __clone private to prevent cloning instance of the class
      * 
-     * @access private
-     * @param void
-     * @return void
-     * 	 
-     * */
+     * @access final private
+     */
     final private function __clone()
     {
         

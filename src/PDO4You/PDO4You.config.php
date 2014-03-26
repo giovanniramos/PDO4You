@@ -1,19 +1,17 @@
 <?php
 
-// Defining namespaces
 namespace PDO4You;
 
 /**
  * Initial Configuration
  * 
  * @author Giovanni Ramos <giovannilauro@gmail.com>
- * @copyright 2010-2013, Giovanni Ramos
+ * @copyright 2010-2014, Giovanni Ramos
  * @since 2010-09-07
  * @license http://opensource.org/licenses/MIT
  * @link http://github.com/giovanniramos/PDO4You
  * @package PDO4You
- * 
- * */
+ */
 interface Config
 {
     // Connection adapter defined in: PDO4You.settings.ini
