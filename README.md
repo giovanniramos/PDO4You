@@ -1,217 +1,228 @@
+*[Leia a documenta&ccedil;&atilde;o em Portugu&ecirc;s](https://github.com/giovanniramos/PDO4You/blob/master/README-pt.md)*
+
+---
+
 PDO4You
 ==================================================
 
-Esta classe é baseada no PDO, que é uma extensão do PHP que permite aos desenvolvedores criar um código portável, de modo a atender a maioria das bases de dados mais populares.
-Sendo o MySQL, PostgreSQL, Oracle, MS SQL Server, Sybase.
-
-E agora a partir da versão 2.6, também oferencendo suporte ao banco de dados CUBRID.
-O mais novo sistema de gerenciamento de banco de dados altamente otimizado para aplicações Web.
-Mais informações em: http://bit.ly/CUBRID
-
-O PDO4You provê uma camada abstrata de acesso a dados, que independentemente de qual base de dados você esteja utilizando, sempre poderá usar os mesmos métodos para emitir consultas e buscar dados.
-
-O padrão de projeto Singleton foi adotado para otimizar a conexão, garantindo uma única instância do objeto de conexão por base de dados.
+[![Latest Stable Version](https://poser.pugx.org/giovanniramos/pdo4you/v/stable.png)](https://packagist.org/packages/giovanniramos/pdo4you)
+[![Build Status](http://img.shields.io/travis-ci/giovanniramos/PDO4You.png?branch=master)](http://travis-ci.org/giovanniramos/PDO4You "Check this project's build status on TravisCI")
+[![Gittip donate button](http://img.shields.io/gittip/giovanniramos.png)](https://www.gittip.com/giovanniramos "Donate weekly to this project using Gittip")
+[![Flattr donate button](http://img.shields.io/flattr/donate.png?color=yellow)](https://flattr.com/profile/giovanniramos "Donate monthly to this project using Flattr")
+[![PayPal donate button](http://img.shields.io/paypal/donate.png?color=yellow)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=L2TJHDN263VWU "Donate once-off to this project using Paypal")
 
 
-**Vantagens em sua utilização:**
-* Abstração de conexão
-* Proteção contra SQL Injection
-* Métodos CRUD pré-definidos
-* Múltiplas conexões por base de dados
-* Instrução SQL compacta, usando notação JSON
-* Tratamento de erros com Stack Trace
+This class is based on the PDO, which is a PHP extension that allows developers to create portable code, so as to cater for most popular databases.
+Being MySQL, PostgreSQL, SQLite, Oracle, Microsoft SQL Server, Sybase.
+
+Alternatively been added in version 3.0 support for the MariaDB database.
+MariaDB is being considered as the future replacement free of MySQL.
+More information at: http://bit.ly/MARIADB
+
+And since version 2.6 also has provided support for the CUBRID database.
+A management system database highly optimized for Web applications.
+More information at: http://bit.ly/CUBRID
+
+The PDO4You provides an abstraction layer for data access, that regardless of which database you're using, you can always use the same methods to issue queries and fetch data.
+
+The Singleton design pattern was adopted to optimize the connection, ensuring a single instance of the connection object.
+
+
+### What is the advantage in their use?
+
+* Instruction SQL compact using JSON notation
+* Abstraction of connection
+* Protection against SQL Injection
+* Multiple database connections
+* Methods/Commands CRUD predefined
+* Option to connect with VCAP_SERVICES
+* Error Handling with Stack Trace
 
 
 
-Introdução: carregando a biblioteca necessária
+Getting Started
 --------------------------------------------------
+
+The bootstrap file is responsible for loading the autoloader and all project dependencies.
+If not available, you will receive a confirmation message to start installation with Composer.
 
 ~~~ php
 <?php
 
-// Apenas um arquivo é necessário para carregar toda a biblioteca
-require_once('PDO4You.load.php');
+/**
+ * Loads the autoloader and all project dependencies
+ * The data access have been defined in the 'initial configuration file'
+ */
+require __DIR__.'/src/bootstrap.php';
 
 ?>
 ~~~ 
 
-`PDO4You.load.php`: arquivo responsável pelo carregamento dos arquivos necessários ao funcionamento da lib PDO4You.
+`PDO4You.php`: class that contains the implementation of the PDO object connection.
 
-`PDO4You.class.php`: contém a implementação do objeto PDO de conexão.
+`PDO4You.config.php`: initial configuration file, server access and database.
 
-`PDO4You.config.php`: arquivo de configuração inicial, de acesso ao servidor e base de dados.
+`PDO4You.settings.ini`: contains the settings for each adapter of connection to the database.
 
-`PDO4You.library.php`: contém um autoloading de classes e pode ser usado como biblioteca de funções úteis ao sistema.
+`Describe.php`: Describe is a class used to list all the fields in a table and the data format of each field.
+
+`Pagination.php`: Pagination is a class that allows you to list the records so as paged, similar to Google.
 
 
 
-Verificando os drivers suportados pelo servidor
+Establishing a connection to the database
 --------------------------------------------------
 
-Execute o método abaixo para verificar se o servidor tem suporte a um driver PDO específico de sua base de dados. 
-Os drivers suportados serão exibidos na tela.
+To abstract our data access mechanisms, we use a DSN (Data Source Name = Data Source) that stores the information needed to initiate communication with other data sources, such as: type of technology, server name or location, database name, user, password, and other settings. This allows portability of the project, facilitating the exchange of access to the database during a migration.
 
 ~~~ php
 <?php
 
-// O método abaixo exibe todos os drivers instalados e que são suportados pelo servidor
-PDO4You::getAvailableDrivers();
+// Loading all the necessary files
+require __DIR__.'/src/bootstrap.php';
 
-?>
-~~~
-
-Para habilitar algum driver não instalado, localize o arquivo php.ini, abra e procure por "extension=" sem as aspas, depois descomente as linhas a seguir conforme sua base de dados de preferência, removendo no início de cada linha o "ponto-e-vírgula" e após mudanças, reinicie o servidor.
-
-~~~ html
-extension=php_pdo.dll
-extension=php_pdo_mysql.dll
-extension=php_pdo_pgsql.dll
-;extension=php_pdo_cubrid.dll
-;extension=php_pdo_mssql.dll
-;extension=php_pdo_oci.dll
-;extension=php_pdo_oci8.dll
-;extension=php_pdo_sqlite.dll
-~~~
+// Connection class imported
+use PDO4You\PDO4You;
 
 
+/**
+ * Main ways to start a connection instance
+ */
 
-Estabelecendo conexão com a base de dados
---------------------------------------------------
+// Connection instance started and available
 
-Para abstrair nossos mecanismos de acesso aos dados, usamos um DSN (Data Source Name = Nome de Fonte de Dados) que armazena as informações necessárias para se iniciar uma comunicação com outras fontes de dados, tais como: tipo de tecnologia, nome do servidor ou localização, nome da base de dados, usuário, senha e outras configurações adicionais. Isso facilita a troca de acesso à base de dados que sofrerem migração.
-
-~~~ php
-<?php
-
-// Principais meios de se iniciar uma instância de conexão
-
-# PADRÃO 
-PDO4You::getInstance(); // Os dados de acesso já foram definidos no arquivo de configuração inicial
-
-
-// Conectando-se a outras fontes de dados através de um DSN
-
-# MySQL
-PDO4You::getInstance('nome_da_instancia', 'mysql:host=localhost;dbname=pdo4you;port=3306', 'user', 'pass');
-
-# PostgreSQL
-PDO4You::getInstance('nome_da_instancia', 'pgsql:host=localhost;dbname=pdo4you;port=5432', 'user', 'pass');
-
-# CUBRID
-PDO4You::getInstance('nome_da_instancia', 'cubrid:host=localhost;dbname=pdo4you;port=33000', 'user', 'pass');
-
-?>
-~~~ 
-
-
-
-Realizando operações CRUD em sua base de dados
---------------------------------------------------
-
-O termo CRUD em inglês se refere as 4 operações básicas em uma base de dados e significam: 
-Create(INSERT), Retrieve(SELECT), Update(UPDATE) e Destroy(DELETE)
-
-Instruções SQL de consulta:
-
-`PDO4You::select()`: retorna um array indexado pelo nome da coluna. Equivale a PDO::FETCH_ASSOC
-
-`PDO4You::selectNum()`: retorna um array indexado pela posição numérica da coluna. Equivale a PDO::FETCH_NUM
-
-`PDO4You::selectObj()`: retorna um objeto com nomes de coluna como propriedades. Equivale a PDO::FETCH_OBJ
-
-`PDO4You::selectAll()`: retorna um array indexado pelo nome e pela posição numérica da coluna. Equivale a PDO::FETCH_BOTH
-
-
-Abaixo seguem exemplos de como realizar estas operações.
-
-
-Selecionando registros na base de dados
---------------------------------------------------
-
-~~~ php
-<?php
-
-// Iniciando uma instância de conexão. O padrão de conexão é não-persistente
+# DEFAULT 
 PDO4You::getInstance();
 
-// Definindo uma comunicação persistente com a base de dados
+
+// Connecting to other data sources through a DSN
+
+# MySQL / MariaDB
+PDO4You::getInstance('instance_name', 'mysql:host=localhost;dbname=pdo4you;port=3306', 'user', 'pass');
+
+# PostgreSQL
+PDO4You::getInstance('instance_name', 'pgsql:host=localhost;dbname=pdo4you;port=5432', 'user', 'pass');
+
+# CUBRID
+PDO4You::getInstance('instance_name', 'cubrid:host=localhost;dbname=pdo4you;port=33000', 'user', 'pass');
+
+?>
+~~~ 
+
+
+
+Performing CRUD operations on your database
+--------------------------------------------------
+
+The term CRUD refers to the 4 basic operations in a database and meaning:
+Create(INSERT), Retrieve(SELECT), Update(UPDATE) e Destroy(DELETE)
+
+Query statements:
+
+`PDO4You::select()`: returns an array indexed by column name.
+
+`PDO4You::selectNum()`: returns an array indexed by the numerical position of the column.
+
+`PDO4You::selectObj()`: returns an object with column names as properties.
+
+`PDO4You::selectAll()`: returns an array indexed by name and numerical position of the column.
+
+
+Below are examples of how to perform these operations.
+
+
+
+### Selecting records in the database
+
+~~~ php
+<?php
+
+// Loading all the necessary files
+require __DIR__.'/src/bootstrap.php';
+
+// Connection class imported
+use PDO4You\PDO4You;
+
+// Starting a connection instance. The default connection is not persistent
+PDO4You::getInstance();
+
+// Defining a persistent communication with the database
 PDO4You::setPersistent(true);
 
-// Selecionando registros na base de dados
+// Selecting records in the database
 PDO4You::select('SELECT * FROM books LIMIT 2');
 
-// Selecionando registros e definindo qual instância de conexão será utilizada
-PDO4You::select('SELECT * FROM books LIMIT 2', 'nome_da_instancia');
+// Selecting records and setting that connection instance will be used
+PDO4You::select('SELECT * FROM books LIMIT 2', 'instance_name');
 
 
-// Query de consulta
+// Query statement
 $sql = 'SELECT * FROM books LIMIT 2';
 
-// Selecionando registros com FETCH_ASSOC
+// Selecting records with PDO::FETCH_ASSOC
 $result = PDO4You::select($sql);
 
-// Selecionando registros com FETCH_NUM
+// Selecting records with PDO::FETCH_NUM
 $result = PDO4You::selectNum($sql);
 
-// Selecionando registros com FETCH_OBJ
+// Selecting records with PDO::FETCH_OBJ
 $result = PDO4You::selectObj($sql);
 
-// Selecionando registros com FETCH_BOTH
+// Selecting records with PDO::FETCH_BOTH
 $result = PDO4You::selectAll($sql);
 
 
-// Selecionando todos os registros
+// Selecting all records
 $result = PDO4You::select('SELECT * FROM books');
 
-// Obtendo o total de linhas afetadas pela operação
+// Getting the total number of rows affected by the operation
 $total = PDO4You::rowCount();
 
-// Exibindo o resultado da consulta
-echo '<pre><h3>Resultado da consulta:</h3> ' , print_r($result, true) , '</pre>';
+// Displaying the query results
+echo '<pre><h3>Query Result:</h3> ' , print_r($result, true) , '</pre>';
 
 ?>
 ~~~ 
 
 
 
-Os métodos insert(), update() e delete() da classe PDO4You estão aninhadas entre transações, sendo elas beginTransaction() e commit(). Isto garante que o sistema consiga reverter uma operação mal sucedida e todas as alterações feitas desde o início de uma transação.
+The methods insert(), update() and delete() of the PDO4You class, are nestled between transactions, these being beginTransaction() and commit(). This ensures that the system can roll back an unsuccessful operation and all changes made ​​since the start of a transaction.
 
-Um erro grave na execução resulta em invocar o rollBack(), desfazendo toda a operação. Consequentemente será lançada uma Exception, rastreando o caminho de todas as classes e métodos envolvidos na operação, agilizando em ambiente de "produção" o processo de debug e com isso, assegurando a base de dados do risco de se tornar instável.
+Was added in version 3.1 the execute() method, as an alternative to methods (insert, update and delete).
 
-No MySQL o suporte a transações está disponível em tabelas do tipo InnoDB.
+A serious error in the execution results in invoke rollBack(), undoing the whole operation. Consequently one Exception is thrown, tracing the path of all classes and methods involved in the operation, speeding in an environment of "production", the debug process and thus ensuring the database of the risk becoming unstable.
 
-As instruções SQL da classe PDO4You (insert, update e delete) fazem agora o uso de notação JSON, um novo formato de se escrever querys que por sua vez possui convenções muito semelhante às linguagens como Python, Ruby, C++, Java, JavaScript. A nova sintaxe adotada pela classe é bem mais bonita e concisa, que a usada por Arrays. Além de compacta, as instruções possuem a capacidade de operar ao mesmo tempo, em diferentes tabelas da mesma base de dados. 
+In MySQL, transaction support is available for InnoDB type tables.
 
-
-Abaixo seguem trechos de exemplo na prática.
-
+The SQL statements of the PDO4You class (insert, update and delete) are now using JSON notation, a new format to write queries which in turn has conventions very similar to languages ​​like Python, Ruby, C++, Java, JavaScript. The new syntax adopted by the class is much more beautiful and concise, than the used by Arrays. Besides compact, instructions are capable of operating simultaneously in different tables in the same database.
 
 
-Inserindo um simples registro na base de dados
---------------------------------------------------
+Below are excerpts from example in practice.
+
+
+
+### Inserting a single row in the database
 
 ~~~ php
 <?php
 
-// Query
+// SQL insert in JSON format
 $json = '
-{
-	query : [
+	insert : [
 		{
 			table: "users" ,
 			values: { mail: "pdo4you@gmail.com" }
 		}
 	] 
-}
 ';
 
-// A variável $result armazena como retorno do método, um array com o número de linhas afetadas por operação de inserção
-$result = PDO4You::insert($json);
+// The $result variable stores as return of the method, an array with the number of rows affected by the insert operation
+$result = PDO4You::execute($json);
 
-// Logo após a inserção, utilize o método PDO4You::lastId() para obter o ID da última operação de inserção na base de dados
+// Just after insertion, use the method PDO4You::lastId() to get the ID of the last insert operation in the database
 $lastInsertId = PDO4You::lastId();
 
-// Se necessário, informe o nome da variável de sequência, solicitado em algumas base de dados
+// If needed, enter the name of the sequence variable, required in some databases
 $lastInsertId = PDO4You::lastId('table_id_seq');
 
 ?>
@@ -219,16 +230,14 @@ $lastInsertId = PDO4You::lastId('table_id_seq');
 
 
 
-Inserindo múltiplos registros
---------------------------------------------------
+### Inserting multiple records
 
 ~~~ php
 <?php
 
-// Query
+// SQL insert in JSON format
 $json = '
-{
-	query : [
+	insert : [
 		{
 			table: "users" ,
 			values: { mail: "mail_1@domain.com" }
@@ -240,27 +249,24 @@ $json = '
 			values: { title: "title", author: "author" }
 		}
 	] 
-}
 ';
 
-// A variável $result armazena um array com o número de linhas afetadas por operação de inserção
-$result = PDO4You::insert($json);
+// The $result variable stores an array with the number of rows affected by the insert operation
+$result = PDO4You::execute($json);
 
 ?>
 ~~~ 
 
 
 
-Atualizando múltiplos registros
---------------------------------------------------
+### Updating multiple records
 
 ~~~ php
 <?php
 
-// Query
+// SQL update in JSON format
 $json = '
-{
-	query : [
+	update : [
 		{
 			table: "users" ,
 			values: { mail: "mail_1@domain.com" } ,
@@ -275,27 +281,24 @@ $json = '
 			where: { id: 1 }
 		}
 	] 
-}
 ';
 
-// A variável $result armazena um array com o número de linhas afetadas por operação de atualização
-$result = PDO4You::update($json);
+// The $result variable stores an array with the number of rows affected by the update operation
+$result = PDO4You::execute($json);
 
 ?>
 ~~~ 
 
 
 
-Excluindo múltiplos registros
---------------------------------------------------
+### Deleting multiple records
 
 ~~~ php
 <?php
 
-// Query
+// SQL delete in JSON format
 $json = '
-{
-	query : [
+	delete : [
 		{
 			table: "users" ,
 			where: { id: 2 }
@@ -310,11 +313,76 @@ $json = '
 			where: { id: 10 }
 		}
 	] 
-}
 ';
 
-// A variável $result armazena um array com o número de linhas afetadas por operação de exclusão
-$result = PDO4You::delete($json);
+// The $result variable stores an array with the number of rows affected by the delete operation
+$result = PDO4You::execute($json);
 
 ?>
 ~~~ 
+
+
+
+Drivers supported by the server
+--------------------------------------------------
+
+Execute the method below to check if the server supports a PDO driver specific to your database.
+Supported drivers will be displayed on the screen.
+
+~~~ php
+<?php
+
+// The method below shows all the drivers installed and that are supported by the server
+PDO4You::showAvailableDrivers();
+
+?>
+~~~
+
+To enable any driver not installed, locate the php.ini file, open it and look for "extension=" without quotes, then uncomment the following lines according to your database preferably, removing the beginning of each line the "semicolon" and after changes, restart the server.
+
+~~~ html
+;extension=php_pdo.dll                  ; This DLL is not required as of PHP 5.3
+extension=php_pdo_mysql.dll             ; MySQL 3.x/4.x/5.x / MariaDB
+extension=php_pdo_pgsql.dll             ; PostgreSQL
+;extension=php_pdo_cubrid.dll           ; CUBRID
+;extension=php_pdo_oci.dll              ; Oracle Call Interface
+;extension=php_pdo_sqlsrv.dll           ; Microsoft SQL Server / SQL Azure
+;extension=php_pdo_dblib.dll            ; Microsoft SQL Server / Sybase / FreeTDS
+;extension=php_pdo_mssql.dll            ; Microsoft SQL Server "Old version"
+;extension=php_pdo_sqlite.dll           ; SQLite 2/3
+
+~~~
+
+PDO drivers for the server Xampp:<br />
+CUBRID (PHP 5.4): http://bit.ly/PDO_CUBRID-PHP54<br />
+CUBRID (PHP 5.3): http://bit.ly/PDO_CUBRID-PHP53<br />
+MS SQL Server 3.0 (PHP 5.4): http://bit.ly/PDO_SQLSRV-PHP54<br />
+MS SQL Server 2.0 (PHP 5.2/5.3): http://bit.ly/PDO_SQLSRV-PHP53<br />
+MS SQL Server (Old version): http://bit.ly/PDO_MSSQL-PHP53
+
+
+
+Dependencies
+--------------------------------------------------
+
+PHP >= 5.3.2<br />
+PHPUnit >= 3.7.0 (needed to run the test suite)
+
+
+
+Collaborators
+--------------------------------------------------
+
+Giovanni Ramos - <giovannilauro@gmail.com> - <http://twitter.com/giovanni_ramos><br />
+See also the list of [colaboradores](http://github.com/giovanniramos/PDO4You/contributors) who participated in this project.
+
+
+
+License
+--------------------------------------------------
+
+Copyright (c) 2010-2013 [Giovanni Ramos](http://github.com/giovanniramos)
+
+PDO4You is open-sourced software licensed under the [MIT License](http://www.opensource.org/licenses/MIT)
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/giovanniramos/pdo4you/trend.png)](https://bitdeli.com/free "Bitdeli Badge")

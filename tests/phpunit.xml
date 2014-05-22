@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<phpunit bootstrap="../src/bootstrap.php"
+         backupGlobals="false"
+         backupStaticAttributes="false"
+         convertErrorsToExceptions="true"
+         convertNoticesToExceptions="true"
+         convertWarningsToExceptions="true"
+         processIsolation="false"
+         stopOnFailure="false"
+         syntaxCheck="false"
+         strict="true"
+         colors="true"
+         verbose="true">
+    <testsuites>
+        <testsuite name="PDO4You Test Suite">
+            <directory suffix="Test.php">../tests/PDO4You/</directory>
+        </testsuite>
+    </testsuites>
+    <filter>
+        <whitelist addUncoveredFilesFromWhitelist="true">
+            <directory suffix=".php">../src/PDO4You/</directory>
+            <exclude>
+                <file>../src/bootstrap.php</file>
+                <file>../src/PDO4You/PDO4You.config.php</file>
+                <file>../src/PDO4You/PDO4You.settings.ini</file>
+            </exclude>
+        </whitelist>
+    </filter>
+    <php>
+        <server name="SERVER_ADDR" value="127.0.0.1"/>
+    </php>
+</phpunit>
