@@ -386,3 +386,6 @@ Copyright (c) 2010-2013 [Giovanni Ramos](http://github.com/giovanniramos)
 PDO4You is open-sourced software licensed under the [MIT License](http://www.opensource.org/licenses/MIT)
 
 [![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/giovanniramos/pdo4you/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/giovanniramos/pdo4you/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
