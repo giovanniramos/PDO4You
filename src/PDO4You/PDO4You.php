@@ -1200,9 +1200,13 @@ class PDO4You implements Config
                 throw new \PDOException(self::$exception['no-instance']);
             }
 
-            if (!self::$instance->query($query)) {
+            $statement = self::$instance->query($query);
+
+            if ($statement === false) {
                 throw new \PDOException(current(self::$instance->errorInfo()) . ' ' . end(self::$instance->errorInfo()));
             }
+
+            return $statement;
         } catch (\PDOException $e) {
             self::stackTrace($e);
         }
@@ -1215,9 +1219,13 @@ class PDO4You implements Config
                 throw new \PDOException(self::$exception['no-instance']);
             }
 
-            if (!self::$instance->lastInsertId($name)) {
+            $id = self::$instance->lastInsertId($name);
+
+            if ($id === false) {
                 throw new \PDOException(current(self::$instance->errorInfo()) . ' ' . end(self::$instance->errorInfo()));
             }
+
+            return $id;
         } catch (\PDOException $e) {
             self::stackTrace($e);
         }
@@ -1233,6 +1241,8 @@ class PDO4You implements Config
             if (!self::$instance->beginTransaction()) {
                 throw new \PDOException(current(self::$instance->errorInfo()) . ' ' . end(self::$instance->errorInfo()));
             }
+
+            return true;
         } catch (\PDOException $e) {
             self::stackTrace($e);
         }
@@ -1248,6 +1258,8 @@ class PDO4You implements Config
             if (!self::$instance->commit()) {
                 throw new \PDOException(current(self::$instance->errorInfo()) . ' ' . end(self::$instance->errorInfo()));
             }
+
+            return true;
         } catch (\PDOException $e) {
             self::stackTrace($e);
         }
@@ -1263,6 +1275,8 @@ class PDO4You implements Config
             if (!self::$instance->rollBack()) {
                 throw new \PDOException(current(self::$instance->errorInfo()) . ' ' . end(self::$instance->errorInfo()));
             }
+
+            return true;
         } catch (\PDOException $e) {
             self::stackTrace($e);
         }
