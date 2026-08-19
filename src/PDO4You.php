@@ -15,10 +15,27 @@ use PDOException;
 class PDO4You
 {
     private PDO $pdo;
+    private Platform\DatabasePlatform $platform;
 
-    public function __construct(PDO $pdo)
+    public function __construct(PDO $pdo, Platform\DatabasePlatform $platform)
     {
         $this->pdo = $pdo;
+        $this->platform = $platform;
+    }
+
+    /**
+     * Recupera o ID do último registro inserido baseado na plataforma.
+     */
+    public function lastId(?string $sequence = null): string|false
+    {
+        $sql = $this->platform->getLastInsertIdSql($sequence);
+        $result = $this->pdo->query($sql);
+        
+        if ($result === false) {
+            return false;
+        }
+        
+        return $result->fetchColumn() ?: false;
     }
 
     /**
