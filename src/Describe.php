@@ -4,7 +4,6 @@ namespace PDO4You;
 
 // Importing classes
 use PDOException;
-use PDO4You\Singleton;
 
 /**
  * Describe class

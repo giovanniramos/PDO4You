@@ -4,11 +4,13 @@
     "description": "Modern lightweight database wrapper using PDO",
     "keywords": ["database", "pdo", "mysql", "postgresql", "sqlite"],
     "license": "MIT",
-    "authors": [{
-        "name": "Giovanni Ramos",
-        "email": "giovanniramos@msn.com",
-        "role": "Developer"
-    }],
+    "authors": [
+        {
+            "name": "Giovanni Ramos",
+            "email": "giovanniramos@msn.com",
+            "role": "Developer"
+        }
+    ],
     "require": {
         "php": ">=8.2"
     },

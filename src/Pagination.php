@@ -205,7 +205,9 @@ class Pagination
         $paginator = stripslashes($http . $host . $path_parts);
 
         if (self::$friendly_url) {
-            array_walk($request, create_function('&$v,$k', '$v="$k/$v";'));
+            array_walk($request, function(&$v, $k) {
+                $v = "$k/$v";
+            });
             $params = implode($request, '/');
             $paginator.= '/' . self::$paginator . '/' . (int) $page . ($params ? '/' . $params : '');
         } else {

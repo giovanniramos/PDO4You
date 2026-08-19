@@ -3,7 +3,6 @@
 namespace PDO4You;
 
 // Importing classes
-use PDO4You\Pagination;
 
 // Loading the configuration file
 require_once 'PDO4You.config.php';
