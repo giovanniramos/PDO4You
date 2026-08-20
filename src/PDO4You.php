@@ -30,11 +30,11 @@ class PDO4You
     {
         $sql = $this->platform->getLastInsertIdSql($sequence);
         $result = $this->pdo->query($sql);
-        
+
         if ($result === false) {
             return false;
         }
-        
+
         return $result->fetchColumn() ?: false;
     }
 

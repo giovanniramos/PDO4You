@@ -1,10 +1,44 @@
-# code analyses
-/_reports
-
-# composer
-composer.lock
+# -- Composer Dependencies
+/vendor/
 composer.phar
-/vendor
 
-# netbeans
-/nbproject
+# -- Environment and Secret Files
+.env
+.env.backup
+.env.local
+.env.*.local
+*.env.php
+config.local.php
+
+# -- Logs and Cache
+*.log
+/logs/
+/tmp/
+/temp/
+/build/
+/coverage/
+.phpunit.cache/
+.phpunit.result.cache
+.php_cs.cache
+.php-cs-fixer.cache
+.phpstan.cache/
+
+# -- IDE and Editor Configurations
+.idea/
+.vscode/
+.buildpath
+.project
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# -- Docker
+docker-compose.override.yml
+
+
+# -- Generated Assets
+/public/build/
+/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
