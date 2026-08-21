@@ -40,10 +40,17 @@ class PDO4You
 
     /**
      * Executes an arbitrary SQL statement and returns the number of affected rows.
+     * Supports optional parameters for prepared statements.
      */
-    public function exec(string $query): int|false
+    public function exec(string $query, array $params = []): int|false
     {
-        return $this->pdo->exec($query);
+        if (empty($params)) {
+            return $this->pdo->exec($query);
+        }
+
+        $stmt = $this->pdo->prepare($query);
+        $stmt->execute($params);
+        return $stmt->rowCount();
     }
 
     /**
