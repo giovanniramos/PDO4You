@@ -5,13 +5,13 @@ if (function_exists('xdebug_disable')) {
     xdebug_disable();
 }
 
-// Carrega o autoloader do Composer.
-// Assume que o vendor está na raiz do projeto (uma pasta acima da pasta src).
+// Load Composer autoloader.
+// Assumes vendor directory is at the project root (one level above src).
 $autoloadPath = __DIR__ . '/../vendor/autoload.php';
 
 if (!file_exists($autoloadPath)) {
-    echo '<h1>Autoloader não encontrado.</h1>';
-    echo '<p>Execute <code>composer install</code> na raiz do projeto.</p>';
+    echo '<h1>Autoloader not found.</h1>';
+    echo '<p>Please run <code>composer install</code> at the project root.</p>';
     exit;
 }
 

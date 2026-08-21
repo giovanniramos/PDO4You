@@ -13,26 +13,26 @@ class PDO4YouTest extends TestCase
 {
     public function testLastIdUsesPlatformStrategy(): void
     {
-        // 1. Criar Mock do PDO
+        // 1. Create a PDO mock
         $pdoMock = $this->createMock(PDO::class);
 
-        // 2. Criar Mock da Plataforma
+        // 2. Create Platform Mockup
         $platformMock = $this->createMock(DatabasePlatform::class);
 
-        // 3. Configurar expectativa: a plataforma deve ser chamada
+        // 3. Set expectation: the platform must be called
         $platformMock->expects($this->once())
                      ->method('getLastInsertIdSql')
                      ->willReturn('SELECT 123');
 
-        // 4. Configurar mock do PDO para retornar o valor esperado
+        // 4. Configure the PDO mock to return the expected value
         $pdoStatementMock = $this->createMock(\PDOStatement::class);
         $pdoStatementMock->method('fetchColumn')->willReturn('123');
         $pdoMock->method('query')->willReturn($pdoStatementMock);
 
-        // 5. Instanciar a classe
+        // 5. Instantiate PDO4You with the mocks
         $db = new PDO4You($pdoMock, $platformMock);
 
-        // 6. Executar e validar
+        // 6. Call lastId and assert the result
         $this->assertEquals('123', $db->lastId());
     }
 }

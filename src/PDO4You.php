@@ -35,7 +35,7 @@ class PDO4You
             return false;
         }
 
-        return $result->fetchColumn() ?: false;
+        return (string) $result->fetchColumn() ?: false;
     }
 
     /**
@@ -62,16 +62,25 @@ class PDO4You
         return $this->pdo->lastInsertId($name);
     }
 
+    /**
+     * Begins a transaction.
+     */
     public function beginTransaction(): bool
     {
         return $this->pdo->beginTransaction();
     }
 
+    /**
+     * Commits a transaction.
+     */
     public function commit(): bool
     {
         return $this->pdo->commit();
     }
 
+    /**
+     * Rolls back a transaction.
+     */
     public function rollBack(): bool
     {
         return $this->pdo->rollBack();

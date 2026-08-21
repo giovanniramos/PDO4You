@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace PDO4You\Platform;
 
 /**
- * Define a interface para comportamentos específicos de cada SGBD (dialetos).
+ * Interface for database platform-specific implementations.
  */
 interface DatabasePlatform
 {
     /**
-     * Retorna a query SQL correta para recuperar o último ID inserido.
+     * Returns the correct SQL query to retrieve the last inserted ID.
      */
     public function getLastInsertIdSql(?string $sequence = null): string;
 }
