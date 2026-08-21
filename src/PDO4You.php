@@ -24,7 +24,8 @@ class PDO4You
     }
 
     /**
-     * Recupera o ID do último registro inserido baseado na plataforma.
+     * Returns the last inserted ID for the current connection, optionally using a sequence name.
+     * This method delegates to the platform-specific implementation.
      */
     public function lastId(?string $sequence = null): string|false
     {
@@ -40,7 +41,7 @@ class PDO4You
 
     /**
      * Executes an arbitrary SQL statement and returns the number of affected rows.
-     * Supports optional parameters for prepared statements.
+     * Supports optional parameters for single or batch prepared statements.
      */
     public function exec(string $query, array $params = []): int|false
     {
@@ -49,8 +50,57 @@ class PDO4You
         }
 
         $stmt = $this->pdo->prepare($query);
-        $stmt->execute($params);
+
+        // Batch execution for multiple records: [['John', 'Doe'], ['Jane', 'Doe']]
+        if (is_array(reset($params))) {
+            $totalAffected = 0;
+
+            foreach ($params as $row) {
+                if (!$stmt->execute((array) $row)) {
+                    return false;
+                }
+                $totalAffected += $stmt->rowCount();
+            }
+
+            return $totalAffected;
+        }
+
+        // Single execution for a single record: ['John', 'Doe']
+        if (!$stmt->execute($params)) {
+            return false;
+        }
+
         return $stmt->rowCount();
+    }
+
+    /**
+     * Executes a SELECT query and returns the results as an associative array.
+     */
+    public function select(string $sql, array $params = []): array
+    {
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Executes a SELECT query and returns the results as an array of objects.
+     */
+    public function selectObj(string $sql, array $params = []): array
+    {
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_OBJ);
+    }
+
+    /**
+     * Executes a SELECT query and returns the results as a numeric array.
+     */
+    public function selectNum(string $sql, array $params = []): array
+    {
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_NUM);
     }
 
     /**
@@ -91,35 +141,5 @@ class PDO4You
     public function rollBack(): bool
     {
         return $this->pdo->rollBack();
-    }
-
-    /**
-     * Executes a SELECT query and returns the results as an associative array.
-     */
-    public function select(string $sql, array $params = []): array
-    {
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute($params);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
-
-    /**
-     * Executes a SELECT query and returns the results as an array of objects.
-     */
-    public function selectObj(string $sql, array $params = []): array
-    {
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute($params);
-        return $stmt->fetchAll(PDO::FETCH_OBJ);
-    }
-
-    /**
-     * Executes a SELECT query and returns the results as a numeric array.
-     */
-    public function selectNum(string $sql, array $params = []): array
-    {
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute($params);
-        return $stmt->fetchAll(PDO::FETCH_NUM);
     }
 }
