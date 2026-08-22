@@ -14,10 +14,22 @@ use PDOException;
  */
 class PDO4You
 {
-    private PDO $pdo;
+    /** @var \PDO */
+    private \PDO $pdo;
+
+    /**
+     * @var Platform\DatabasePlatform
+     */
     private Platform\DatabasePlatform $platform;
 
-    public function __construct(PDO $pdo, Platform\DatabasePlatform $platform)
+
+    /**
+     * Initializes the PDO4You instance with a PDO connection and a database platform.
+     *
+     * @param \PDO $pdo The PDO connection instance.
+     * @param Platform\DatabasePlatform $platform The database platform implementation.
+     */
+    public function __construct(\PDO $pdo, Platform\DatabasePlatform $platform)
     {
         $this->pdo = $pdo;
         $this->platform = $platform;
@@ -26,6 +38,11 @@ class PDO4You
     /**
      * Returns the last inserted ID for the current connection, optionally using a sequence name.
      * This method delegates to the platform-specific implementation.
+     *
+     * @param string|null $sequence The name of the sequence object from which the ID should be returned.
+     * @return string|false The last inserted ID as a string, or false on failure.
+     *
+     * @see Platform\DatabasePlatform::getLastInsertIdSql()
      */
     public function lastId(?string $sequence = null): string|false
     {
@@ -42,6 +59,10 @@ class PDO4You
     /**
      * Executes an arbitrary SQL statement and returns the number of affected rows.
      * Supports optional parameters for single or batch prepared statements.
+     *
+     * @param string $query The SQL statement to execute.
+     * @param array<string|int, mixed> $params Optional parameters for prepared statements.
+     * @return int|false The number of affected rows, or false on failure.
      */
     public function exec(string $query, array $params = []): int|false
     {
@@ -75,44 +96,65 @@ class PDO4You
 
     /**
      * Executes a SELECT query and returns the results as an associative array.
+     *
+     * @param string $sql The SQL query to execute.
+     * @param array<string|int, mixed> $params Optional parameters for prepared statements.
+     * @return array<int, array<string, mixed>> The resulting rows as an associative array.
      */
     public function select(string $sql, array $params = []): array
     {
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
     /**
      * Executes a SELECT query and returns the results as an array of objects.
+     *
+     * @param string $sql The SQL query to execute.
+     * @param array<string|int, mixed> $params Optional parameters for prepared statements.
+     * @return array<int, \stdClass> The resulting rows as an array of objects.
      */
     public function selectObj(string $sql, array $params = []): array
     {
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
-        return $stmt->fetchAll(PDO::FETCH_OBJ);
+        return $stmt->fetchAll(\PDO::FETCH_OBJ);
     }
 
     /**
      * Executes a SELECT query and returns the results as a numeric array.
+     *
+     * @param string $sql The SQL query to execute.
+     * @param array<string|int, mixed> $params Optional parameters for prepared statements.
+     * @return array<int, array<int, mixed>> The resulting rows as a numeric array.
      */
     public function selectNum(string $sql, array $params = []): array
     {
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
-        return $stmt->fetchAll(PDO::FETCH_NUM);
+        return $stmt->fetchAll(\PDO::FETCH_NUM);
     }
 
     /**
      * Executes an SQL statement, returning a result set as a PDOStatement object.
+     *
+     * @param string $sql The SQL statement to execute.
+     * @param array<string|int, mixed> $params Optional parameters for prepared statements.
+     * @return \PDOStatement|false The resulting PDOStatement object, or false on failure.
      */
-    public function query(string $query): \PDOStatement|false
+    public function query(string $query, array $params = []): \PDOStatement|false
     {
-        return $this->pdo->query($query);
+        $stmt = $this->pdo->prepare($query);
+        $stmt->execute($params);
+        return $stmt;
     }
 
     /**
      * Returns the ID of the last inserted row or sequence value.
+     *
+     * @param string|null $name The name of the sequence object from which the ID should be returned.
+     * @return string|false The last inserted ID as a string, or false on failure.
      */
     public function lastInsertId(?string $name = null): string|false
     {
@@ -121,6 +163,8 @@ class PDO4You
 
     /**
      * Begins a transaction.
+     *
+     * @return bool True on success, false on failure.
      */
     public function beginTransaction(): bool
     {
@@ -129,6 +173,8 @@ class PDO4You
 
     /**
      * Commits a transaction.
+     *
+     * @return bool True on success, false on failure.
      */
     public function commit(): bool
     {
@@ -137,6 +183,8 @@ class PDO4You
 
     /**
      * Rolls back a transaction.
+     *
+     * @return bool True on success, false on failure.
      */
     public function rollBack(): bool
     {

@@ -61,19 +61,17 @@ use PDO4You\Platform\SqlitePlatform;
             $user = $db->select("SELECT id, name, surname, created_at FROM users WHERE id = ?", [$lastId]);
 
             echo "<p>Resulting record:</p>";
-            echo "<pre>" . htmlspecialchars(print_r($user, true), ENT_QUOTES, 'UTF-8') . "</pre>";
+            echo "<pre>" . htmlspecialchars(print_r($user, true)) . "</pre>";
 
-        } catch (PDOException $e) {
-            // Handle database-related exceptions
+        } catch (\PDOException $e) {
             echo "<div class='error'>";
             echo "<h3>Database Error:</h3>";
-            echo "<pre>" . htmlspecialchars($e->getMessage(), ENT_QUOTES, 'UTF-8') . "</pre>";
+            echo "<pre>" . htmlspecialchars($e->getMessage()) . "</pre>";
             echo "</div>";
-        } catch (Throwable $e) {
-            // Handle any other unexpected exceptions
+        } catch (\Throwable $e) {
             echo "<div class='error'>";
             echo "<h3>Unexpected Error:</h3>";
-            echo "<pre>" . htmlspecialchars($e->getMessage(), ENT_QUOTES, 'UTF-8') . "</pre>";
+            echo "<pre>" . htmlspecialchars($e->getMessage()) . "</pre>";
             echo "</div>";
         }
         ?>
