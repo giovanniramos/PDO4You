@@ -8,9 +8,15 @@ use PDO;
 use PDOException;
 
 /**
- * PDO4You: A modern lightweight database wrapper using PDO.
+ * PDO4You: A lightweight, modern PHP database abstraction layer built on top of PDO.
  *
- * Refactored to support Dependency Injection and Instance-based usage.
+ * @author Giovanni Ramos <giovanniramos@msn.com>
+ * @copyright 2010-2026, Giovanni Ramos
+ * @since 2010-09-07
+ * @license http://opensource.org/licenses/MIT
+ * @link https://github.com/giovanniramos/PDO4You
+ * @package PDO4You
+ * @version 5.0.0
  */
 class PDO4You
 {

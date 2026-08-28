@@ -48,7 +48,7 @@ $db = new PDO4You($pdo, $platform);
 $users = $db->select("SELECT * FROM users WHERE status = ?", ['active']);
 
 // EXECUTE (insert, update, delete)
-$db->exec("UPDATE users SET status = 'inactive' WHERE id = 1");
+$db->exec("INSERT INTO users (name, surname) VALUES (?, ?)", [['John', 'Doe'], ['Jane', 'Doe']]);
 
 // GET LAST ID (utiliza a estratégia da plataforma)
 $newId = $db->lastId();
