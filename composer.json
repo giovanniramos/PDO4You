@@ -12,7 +12,8 @@
         }
     ],
     "require": {
-        "php": ">=8.2"
+        "php": ">=8.2",
+        "ext-pdo": "*"
     },
     "require-dev": {
         "phpunit/phpunit": "^10.0"
@@ -20,6 +21,11 @@
     "autoload": {
         "psr-4": {
             "PDO4You\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "PDO4You\\Tests\\": "tests/"
         }
     },
     "config": {
