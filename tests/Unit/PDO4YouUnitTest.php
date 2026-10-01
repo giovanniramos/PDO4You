@@ -89,29 +89,43 @@ class PDO4YouUnitTest extends TestCase
         $pdoStatementMock = $this->createMock(PDOStatement::class);
 
         $pdoMock->expects($this->once())
-             ->method('prepare')
-             ->willReturn($pdoStatementMock);
+            ->method('prepare')
+            ->willReturn($pdoStatementMock);
 
         $pdoStatementMock->expects($this->once())
-             ->method('execute')
-             ->with(['id' => 1])
-             ->willReturn(true);
+            ->method('execute')
+            ->with(['id' => 1])
+            ->willReturn(true);
 
         $observedSql = null;
         $observedParams = null;
         $observedDuration = null;
 
-        PDO4You::onQuery(function (string $sql, array $params, float $duration) use (&$observedSql, &$observedParams, &$observedDuration) {
-            $observedSql = $sql;
-            $observedParams = $params;
-            $observedDuration = $duration;
-        });
+        PDO4You::onQuery(
+            function (
+                string $sql,
+                array $params,
+                float $duration
+            ) use (
+                &$observedSql,
+                &$observedParams,
+                &$observedDuration
+            ): void {
+                $observedSql = $sql;
+                $observedParams = $params;
+                $observedDuration = $duration;
+            }
+        );
 
-        $db = new PDO4You($pdoMock);
+        try {
+            $db = new PDO4You($pdoMock);
 
-        // Act
-        $db->select('SELECT * FROM users WHERE id = :id', ['id' => 1]);
-        PDO4You::onQuery(null); // Reset
+            // Act
+            $db->select('SELECT * FROM users WHERE id = :id', ['id' => 1]);
+        } finally {
+            // Always reset the static listener after the test.
+            PDO4You::onQuery(null);
+        }
 
         // Assert
         $this->assertSame('SELECT * FROM users WHERE id = :id', $observedSql);
@@ -123,13 +137,15 @@ class PDO4YouUnitTest extends TestCase
     {
         // Arrange
         $pdoMock = $this->createMock(PDO::class);
-        $pdoMock->method('prepare')->willThrowException(new PDOException('Syntax error'));
+
+        $pdoMock->method('prepare')
+            ->willThrowException(new PDOException('Syntax error'));
 
         $db = new PDO4You($pdoMock);
 
         // Assert (Expectations)
         $this->expectException(QueryException::class);
-        $this->expectExceptionMessage('Query failed: Syntax error');
+        $this->expectExceptionMessage('Query preparation failed: Syntax error');
 
         // Act
         $db->select('INVALID SQL');
