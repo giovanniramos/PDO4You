@@ -23,6 +23,11 @@
             "PDO4You\\": "src/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "PDO4You\\Tests\\": "tests/"
+        }
+    },
     "config": {
         "sort-packages": true,
         "allow-plugins": {
