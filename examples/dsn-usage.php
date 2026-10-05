@@ -1,5 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
+/**
+ * PDO4You DSN Usage Example:
+ * Demonstrating connection via DSN strings with automatic platform resolution.
+ *
+ * @sample 2
+ */
+
 use PDO4You\PDO4You;
 
 try {
@@ -10,11 +19,12 @@ try {
     echo "<p class='success'>✓ Connected successfully and platform resolved automatically.</p>";
 
     // 2. Define schema
-    $db->exec("CREATE TABLE products (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+    $db->exec("
+        CREATE TABLE products (
+        id INTEGER PRIMARY KEY,
         name TEXT NOT NULL,
-        price REAL NOT NULL
-    )");
+        price REAL NOT NULL)
+    ");
     echo "<p class='success'>✓ Table 'products' created.</p>";
 
     // 3. Insert records

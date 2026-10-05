@@ -1,5 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
+/**
+ * PDO4You Transaction Usage Example:
+ * Demonstrating managed database transactions with commit and rollback handling.
+ *
+ * @sample 3
+ */
+
 use PDO4You\PDO4You;
 use PDO4You\Platform\SqlitePlatform;
 
@@ -12,13 +21,14 @@ try {
     $db = new PDO4You($pdo, new SqlitePlatform());
 
     // 2. Schema definition
-    $db->exec("CREATE TABLE accounts (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+    $db->exec("
+        CREATE TABLE accounts (
+        id INTEGER PRIMARY KEY,
         user_id INTEGER NOT NULL,
         account_number TEXT UNIQUE NOT NULL,
         balance REAL NOT NULL DEFAULT 0.0 CHECK (balance >= 0),
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )");
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP)
+    ");
 
     // 3. Insert initial data
     $db->exec("

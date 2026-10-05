@@ -6,7 +6,16 @@ require_once __DIR__ . '/../vendor/autoload.php';
 
 $currentDir = __DIR__;
 
-// Filtra scripts PHP válidos ignorando index e subpastas
+// Helper function to extract the @sample metadata from the file header
+function getExampleOrder(string $filePath): int {
+    $content = file_get_contents($filePath, false, null, 0, 1024);
+    if ($content !== false && preg_match('/@sample\s+(\d+)/i', $content, $matches)) {
+        return (int)$matches[1];
+    }
+    return 999;
+}
+
+// Filter valid PHP scripts excluding index and subdirectories
 $files = array_values(array_filter(scandir($currentDir) ?: [], function (string $file) use ($currentDir): bool {
     $filePath = $currentDir . DIRECTORY_SEPARATOR . $file;
     return is_file($filePath)
@@ -14,7 +23,18 @@ $files = array_values(array_filter(scandir($currentDir) ?: [], function (string 
         && $file !== 'index.php';
 }));
 
-// Sistema simples de i18n
+// Sort files dynamically based on the @order annotation inside each script
+usort($files, function (string $a, string $b) use ($currentDir): int {
+    $orderA = getExampleOrder($currentDir . DIRECTORY_SEPARATOR . $a);
+    $orderB = getExampleOrder($currentDir . DIRECTORY_SEPARATOR . $b);
+
+    if ($orderA === $orderB) {
+        return strcmp($a, $b);
+    }
+    return $orderA <=> $orderB;
+});
+
+// Simple i18n system
 $availableLangs = ['en', 'pt', 'es'];
 $lang = filter_input(INPUT_GET, 'lang', FILTER_DEFAULT) ?? 'en';
 if (!in_array($lang, $availableLangs, true)) {
@@ -56,19 +76,19 @@ $i18n = [
 
 $t = $i18n[$lang];
 
-// Sanitização e validação de rota
+// Route sanitization and validation
 $selected = filter_input(INPUT_GET, 'demo', FILTER_DEFAULT);
 $scriptPath = ($selected && in_array($selected, $files, true))
     ? $currentDir . DIRECTORY_SEPARATOR . $selected
     : null;
 
-// Função auxiliar para formatar nomes de arquivos em rótulos amigáveis
+// Helper function to format filenames into friendly labels
 function formatTitle(string $filename): string {
     $name = pathinfo($filename, PATHINFO_FILENAME);
     return ucwords(str_replace(['-', '_'], ' ', $name));
 }
 
-// Define o título dinâmico (se houver demo selecionada ou home)
+// Dynamic page title
 $pageTitle = $scriptPath ? 'PDO4You — ' . formatTitle((string)$selected) : $t['title'];
 ?>
 <!DOCTYPE html>
@@ -108,6 +128,7 @@ $pageTitle = $scriptPath ? 'PDO4You — ' . formatTitle((string)$selected) : $t[
         .step { color: var(--primary); font-weight: 600; margin-top: 18px; }
         .success { color: #16a34a; font-weight: 500; }
         .error { color: #991b1b; background: #fef2f2; border: 1px solid #fecaca; padding: 16px; border-radius: 8px; margin: 16px 0; }
+        .error h3 { margin: 0; }
         .divider { border: 0; border-top: 1px solid var(--border); margin: 24px 0; }
 
         /* Initial Dashboard Grid */
@@ -150,18 +171,18 @@ $pageTitle = $scriptPath ? 'PDO4You — ' . formatTitle((string)$selected) : $t[
         <hr class="divider">
 
         <?php if ($scriptPath && file_exists($scriptPath)): ?>
-            <!-- Execução do Script -->
+            <!-- Script Execution Output -->
             <div class="execution-output">
                 <?php require $scriptPath; ?>
             </div>
 
-            <!-- Inspecionar Código-Fonte -->
+            <!-- Source Code Inspector -->
             <details class="source-viewer">
                 <summary>🔍 <?= htmlspecialchars($t['view_source']) ?> (<?= htmlspecialchars($selected) ?>)</summary>
                 <pre><?= htmlspecialchars((string)file_get_contents($scriptPath)) ?></pre>
             </details>
         <?php else: ?>
-            <!-- Estado Inicial / Dashboard Informativo -->
+            <!-- Initial Dashboard / Overview -->
             <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0;"><?= htmlspecialchars($t['select_hint']) ?></p>
 
             <div class="grid">
