@@ -1,0 +1,27 @@
+name: Update License Year
+
+on:
+  schedule:
+    - cron: '0 0 1 1 *' # Executa à meia-noite do dia 1 de janeiro
+  workflow_dispatch: # Permite rodar manualmente se necessário
+
+jobs:
+  update-year:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Dá permissão para o robô salvar o arquivo no repositório
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Update Year in LICENSE File
+        run: |
+          CURRENT_YEAR=$(date +'%Y')
+          # Substitui dinamicamente o ano final mantendo o e-mail e o início (2010)
+          sed -i -E "s/Copyright \(c\) 2010-[0-9]{4} Giovanni Ramos/Copyright (c) 2010-$CURRENT_YEAR Giovanni Ramos/g" LICENSE
+
+      - name: Commit and Push Changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: update license copyright year to $(date +'%Y')"
+          file_pattern: 'LICENSE'
