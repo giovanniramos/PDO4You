@@ -1,5 +1,28 @@
 services:
   test:
     build: .
+    tty: true
     volumes:
       - .:/app
+    environment:
+      - DB_HOST=mysql
+    command: ["vendor/bin/phpunit", "--colors=always"]
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  mysql:
+    image: mysql:9.7
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: pdo4you
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: pass
+    command: ["mysqld", "--log-error-verbosity=1"]
+    logging:
+      driver: "none"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
+      interval: 5s
+      timeout: 3s
+      retries: 10

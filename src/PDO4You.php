@@ -21,7 +21,7 @@ use PDO4You\Exception\QueryException;
  * @license http://opensource.org/licenses/MIT
  * @link https://github.com/giovanniramos/PDO4You
  * @package PDO4You
- * @version 5.3.0
+ * @version 5.3.1
  */
 class PDO4You
 {
@@ -280,7 +280,8 @@ class PDO4You
         $stmt = $this->executeStatement($sql, $params);
 
         if ($classMap !== null) {
-            $result = $stmt->fetch(PDO::FETCH_CLASS, $classMap);
+            $stmt->setFetchMode(PDO::FETCH_CLASS, $classMap);
+            $result = $stmt->fetch();
 
             return $result === false ? null : $result;
         }

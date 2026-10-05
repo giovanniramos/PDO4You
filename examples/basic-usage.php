@@ -1,5 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
+/**
+ * PDO4You Basic Usage Example:
+ * Demonstrating basic connection, table creation, batch record insertion, and selection.
+ *
+ * @sample 1
+ */
+
 use PDO4You\PDO4You;
 use PDO4You\Platform\SqlitePlatform;
 
@@ -13,12 +22,13 @@ try {
     echo "<p class='success'>✓ PDO4You instance created successfully.</p>";
 
     // 2. Schema definition
-    $db->exec("CREATE TABLE users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+    $db->exec("
+        CREATE TABLE users (
+        id INTEGER PRIMARY KEY,
         name TEXT NOT NULL,
         surname TEXT NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )");
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP)
+    ");
     echo "<p class='success'>✓ Table 'users' created.</p>";
 
     // 3. Insert multiple records

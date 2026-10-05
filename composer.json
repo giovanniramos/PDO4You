@@ -33,5 +33,15 @@
         "allow-plugins": {
             "phpunit/phpunit": true
         }
+    },
+    "scripts": {
+        "docker-build": "docker compose build -q --no-cache",
+        "docker-test": "docker compose run --rm test",
+        "test": [
+            "@php -r \"echo chr(27).'[2J'.chr(27).'[H';\"",
+            "echo Executando os testes no Docker, aguarde...",
+            "@docker-build",
+            "@docker-test"
+        ]
     }
 }
