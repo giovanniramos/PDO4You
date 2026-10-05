@@ -15,11 +15,11 @@ class PDO4YouIntegrationTest extends TestCase
         $db = PDO4You::connect('sqlite::memory:');
 
         // Act
-        $db->exec("CREATE TABLE test_table (id INTEGER PRIMARY KEY, name TEXT)");
+        $db->exec("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)");
 
-        $affected = $db->exec("INSERT INTO test_table (name) VALUES (?)", ['Alice']);
+        $affected = $db->exec("INSERT INTO users (name) VALUES (?)", ['Alice']);
 
-        $rows = $db->select("SELECT * FROM test_table");
+        $rows = $db->select("SELECT * FROM users");
 
         // Assert
         $this->assertInstanceOf(PDO4You::class, $db);
@@ -31,7 +31,8 @@ class PDO4YouIntegrationTest extends TestCase
     public function testConnectWithMySqlDsn(): void
     {
         // Arrange
-        $dsn = 'mysql:host=127.0.0.1;dbname=pdo4you';
+        $host = getenv('DB_HOST') ?: '127.0.0.1';
+        $dsn = "mysql:host={$host};dbname=pdo4you";
         $db = PDO4You::connect($dsn, 'admin', 'pass');
 
         // Act
@@ -43,15 +44,15 @@ class PDO4YouIntegrationTest extends TestCase
             )"
         );
 
-        $affected = $db->exec("INSERT INTO users (name, surname) VALUES (?, ?)", ['John', 'Doe']);
+        $affected = $db->exec("INSERT INTO users (name, surname) VALUES (?, ?)", ['Bob', 'Jones']);
 
-        $rows = $db->select("SELECT * FROM users WHERE name = ?", ['John']);
+        $rows = $db->select("SELECT * FROM users WHERE name = ?", ['Bob']);
 
         // Assert
         $this->assertInstanceOf(PDO4You::class, $db);
         $this->assertSame(1, $affected);
         $this->assertNotEmpty($rows);
-        $this->assertSame('John', $rows[0]['name']);
-        $this->assertSame('Doe', $rows[0]['surname']);
+        $this->assertSame('Bob', $rows[0]['name']);
+        $this->assertSame('Jones', $rows[0]['surname']);
     }
 }

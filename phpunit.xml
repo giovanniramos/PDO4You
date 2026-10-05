@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.0/phpunit.xsd"
-         bootstrap="src/bootstrap.php"
-         colors="true">
+         bootstrap="vendor/autoload.php"
+         colors="true"
+         stopOnFailure="false"
+         cacheDirectory=".phpunit.cache">
+
     <testsuites>
         <testsuite name="Unit">
             <directory>tests/Unit</directory>
@@ -11,4 +14,12 @@
             <directory>tests/Integration</directory>
         </testsuite>
     </testsuites>
+
+    <php>
+        <env name="DB_HOST" value="127.0.0.1"/>
+        <env name="DB_PORT" value="3306"/>
+        <env name="DB_DATABASE" value="pdo4you"/>
+        <env name="DB_USERNAME" value="admin"/>
+        <env name="DB_PASSWORD" value="pass"/>
+    </php>
 </phpunit>
