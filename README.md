@@ -145,6 +145,42 @@ $rows = $db->selectNum('SELECT id, name FROM users');
 
 ---
 
+### Fluent DML Helpers (`insert()`, `update()`, `delete()`)
+
+PDO4You provides dedicated methods for common write operations using associative arrays:
+
+#### `insert()` — Insert a record
+```php
+$affected = $db->insert('users', [
+    'name' => 'John',
+    'surname' => 'Wick',
+    'status' => 'active'
+]);
+
+$lastId = $db->lastId();
+```
+
+#### `update()` — Update records
+```php
+$affected = $db->update(
+    'users',
+    ['status' => 'inactive'],
+    'id = :id',
+    ['id' => 5]
+);
+```
+
+#### `delete()` — Delete records
+```php
+$affected = $db->delete(
+    'users',
+    'id = :id',
+    ['id' => 10]
+);
+```
+
+---
+
 ### Execution (INSERT, UPDATE, DELETE)
 
 The `exec()` method handles data modification operations and returns the number of affected rows.
