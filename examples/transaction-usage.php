@@ -5,10 +5,10 @@ declare(strict_types=1);
 require __DIR__ . '/../vendor/autoload.php';
 
 /**
- * PDO4You Transaction Usage Example:
  * Demonstrating secure database transactions, atomic updates, and rollback handling.
  *
- * @sample 4
+ * @title Transactions
+ * @order 4
  */
 
 use PDO4You\PDO4You;

@@ -5,10 +5,10 @@ declare(strict_types=1);
 require __DIR__ . '/../vendor/autoload.php';
 
 /**
- * PDO4You DML Helpers Example:
  * Demonstrating fluent DML methods (insert, update, delete) and managed transactions.
  *
- * @sample 3
+ * @title DML Helpers
+ * @order 3
  */
 
 use PDO4You\PDO4You;

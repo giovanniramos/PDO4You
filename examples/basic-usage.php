@@ -5,10 +5,10 @@ declare(strict_types=1);
 require __DIR__ . '/../vendor/autoload.php';
 
 /**
- * PDO4You Basic Usage Example:
  * Demonstrating basic connection, table creation, batch record insertion, and selection.
  *
- * @sample 1
+ * @title Basic Usage
+ * @order 1
  */
 
 use PDO4You\PDO4You;

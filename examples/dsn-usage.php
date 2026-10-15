@@ -5,10 +5,10 @@ declare(strict_types=1);
 require __DIR__ . '/../vendor/autoload.php';
 
 /**
- * PDO4You DSN Usage Example:
  * Demonstrating connection via DSN strings with automatic platform resolution.
  *
- * @sample 2
+ * @title DSN Usage
+ * @order 2
  */
 
 use PDO4You\PDO4You;

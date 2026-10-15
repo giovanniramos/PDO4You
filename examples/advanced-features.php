@@ -5,10 +5,10 @@ declare(strict_types=1);
 require __DIR__ . '/../vendor/autoload.php';
 
 /**
- * PDO4You Advanced Features Example:
  * Demonstrating DTO Hydration, Batch Operations, Query Observability, and Scalar Lookups.
  *
- * @sample 5
+ * @title Advanced Features
+ * @order 6
  */
 
 use PDO4You\PDO4You;
