@@ -181,4 +181,91 @@ class PDO4YouUnitTest extends TestCase
             throw new RuntimeException('Error inside transaction');
         });
     }
+
+    public function testInsertHelper(): void
+    {
+        // Arrange
+        $pdoMock = $this->createMock(PDO::class);
+        $pdoStatementMock = $this->createMock(PDOStatement::class);
+
+        $pdoMock->expects($this->once())
+            ->method('prepare')
+            ->with('INSERT INTO users (name, surname) VALUES (:name, :surname)')
+            ->willReturn($pdoStatementMock);
+
+        $pdoStatementMock->expects($this->once())
+            ->method('execute')
+            ->with(['name' => 'John', 'surname' => 'Doe'])
+            ->willReturn(true);
+
+        $pdoStatementMock->expects($this->once())
+            ->method('rowCount')
+            ->willReturn(1);
+
+        $db = new PDO4You($pdoMock);
+
+        // Act
+        $affected = $db->insert('users', ['name' => 'John', 'surname' => 'Doe']);
+
+        // Assert
+        $this->assertSame(1, $affected);
+    }
+
+    public function testUpdateHelper(): void
+    {
+        // Arrange
+        $pdoMock = $this->createMock(PDO::class);
+        $pdoStatementMock = $this->createMock(PDOStatement::class);
+
+        $pdoMock->expects($this->once())
+            ->method('prepare')
+            ->with('UPDATE users SET name = :_set_name WHERE id = :id')
+            ->willReturn($pdoStatementMock);
+
+        $pdoStatementMock->expects($this->once())
+            ->method('execute')
+            ->with(['_set_name' => 'Jane', 'id' => 1])
+            ->willReturn(true);
+
+        $pdoStatementMock->expects($this->once())
+            ->method('rowCount')
+            ->willReturn(1);
+
+        $db = new PDO4You($pdoMock);
+
+        // Act
+        $affected = $db->update('users', ['name' => 'Jane'], 'id = :id', ['id' => 1]);
+
+        // Assert
+        $this->assertSame(1, $affected);
+    }
+
+    public function testDeleteHelper(): void
+    {
+        // Arrange
+        $pdoMock = $this->createMock(PDO::class);
+        $pdoStatementMock = $this->createMock(PDOStatement::class);
+
+        $pdoMock->expects($this->once())
+            ->method('prepare')
+            ->with('DELETE FROM users WHERE id = :id')
+            ->willReturn($pdoStatementMock);
+
+        $pdoStatementMock->expects($this->once())
+            ->method('execute')
+            ->with(['id' => 1])
+            ->willReturn(true);
+
+        $pdoStatementMock->expects($this->once())
+            ->method('rowCount')
+            ->willReturn(1);
+
+        $db = new PDO4You($pdoMock);
+
+        // Act
+        $affected = $db->delete('users', 'id = :id', ['id' => 1]);
+
+        // Assert
+        $this->assertSame(1, $affected);
+    }
 }
