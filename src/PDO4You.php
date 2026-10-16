@@ -469,7 +469,7 @@ class PDO4You
      *
      * @return int Number of affected rows.
      *
-     * @throws InvalidArgumentException If table or column names are invalid.
+     * @throws InvalidArgumentException If table or column names are invalid or if parameter collision occurs.
      * @throws QueryException If execution fails.
      */
     public function update(
@@ -483,46 +483,36 @@ class PDO4You
         }
 
         $escapedTable = $this->quoteIdentifier($table);
+        $isPositional = array_is_list($whereParams);
 
         $sets = [];
         $bindParams = [];
 
-        $i = 0;
-        foreach ($data as $column => $value) {
-            $escapedColumn = $this->quoteIdentifier($column);
-            $cleanParam = preg_replace('/[^a-zA-Z0-9_]/', '_', $column);
-            $paramName = "_pdo4you_upd_{$i}_{$cleanParam}";
-
-            $sets[] = "{$escapedColumn} = :{$paramName}";
-            $bindParams[$paramName] = $value;
-            $i++;
-        }
-
-        $processedWhere = $where;
-        $isPositional = array_is_list($whereParams);
-
         if ($isPositional) {
-            $paramIndex = 0;
-            $processedWhere = preg_replace_callback('/\?/', function () use (&$paramIndex, $whereParams, &$bindParams) {
-                if (!array_key_exists($paramIndex, $whereParams)) {
-                    throw new InvalidArgumentException("Missing positional parameter for index {$paramIndex}.");
-                }
-                $paramName = "_pdo4you_where_pos_{$paramIndex}";
-                $bindParams[$paramName] = $whereParams[$paramIndex];
-                $paramIndex++;
-                return ":{$paramName}";
-            }, $where);
-
-            if ($paramIndex < count($whereParams)) {
-                throw new InvalidArgumentException('Too many positional parameters provided for WHERE clause.');
+            foreach (array_keys($data) as $column) {
+                $escapedColumn = $this->quoteIdentifier($column);
+                $sets[] = "{$escapedColumn} = ?";
             }
+
+            $bindParams = array_merge(array_values($data), array_values($whereParams));
         } else {
+            $i = 0;
+            foreach ($data as $column => $value) {
+                $escapedColumn = $this->quoteIdentifier($column);
+                $cleanParam = preg_replace('/[^a-zA-Z0-9_]/', '_', $column);
+                $paramName = "_pdo4you_upd_{$i}_{$cleanParam}";
+
+                $sets[] = "{$escapedColumn} = :{$paramName}";
+                $bindParams[$paramName] = $value;
+                $i++;
+            }
+
             foreach ($whereParams as $key => $value) {
                 $normalizedKey = ltrim((string) $key, ':');
 
                 if (array_key_exists($normalizedKey, $bindParams)) {
                     throw new InvalidArgumentException(
-                        sprintf('Parameter collision: WHERE parameter ":%s" conflicts with internal SET bindings.', $normalizedKey)
+                        sprintf('Parameter collision: WHERE parameter ":%s" conflicts with generated SET bindings.', $normalizedKey)
                     );
                 }
 
@@ -530,7 +520,7 @@ class PDO4You
             }
         }
 
-        $sql = "UPDATE {$escapedTable} SET " . implode(', ', $sets) . " WHERE {$processedWhere}";
+        $sql = "UPDATE {$escapedTable} SET " . implode(', ', $sets) . " WHERE {$where}";
 
         return $this->executeStatement($sql, $bindParams)->rowCount();
     }
