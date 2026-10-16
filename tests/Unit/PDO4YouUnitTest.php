@@ -4,14 +4,17 @@ declare(strict_types=1);
 
 namespace PDO4You\Tests\Unit;
 
+use InvalidArgumentException;
 use PDO;
 use PDOException;
 use PDOStatement;
 use PDO4You\PDO4You;
 use PDO4You\Exception\QueryException;
 use PDO4You\Platform\DatabasePlatform;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
+use Throwable;
 
 class DummyUserDto
 {
@@ -21,26 +24,52 @@ class DummyUserDto
 
 class PDO4YouUnitTest extends TestCase
 {
+    /** @var PDO&MockObject */
+    private PDO $pdoMock;
+    private PDO4You $db;
+
+    protected function setUp(): void
+    {
+        // Mocking the core PDO extension
+        $this->pdoMock = $this->createMock(PDO::class);
+
+        // Set the default driver for MySQL on Mac (using quoted phrases)
+        $this->pdoMock->method('getAttribute')
+            ->with(PDO::ATTR_DRIVER_NAME)
+            ->willReturn('mysql');
+
+        $this->db = new PDO4You($this->pdoMock);
+    }
+
+    /**
+     * Helper for creating mocks of executed statements with default expectations.
+     */
+    private function createExecutedStatementMock(int $rowCount = 1): MockObject&PDOStatement
+    {
+        $stmtMock = $this->createMock(PDOStatement::class);
+        $stmtMock->method('execute')->willReturn(true);
+        $stmtMock->method('rowCount')->willReturn($rowCount);
+
+        return $stmtMock;
+    }
+
     public function testDtoHydration(): void
     {
         // Arrange
-        $pdoMock = $this->createMock(PDO::class);
-        $pdoStatementMock = $this->createMock(PDOStatement::class);
+        $stmtMock = $this->createMock(PDOStatement::class);
 
-        $pdoMock->method('prepare')
-            ->willReturn($pdoStatementMock);
+        $this->pdoMock->method('prepare')
+            ->willReturn($stmtMock);
 
-        $pdoStatementMock->method('execute')
+        $stmtMock->method('execute')
             ->willReturn(true);
 
-        $pdoStatementMock->method('fetchAll')
+        $stmtMock->method('fetchAll')
             ->with(PDO::FETCH_CLASS, DummyUserDto::class)
             ->willReturn([new DummyUserDto()]);
 
-        $db = new PDO4You($pdoMock);
-
         // Act
-        $results = $db->select('SELECT id, name FROM users', [], DummyUserDto::class);
+        $results = $this->db->select('SELECT id, name FROM users', [], DummyUserDto::class);
 
         // Assert
         $this->assertCount(1, $results);
@@ -50,30 +79,29 @@ class PDO4YouUnitTest extends TestCase
     public function testLastIdUsesPlatformStrategy(): void
     {
         // Arrange
-        $pdoMock = $this->createMock(PDO::class);
+        $stmtMock = $this->createMock(PDOStatement::class);
         $platformMock = $this->createMock(DatabasePlatform::class);
-        $pdoStatementMock = $this->createMock(PDOStatement::class);
 
         $platformMock->expects($this->once())
             ->method('getLastInsertIdSql')
             ->with(null)
             ->willReturn('SELECT 123');
 
-        $pdoMock->expects($this->once())
+        $this->pdoMock->expects($this->once())
             ->method('prepare')
             ->with('SELECT 123')
-            ->willReturn($pdoStatementMock);
+            ->willReturn($stmtMock);
 
-        $pdoStatementMock->expects($this->once())
+        $stmtMock->expects($this->once())
             ->method('execute')
             ->with([])
             ->willReturn(true);
 
-        $pdoStatementMock->expects($this->once())
+        $stmtMock->expects($this->once())
             ->method('fetchColumn')
             ->willReturn('123');
 
-        $db = new PDO4You($pdoMock, $platformMock);
+        $db = new PDO4You($this->pdoMock, $platformMock);
 
         // Act
         $result = $db->lastId();
@@ -85,14 +113,13 @@ class PDO4YouUnitTest extends TestCase
     public function testQueryObservabilityListener(): void
     {
         // Arrange
-        $pdoMock = $this->createMock(PDO::class);
-        $pdoStatementMock = $this->createMock(PDOStatement::class);
+        $stmtMock = $this->createMock(PDOStatement::class);
 
-        $pdoMock->expects($this->once())
+        $this->pdoMock->expects($this->once())
             ->method('prepare')
-            ->willReturn($pdoStatementMock);
+            ->willReturn($stmtMock);
 
-        $pdoStatementMock->expects($this->once())
+        $stmtMock->expects($this->once())
             ->method('execute')
             ->with(['id' => 1])
             ->willReturn(true);
@@ -118,10 +145,8 @@ class PDO4YouUnitTest extends TestCase
         );
 
         try {
-            $db = new PDO4You($pdoMock);
-
             // Act
-            $db->select('SELECT * FROM users WHERE id = :id', ['id' => 1]);
+            $this->db->select('SELECT * FROM users WHERE id = :id', ['id' => 1]);
         } finally {
             // Always reset the static listener after the test.
             PDO4You::onQuery(null);
@@ -136,136 +161,162 @@ class PDO4YouUnitTest extends TestCase
     public function testQueryExceptionWrapping(): void
     {
         // Arrange
-        $pdoMock = $this->createMock(PDO::class);
-
-        $pdoMock->method('prepare')
+        $this->pdoMock->expects($this->once())
+            ->method('prepare')
             ->willThrowException(new PDOException('Syntax error'));
-
-        $db = new PDO4You($pdoMock);
 
         // Assert (Expectations)
         $this->expectException(QueryException::class);
         $this->expectExceptionMessage('Query preparation failed: Syntax error');
 
         // Act
-        $db->select('INVALID SQL');
+        $this->db->select('INVALID SQL');
     }
 
+    /**
+     * @throws Throwable
+     */
     public function testTransactionRollbackOnException(): void
     {
         // Arrange
-        $pdoMock = $this->createMock(PDO::class);
-
-        $pdoMock->expects($this->once())
+        $this->pdoMock->expects($this->once())
             ->method('beginTransaction')
             ->willReturn(true);
 
-        $pdoMock->method('inTransaction')
+        $this->pdoMock->method('inTransaction')
             ->willReturn(true);
 
-        $pdoMock->expects($this->once())
+        $this->pdoMock->expects($this->once())
             ->method('rollBack')
             ->willReturn(true);
 
-        $pdoMock->expects($this->never())
+        $this->pdoMock->expects($this->never())
             ->method('commit');
-
-        $db = new PDO4You($pdoMock);
 
         // Assert (Expectations)
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Error inside transaction');
 
         // Act
-        $db->transaction(function () {
+        $this->db->transaction(function () {
             throw new RuntimeException('Error inside transaction');
         });
     }
 
-    public function testInsertHelper(): void
+    public function testInsertHelperQuotesIdentifiers(): void
     {
         // Arrange
-        $pdoMock = $this->createMock(PDO::class);
-        $pdoStatementMock = $this->createMock(PDOStatement::class);
+        $stmtMock = $this->createExecutedStatementMock(1);
 
-        $pdoMock->expects($this->once())
+        $this->pdoMock->expects($this->once())
             ->method('prepare')
-            ->with('INSERT INTO users (name, surname) VALUES (:name, :surname)')
-            ->willReturn($pdoStatementMock);
+            ->with('INSERT INTO `users` (`name`, `surname`) VALUES (:_ins_name, :_ins_surname)')
+            ->willReturn($stmtMock);
 
-        $pdoStatementMock->expects($this->once())
+        $stmtMock->expects($this->once())
             ->method('execute')
-            ->with(['name' => 'John', 'surname' => 'Doe'])
+            ->with(['_ins_name' => 'John', '_ins_surname' => 'Doe'])
             ->willReturn(true);
 
-        $pdoStatementMock->expects($this->once())
-            ->method('rowCount')
-            ->willReturn(1);
-
-        $db = new PDO4You($pdoMock);
-
         // Act
-        $affected = $db->insert('users', ['name' => 'John', 'surname' => 'Doe']);
+        $affected = $this->db->insert('users', ['name' => 'John', 'surname' => 'Doe']);
 
         // Assert
         $this->assertSame(1, $affected);
     }
 
-    public function testUpdateHelper(): void
+    public function testInsertWithEmptyDataReturnsZero(): void
+    {
+        $this->pdoMock->expects($this->never())->method('prepare');
+
+        $affected = $this->db->insert('users', []);
+
+        $this->assertSame(0, $affected);
+    }
+
+    public function testUpdateHelperQuotesIdentifiers(): void
     {
         // Arrange
-        $pdoMock = $this->createMock(PDO::class);
-        $pdoStatementMock = $this->createMock(PDOStatement::class);
+        $stmtMock = $this->createExecutedStatementMock(1);
 
-        $pdoMock->expects($this->once())
+        $this->pdoMock->expects($this->once())
             ->method('prepare')
-            ->with('UPDATE users SET name = :_set_name WHERE id = :id')
-            ->willReturn($pdoStatementMock);
+            ->with('UPDATE `users` SET `name` = :_set_name WHERE id = :id')
+            ->willReturn($stmtMock);
 
-        $pdoStatementMock->expects($this->once())
+        $stmtMock->expects($this->once())
             ->method('execute')
             ->with(['_set_name' => 'Jane', 'id' => 1])
             ->willReturn(true);
 
-        $pdoStatementMock->expects($this->once())
-            ->method('rowCount')
-            ->willReturn(1);
-
-        $db = new PDO4You($pdoMock);
-
         // Act
-        $affected = $db->update('users', ['name' => 'Jane'], 'id = :id', ['id' => 1]);
+        $affected = $this->db->update('users', ['name' => 'Jane'], 'id = :id', ['id' => 1]);
 
         // Assert
         $this->assertSame(1, $affected);
     }
 
-    public function testDeleteHelper(): void
+    public function testUpdateWithEmptyDataReturnsZero(): void
+    {
+        $this->pdoMock->expects($this->never())->method('prepare');
+
+        $affected = $this->db->update('users', [], 'id = :id', ['id' => 1]);
+
+        $this->assertSame(0, $affected);
+    }
+
+    public function testDeleteHelperQuotesIdentifiers(): void
     {
         // Arrange
-        $pdoMock = $this->createMock(PDO::class);
-        $pdoStatementMock = $this->createMock(PDOStatement::class);
+        $stmtMock = $this->createExecutedStatementMock(1);
 
-        $pdoMock->expects($this->once())
+        $this->pdoMock->expects($this->once())
             ->method('prepare')
-            ->with('DELETE FROM users WHERE id = :id')
-            ->willReturn($pdoStatementMock);
+            ->with('DELETE FROM `users` WHERE id = :id')
+            ->willReturn($stmtMock);
 
-        $pdoStatementMock->expects($this->once())
+        $stmtMock->expects($this->once())
             ->method('execute')
             ->with(['id' => 1])
             ->willReturn(true);
 
-        $pdoStatementMock->expects($this->once())
-            ->method('rowCount')
-            ->willReturn(1);
-
-        $db = new PDO4You($pdoMock);
-
         // Act
-        $affected = $db->delete('users', 'id = :id', ['id' => 1]);
+        $affected = $this->db->delete('users', 'id = :id', ['id' => 1]);
 
         // Assert
         $this->assertSame(1, $affected);
+    }
+
+    public function testQualifiedTableNamesSupportDotNotation(): void
+    {
+        // Arrange (ex: schema.tabela -> `tenant_db`.`users`)
+        $stmtMock = $this->createExecutedStatementMock(1);
+
+        $this->pdoMock->expects($this->once())
+            ->method('prepare')
+            ->with('DELETE FROM `tenant_db`.`users` WHERE id = :id')
+            ->willReturn($stmtMock);
+
+        // Act
+        $affected = $this->db->delete('tenant_db.users', 'id = :id', ['id' => 1]);
+
+        // Assert
+        $this->assertSame(1, $affected);
+    }
+
+    public function testInvalidTableNameThrowsInvalidArgumentException(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid SQL identifier provided: "users; DROP TABLE users"');
+
+        $this->db->delete('users; DROP TABLE users', 'id = 1');
+    }
+
+    public function testInvalidColumnNameThrowsInvalidArgumentException(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid SQL identifier provided: "name` = 1 --"');
+
+        $this->db->update('users', ['name` = 1 --' => 'val'], 'id = 1');
     }
 }
