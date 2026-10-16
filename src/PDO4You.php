@@ -440,13 +440,15 @@ class PDO4You
         $placeholders = [];
         $bindParams = [];
 
+        $i = 0;
         foreach ($data as $column => $value) {
             $escapedColumns[] = $this->quoteIdentifier($column);
             $cleanParam = preg_replace('/[^a-zA-Z0-9_]/', '_', $column);
-            $paramName = "_ins_{$cleanParam}";
+            $paramName = "_pdo4you_ins_{$i}_{$cleanParam}";
 
             $placeholders[] = ":{$paramName}";
             $bindParams[$paramName] = $value;
+            $i++;
         }
 
         $columnsSql = implode(', ', $escapedColumns);
@@ -485,20 +487,50 @@ class PDO4You
         $sets = [];
         $bindParams = [];
 
+        $i = 0;
         foreach ($data as $column => $value) {
             $escapedColumn = $this->quoteIdentifier($column);
             $cleanParam = preg_replace('/[^a-zA-Z0-9_]/', '_', $column);
-            $paramName = "_set_{$cleanParam}";
+            $paramName = "_pdo4you_upd_{$i}_{$cleanParam}";
 
             $sets[] = "{$escapedColumn} = :{$paramName}";
             $bindParams[$paramName] = $value;
+            $i++;
         }
 
-        foreach ($whereParams as $key => $value) {
-            $bindParams[$key] = $value;
+        $processedWhere = $where;
+        $isPositional = array_is_list($whereParams);
+
+        if ($isPositional) {
+            $paramIndex = 0;
+            $processedWhere = preg_replace_callback('/\?/', function () use (&$paramIndex, $whereParams, &$bindParams) {
+                if (!array_key_exists($paramIndex, $whereParams)) {
+                    throw new InvalidArgumentException("Missing positional parameter for index {$paramIndex}.");
+                }
+                $paramName = "_pdo4you_where_pos_{$paramIndex}";
+                $bindParams[$paramName] = $whereParams[$paramIndex];
+                $paramIndex++;
+                return ":{$paramName}";
+            }, $where);
+
+            if ($paramIndex < count($whereParams)) {
+                throw new InvalidArgumentException('Too many positional parameters provided for WHERE clause.');
+            }
+        } else {
+            foreach ($whereParams as $key => $value) {
+                $normalizedKey = ltrim((string) $key, ':');
+
+                if (array_key_exists($normalizedKey, $bindParams)) {
+                    throw new InvalidArgumentException(
+                        sprintf('Parameter collision: WHERE parameter ":%s" conflicts with internal SET bindings.', $normalizedKey)
+                    );
+                }
+
+                $bindParams[$normalizedKey] = $value;
+            }
         }
 
-        $sql = "UPDATE {$escapedTable} SET " . implode(', ', $sets) . " WHERE {$where}";
+        $sql = "UPDATE {$escapedTable} SET " . implode(', ', $sets) . " WHERE {$processedWhere}";
 
         return $this->executeStatement($sql, $bindParams)->rowCount();
     }

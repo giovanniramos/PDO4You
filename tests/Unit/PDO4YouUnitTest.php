@@ -210,12 +210,15 @@ class PDO4YouUnitTest extends TestCase
 
         $this->pdoMock->expects($this->once())
             ->method('prepare')
-            ->with('INSERT INTO `users` (`name`, `surname`) VALUES (:_ins_name, :_ins_surname)')
+            ->with('INSERT INTO `users` (`name`, `surname`) VALUES (:_pdo4you_ins_0_name, :_pdo4you_ins_1_surname)')
             ->willReturn($stmtMock);
 
         $stmtMock->expects($this->once())
             ->method('execute')
-            ->with(['_ins_name' => 'John', '_ins_surname' => 'Doe'])
+            ->with([
+                '_pdo4you_ins_0_name' => 'John',
+                '_pdo4you_ins_1_surname' => 'Doe',
+            ])
             ->willReturn(true);
 
         // Act
@@ -241,12 +244,15 @@ class PDO4YouUnitTest extends TestCase
 
         $this->pdoMock->expects($this->once())
             ->method('prepare')
-            ->with('UPDATE `users` SET `name` = :_set_name WHERE id = :id')
+            ->with('UPDATE `users` SET `name` = :_pdo4you_upd_0_name WHERE id = :id')
             ->willReturn($stmtMock);
 
         $stmtMock->expects($this->once())
             ->method('execute')
-            ->with(['_set_name' => 'Jane', 'id' => 1])
+            ->with([
+                '_pdo4you_upd_0_name' => 'Jane',
+                'id' => 1,
+            ])
             ->willReturn(true);
 
         // Act
