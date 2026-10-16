@@ -21,10 +21,13 @@ use PDO4You\Exception\QueryException;
  * @license http://opensource.org/licenses/MIT
  * @link https://github.com/giovanniramos/PDO4You
  * @package PDO4You
- * @version 5.3.1
+ * @version 5.4.0
  */
 class PDO4You
 {
+    /** @var (Closure(string, array<string|int, mixed>, float): void)|null */
+    private static ?Closure $queryListener = null;
+
     /**
      * Initializes the PDO4You instance.
      *
@@ -36,9 +39,6 @@ class PDO4You
         private readonly ?Platform\DatabasePlatform $platform = null
     ) {
     }
-
-    /** @var (Closure(string, array<string|int, mixed>, float): void)|null */
-    private static ?Closure $queryListener = null;
 
     /**
      * Creates a PDO4You instance from a DSN string.
@@ -133,7 +133,7 @@ class PDO4You
         try {
             (self::$queryListener)($sql, $params, $durationMs);
         } catch (Throwable) {
-            // Observability must never change the outcome of a database operation.
+            // Observability failures do not compromise core execution.
         }
     }
 
@@ -223,11 +223,7 @@ class PDO4You
     ): PDOStatement {
         $stmt = $this->prepareStatement($sql, $params);
 
-        return $this->executePreparedStatement(
-            $stmt,
-            $sql,
-            $params
-        );
+        return $this->executePreparedStatement($stmt, $sql, $params);
     }
 
     /**
@@ -251,11 +247,9 @@ class PDO4You
     ): array {
         $stmt = $this->executeStatement($sql, $params);
 
-        if ($classMap !== null) {
-            return $stmt->fetchAll(PDO::FETCH_CLASS, $classMap);
-        }
-
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $classMap !== null
+            ? $stmt->fetchAll(PDO::FETCH_CLASS, $classMap)
+            : $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     /**
@@ -329,11 +323,9 @@ class PDO4You
     ): array {
         $stmt = $this->executeStatement($sql, $params);
 
-        if ($classMap !== null) {
-            return $stmt->fetchAll(PDO::FETCH_CLASS, $classMap);
-        }
-
-        return $stmt->fetchAll(PDO::FETCH_OBJ);
+        return $classMap !== null
+            ? $stmt->fetchAll(PDO::FETCH_CLASS, $classMap)
+            : $stmt->fetchAll(PDO::FETCH_OBJ);
     }
 
     /**
@@ -401,13 +393,7 @@ class PDO4You
         $totalAffected = 0;
 
         foreach ($params as $row) {
-            $totalAffected += $this
-                ->executePreparedStatement(
-                    $stmt,
-                    $sql,
-                    (array) $row
-                )
-                ->rowCount();
+            $totalAffected += $this->executePreparedStatement($stmt, $sql, (array) $row)->rowCount();
         }
 
         return $totalAffected;
@@ -428,8 +414,158 @@ class PDO4You
 
         $first = reset($params);
 
-        return is_array($first)
-            && array_is_list($params);
+        return is_array($first) && array_is_list($params);
+    }
+
+    /**
+     * Inserts a row into a table and returns the number of affected rows.
+     *
+     * @param string $table The table name.
+     * @param array<string, mixed> $data Associative array of column-value pairs.
+     *
+     * @return int Number of affected rows.
+     *
+     * @throws InvalidArgumentException If table or column names are invalid.
+     * @throws QueryException If execution fails.
+     */
+    public function insert(string $table, array $data): int
+    {
+        if ($data === []) {
+            return 0;
+        }
+
+        $escapedTable = $this->quoteIdentifier($table);
+
+        $escapedColumns = [];
+        $placeholders = [];
+        $bindParams = [];
+
+        foreach ($data as $column => $value) {
+            $escapedColumns[] = $this->quoteIdentifier($column);
+            $cleanParam = preg_replace('/[^a-zA-Z0-9_]/', '_', $column);
+            $paramName = "_ins_{$cleanParam}";
+
+            $placeholders[] = ":{$paramName}";
+            $bindParams[$paramName] = $value;
+        }
+
+        $columnsSql = implode(', ', $escapedColumns);
+        $valuesSql = implode(', ', $placeholders);
+
+        $sql = "INSERT INTO {$escapedTable} ({$columnsSql}) VALUES ({$valuesSql})";
+
+        return $this->executeStatement($sql, $bindParams)->rowCount();
+    }
+
+    /**
+     * Updates rows in a table and returns the number of affected rows.
+     *
+     * @param string $table The table name.
+     * @param array<string, mixed> $data Associative array of columns to update.
+     * @param string $where The WHERE clause condition.
+     * @param array<string|int, mixed> $whereParams Parameters for the WHERE clause.
+     *
+     * @return int Number of affected rows.
+     *
+     * @throws InvalidArgumentException If table or column names are invalid.
+     * @throws QueryException If execution fails.
+     */
+    public function update(
+        string $table,
+        array $data,
+        string $where,
+        array $whereParams = []
+    ): int {
+        if ($data === []) {
+            return 0;
+        }
+
+        $escapedTable = $this->quoteIdentifier($table);
+
+        $sets = [];
+        $bindParams = [];
+
+        foreach ($data as $column => $value) {
+            $escapedColumn = $this->quoteIdentifier($column);
+            $cleanParam = preg_replace('/[^a-zA-Z0-9_]/', '_', $column);
+            $paramName = "_set_{$cleanParam}";
+
+            $sets[] = "{$escapedColumn} = :{$paramName}";
+            $bindParams[$paramName] = $value;
+        }
+
+        foreach ($whereParams as $key => $value) {
+            $bindParams[$key] = $value;
+        }
+
+        $sql = "UPDATE {$escapedTable} SET " . implode(', ', $sets) . " WHERE {$where}";
+
+        return $this->executeStatement($sql, $bindParams)->rowCount();
+    }
+
+    /**
+     * Deletes rows from a table and returns the number of affected rows.
+     *
+     * @param string $table The table name.
+     * @param string $where The WHERE clause condition.
+     * @param array<string|int, mixed> $whereParams Parameters for the WHERE clause.
+     *
+     * @return int Number of affected rows.
+     *
+     * @throws InvalidArgumentException If table name is invalid.
+     * @throws QueryException If execution fails.
+     */
+    public function delete(
+        string $table,
+        string $where,
+        array $whereParams = []
+    ): int {
+        $escapedTable = $this->quoteIdentifier($table);
+        $sql = "DELETE FROM {$escapedTable} WHERE {$where}";
+
+        return $this->executeStatement($sql, $whereParams)->rowCount();
+    }
+
+    /**
+     * Validates and quotes an SQL identifier (table or column name),
+     * supporting qualified identifiers (e.g., 'schema.table').
+     *
+     * @param string $identifier The identifier to escape.
+     *
+     * @return string
+     *
+     * @throws InvalidArgumentException If identifier format is invalid.
+     */
+    private function quoteIdentifier(string $identifier): string
+    {
+        $parts = explode('.', $identifier);
+        $driver = $this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+
+        $quoteChar = ($driver === 'mysql') ? '`' : '"';
+
+        $escapedParts = [];
+        foreach ($parts as $part) {
+            $this->assertValidIdentifier($part);
+            $escapedParts[] = $quoteChar . str_replace($quoteChar, $quoteChar . $quoteChar, $part) . $quoteChar;
+        }
+
+        return implode('.', $escapedParts);
+    }
+
+    /**
+     * Asserts that a single identifier token contains only safe characters.
+     *
+     * @param string $part
+     *
+     * @throws InvalidArgumentException If token contains illegal characters.
+     */
+    private function assertValidIdentifier(string $part): void
+    {
+        if (!preg_match('/^[a-zA-Z0-9_]+$/', $part)) {
+            throw new InvalidArgumentException(
+                sprintf('Invalid SQL identifier provided: "%s"', $part)
+            );
+        }
     }
 
     /**
@@ -440,6 +576,8 @@ class PDO4You
      * @return string
      *
      * @throws QueryException If the ID cannot be retrieved.
+     *
+     * @see Platform\DatabasePlatform::getLastInsertIdSql()
      */
     public function lastId(?string $sequence = null): string
     {
