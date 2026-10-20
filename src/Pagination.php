@@ -13,10 +13,13 @@ class Pagination
     private int $perPage;
     private int $total = 0;
 
-    public function __construct(int $currentPage = 1, int $perPage = 10)
-    {
+    public function __construct(
+        int $currentPage = 1,
+        int $perPage = 10,
+        ?int $limitPerPage = null
+    ) {
         $this->currentPage = max(1, $currentPage);
-        $this->perPage = max(1, $perPage);
+        $this->perPage = max(1, $limitPerPage ?? $perPage);
     }
 
     /**
