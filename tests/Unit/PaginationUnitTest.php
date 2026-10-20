@@ -51,4 +51,17 @@ class PaginationUnitTest extends TestCase
         $this->assertTrue($metadata['hasPrevious']);
         $this->assertTrue($metadata['hasNext']);
     }
+
+    public function testLegacySetTotalRecordsDelegatesToSetTotal(): void
+    {
+        // Arrange
+        $pagination = new Pagination(currentPage: 1, perPage: 10);
+
+        // Act
+        $pagination->setTotalRecords(25);
+
+        // Assert
+        $this->assertSame(25, $pagination->getTotal());
+        $this->assertSame(3, $pagination->getTotalPages());
+    }
 }

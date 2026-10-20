@@ -32,6 +32,20 @@ class Pagination
     }
 
     /**
+     * Sets the total number of records (legacy alias).
+     *
+     * @param int $totalRecords The total number of records.
+     *
+     * @return void
+     *
+     * @deprecated Use setTotal() instead. Will be removed in v6.0.
+     */
+    public function setTotalRecords(int $totalRecords): void
+    {
+        $this->setTotal($totalRecords);
+    }
+
+    /**
      * Gets the current page number.
      *
      * @return int

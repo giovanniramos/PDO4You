@@ -262,6 +262,28 @@ class PDO4YouUnitTest extends TestCase
         $this->assertSame(1, $affected);
     }
 
+    public function testUpdateSupportsPositionalWhereParameters(): void
+    {
+        // Arrange
+        $stmtMock = $this->createExecutedStatementMock(1);
+
+        $this->pdoMock->expects($this->once())
+            ->method('prepare')
+            ->with('UPDATE `users` SET `name` = ? WHERE id = ?')
+            ->willReturn($stmtMock);
+
+        $stmtMock->expects($this->once())
+            ->method('execute')
+            ->with(['Jane', 1])
+            ->willReturn(true);
+
+        // Act
+        $affected = $this->db->update('users', ['name' => 'Jane'], 'id = ?', [1]);
+
+        // Assert
+        $this->assertSame(1, $affected);
+    }
+
     public function testUpdateWithEmptyDataReturnsZero(): void
     {
         $this->pdoMock->expects($this->never())->method('prepare');
