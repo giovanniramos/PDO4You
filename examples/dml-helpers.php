@@ -89,7 +89,7 @@ try {
         return $conn->lastId();
     });
 
-    echo "<p>Total users after successful transaction: <strong>{$transactionResult}</strong></p>";
+    echo "<p>Last inserted user ID in transaction: <strong>{$transactionResult}</strong></p>";
 
 } catch (\Throwable $e) {
     echo "<div class='error'>";

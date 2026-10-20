@@ -135,7 +135,7 @@ class Pagination
     /**
      * Gets comprehensive pagination metadata.
      *
-     * @return array{currentPage: int, perPage: int, total: int, totalPages: int, offset: int, hasPrevious: bool, hasNext: bool}
+     * @return array{currentPage: int, perPage: int, total: int, totalPages: int, offset: int, hasPrevious: bool, hasNext: bool, limitPerPage: int, totalRecords: int}
      */
     public function getMetadata(): array
     {
@@ -147,6 +147,9 @@ class Pagination
             'offset'       => $this->getOffset(),
             'hasPrevious'  => $this->hasPrevious(),
             'hasNext'      => $this->hasNext(),
+            // Legacy keys retained for backwards compatibility
+            'limitPerPage' => $this->perPage,
+            'totalRecords' => $this->total,
         ];
     }
 }
