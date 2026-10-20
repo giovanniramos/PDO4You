@@ -2,11 +2,13 @@
 
 declare(strict_types=1);
 
+require __DIR__ . '/../vendor/autoload.php';
+
 /**
- * PDO4You Advanced Features Example:
  * Demonstrating DTO Hydration, Batch Operations, Query Observability, and Scalar Lookups.
  *
- * @sample 4
+ * @title Advanced Features
+ * @order 6
  */
 
 use PDO4You\PDO4You;
@@ -26,7 +28,7 @@ class UserDto
 }
 
 try {
-    // 1. Setup & Query Observability
+    // 1. Setup & Query Observability: Initialize connection and register query listener
     echo "<p class='step'>1. Setup: Connecting and configuring Query Observability</p>";
     $db = PDO4You::connect('sqlite::memory:');
     echo "<p class='success'>✓ Connected successfully via DSN (sqlite::memory:).</p>";
@@ -36,7 +38,7 @@ try {
         $queriesLog[] = sprintf("[%.4fms] %s", $durationMs, $sql);
     });
 
-    // Create schema
+    // 2. Schema Definition: Create users table with default status
     $db->exec("
         CREATE TABLE users (
             id INTEGER PRIMARY KEY,
@@ -47,7 +49,7 @@ try {
     ");
     echo "<p class='success'>✓ Table 'users' created.</p>";
 
-    // 2. Batch Execution
+    // 3. Batch Execution: Insert multiple records in a single batch operation
     echo "<p class='step'>2. Operations: Batch Execution (Multiple Inserts)</p>";
     $batchParams = [
         ['Alice', 'Smith', 'active'],
@@ -58,12 +60,12 @@ try {
     $affected = $db->exec("INSERT INTO users (name, surname, status) VALUES (?, ?, ?)", $batchParams);
     echo "<p>Inserted rows count: <strong>{$affected}</strong></p>";
 
-    // 3. Scalar Lookup
+    // 4. Scalar Lookup: Count active users using selectVal()
     echo "<p class='step'>3. Verification: Scalar Lookup (selectVal)</p>";
     $totalActive = $db->selectVal("SELECT COUNT(*) FROM users WHERE status = ?", ['active']);
     echo "<p>Total active users: <strong>{$totalActive}</strong></p>";
 
-    // 4. Strong-Typed DTO Hydration
+    // 5. Strong-Typed DTO Hydration: Map result sets directly to object instances
     echo "<p class='step'>4. Hydration: Strong-Typed DTO Hydration (select / selectOne)</p>";
     /** @var UserDto[] $users */
     $users = $db->select("SELECT id, name, surname, status FROM users", [], UserDto::class);
@@ -81,7 +83,7 @@ try {
         echo "<p>Found single user DTO: <strong>{$singleUser->getFullName()}</strong></p>";
     }
 
-    // 5. Managed Transaction with Automatic Rollback
+    // 6. Managed Transactions: Atomic transaction with automatic rollback on exception
     echo "<p class='step'>5. Transactions: Managed Transaction with Automatic Rollback on Exception</p>";
     try {
         $db->transaction(function (PDO4You $conn) {
@@ -95,7 +97,7 @@ try {
     $countAfterRollback = $db->selectVal("SELECT COUNT(*) FROM users");
     echo "<p>Total users after rollback attempt: <strong>{$countAfterRollback}</strong> (Expected: 3)</p>";
 
-    // 6. Query Profile Log
+    // 7. Query Observability: Display captured SQL queries and execution times
     echo "<p class='step'>6. Observability: Captured SQL Queries</p>";
     echo "<pre>" . htmlspecialchars(implode("\n", $queriesLog)) . "</pre>";
 

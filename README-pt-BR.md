@@ -145,6 +145,42 @@ $rows = $db->selectNum('SELECT id, name FROM users');
 
 ---
 
+### Auxiliares DML Fluídos (`insert()`, `update()`, `delete()`)
+
+O PDO4You fornece métodos dedicados para operações de escrita comuns utilizando arrays associativos:
+
+#### `insert()` — Inserir um registro
+```php
+$affected = $db->insert('users', [
+    'name' => 'John',
+    'surname' => 'Wick',
+    'status' => 'active'
+]);
+
+$lastId = $db->lastId();
+```
+
+#### `update()` — Atualizar registros
+```php
+$affected = $db->update(
+    'users',
+    ['status' => 'inactive'],
+    'id = :id',
+    ['id' => 5]
+);
+```
+
+#### `delete()` — Deletar registros
+```php
+$affected = $db->delete(
+    'users',
+    'id = :id',
+    ['id' => 10]
+);
+```
+
+---
+
 ### Execução (INSERT, UPDATE, DELETE)
 
 O método `exec()` é responsável por operações de modificação e retorna a quantidade de linhas afetadas.

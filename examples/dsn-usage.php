@@ -2,38 +2,40 @@
 
 declare(strict_types=1);
 
+require __DIR__ . '/../vendor/autoload.php';
+
 /**
- * PDO4You DSN Usage Example:
  * Demonstrating connection via DSN strings with automatic platform resolution.
  *
- * @sample 2
+ * @title DSN Usage
+ * @order 2
  */
 
 use PDO4You\PDO4You;
 
 try {
-    // 1. Connect using DSN (SQLite in-memory or file DSN)
-    // The PDO4You::connect() factory automatically resolves the appropriate platform (SqlitePlatform, MySqlPlatform, etc.).
+    // 1. Setup & Connection: Initialize connection via DSN factory with automatic platform resolution
     echo "<p class='step'>1. Setup: Connecting via DSN (sqlite::memory:)</p>";
     $db = PDO4You::connect('sqlite::memory:');
     echo "<p class='success'>✓ Connected successfully and platform resolved automatically.</p>";
 
-    // 2. Define schema
+    // 2. Schema Definition: Create products table
     $db->exec("
         CREATE TABLE products (
-        id INTEGER PRIMARY KEY,
-        name TEXT NOT NULL,
-        price REAL NOT NULL)
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            price REAL NOT NULL
+        )
     ");
     echo "<p class='success'>✓ Table 'products' created.</p>";
 
-    // 3. Insert records
+    // 3. Data Insertion: Insert product records using prepared statements
     echo "<p class='step'>2. Operations: Inserting products</p>";
     $db->exec("INSERT INTO products (name, price) VALUES (?, ?)", [['Laptop', 1200.50], ['Smartphone', 799.99]]);
     $lastId = $db->lastId();
     echo "<p>Last inserted ID: <strong>{$lastId}</strong></p>";
 
-    // 4. Query records
+    // 4. Verification: Query products from the database
     echo "<p class='step'>3. Verification: Querying products</p>";
     $products = $db->select("SELECT * FROM products");
 

@@ -6,10 +6,10 @@ require_once __DIR__ . '/../vendor/autoload.php';
 
 $currentDir = __DIR__;
 
-// Helper function to extract the @sample metadata from the file header
+// Helper function to extract the @order metadata from the file header
 function getExampleOrder(string $filePath): int {
     $content = file_get_contents($filePath, false, null, 0, 1024);
-    if ($content !== false && preg_match('/@sample\s+(\d+)/i', $content, $matches)) {
+    if ($content !== false && preg_match('/@order\s+(\d+)/i', $content, $matches)) {
         return (int)$matches[1];
     }
     return 999;
@@ -82,8 +82,25 @@ $scriptPath = ($selected && in_array($selected, $files, true))
     ? $currentDir . DIRECTORY_SEPARATOR . $selected
     : null;
 
-// Helper function to format filenames into friendly labels
+// Helper function to extract the @title metadata from the file header
+function getExampleTitle(string $filePath): ?string {
+    $content = file_get_contents($filePath, false, null, 0, 1024);
+    if ($content !== false && preg_match('/@title\s+([^\r\n*]+)/i', $content, $matches)) {
+        return trim($matches[1]);
+    }
+    return null;
+}
+
+// Helper function to format filenames into friendly labels or extract @title annotation
 function formatTitle(string $filename): string {
+    global $currentDir;
+    $filePath = $currentDir . DIRECTORY_SEPARATOR . $filename;
+    if (file_exists($filePath)) {
+        $customTitle = getExampleTitle($filePath);
+        if ($customTitle !== null) {
+            return $customTitle;
+        }
+    }
     $name = pathinfo($filename, PATHINFO_FILENAME);
     return ucwords(str_replace(['-', '_'], ' ', $name));
 }
@@ -108,7 +125,7 @@ $pageTitle = $scriptPath ? 'PDO4You — ' . formatTitle((string)$selected) : $t[
             --border: #e2e8f0;
         }
 
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.6; padding: 24px; max-width: 850px; margin: auto; background-color: var(--bg); color: var(--text-main); }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.6; padding: 24px; max-width: 900px; margin: auto; background-color: var(--bg); color: var(--text-main); }
         pre { background: #0f172a; color: #f8fafc; padding: 14px; border-radius: 6px; overflow-x: auto; font-size: 0.88em; margin: 8px 0; }
         .card { background: var(--card-bg); padding: 28px; border-radius: 10px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.07); margin-bottom: 20px; border: 1px solid var(--border); }
 

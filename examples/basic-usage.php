@@ -2,44 +2,47 @@
 
 declare(strict_types=1);
 
+require __DIR__ . '/../vendor/autoload.php';
+
 /**
- * PDO4You Basic Usage Example:
  * Demonstrating basic connection, table creation, batch record insertion, and selection.
  *
- * @sample 1
+ * @title Basic Usage
+ * @order 1
  */
 
 use PDO4You\PDO4You;
 use PDO4You\Platform\SqlitePlatform;
 
 try {
-    // 1. Setup - Injecting Platform
-    echo "<p class='step'>1. Setup: Initializing in-memory SQLite connection</p>";
+    // 1. Setup & Connection: Initializing in-memory SQLite connection and platform strategy
+    echo "<p class='step'>1. Setup: Initializing in-memory SQLite connection and platform</p>";
     $pdo = new PDO('sqlite::memory:');
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
     $db = new PDO4You($pdo, new SqlitePlatform());
     echo "<p class='success'>✓ PDO4You instance created successfully.</p>";
 
-    // 2. Schema definition
+    // 2. Schema Definition: Create users table with automatic timestamp
     $db->exec("
         CREATE TABLE users (
-        id INTEGER PRIMARY KEY,
-        name TEXT NOT NULL,
-        surname TEXT NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP)
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            surname TEXT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
     ");
     echo "<p class='success'>✓ Table 'users' created.</p>";
 
-    // 3. Insert multiple records
+    // 3. Data Insertion: Insert multiple records using batch execution
     echo "<p class='step'>2. Operations: Insert multiple records using batch execution</p>";
     $db->exec("INSERT INTO users (name, surname) VALUES (?, ?)", [['John', 'Doe'], ['Jane', 'Doe']]);
 
-    // 4. Retrieve last inserted ID
+    // 4. Last Insert ID: Retrieve the last generated ID
     $lastId = $db->lastId();
     echo "<p>Last inserted ID: <strong>{$lastId}</strong></p>";
 
-    // 5. Selecting the last inserted record
+    // 5. Verification: Selecting the last inserted record
     echo "<p class='step'>3. Verification: Selecting the last inserted record</p>";
     $user = $db->select("SELECT id, name, surname, created_at FROM users WHERE id = ?", [$lastId]);
 

@@ -36,13 +36,13 @@ class PDO4YouIntegrationTest extends TestCase
         $db = PDO4You::connect($dsn, 'admin', 'pass');
 
         // Act
-        $db->exec(
-            "CREATE TABLE IF NOT EXISTS users (
+        $db->exec("
+            CREATE TABLE IF NOT EXISTS users (
                 id INT PRIMARY KEY AUTO_INCREMENT,
                 name VARCHAR(255) NOT NULL,
                 surname VARCHAR(255) NOT NULL
-            )"
-        );
+            )
+        ");
 
         $affected = $db->exec("INSERT INTO users (name, surname) VALUES (?, ?)", ['Bob', 'Jones']);
 
