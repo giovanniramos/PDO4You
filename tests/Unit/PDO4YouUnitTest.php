@@ -347,4 +347,30 @@ class PDO4YouUnitTest extends TestCase
 
         $this->db->update('users', ['name` = 1 --' => 'val'], 'id = 1');
     }
+
+    public function testSqlSrvPlatformLastInsertIdSql(): void
+    {
+        $platform = new \PDO4You\Platform\SqlSrvPlatform();
+        $this->assertSame('SELECT CAST(SCOPE_IDENTITY() AS BIGINT) AS lastId', $platform->getLastInsertIdSql());
+    }
+
+    public function testQuoteIdentifierForSqlSrvDriver(): void
+    {
+        $pdoMock = $this->createMock(PDO::class);
+        $pdoMock->method('getAttribute')
+            ->with(PDO::ATTR_DRIVER_NAME)
+            ->willReturn('sqlsrv');
+
+        $db = new PDO4You($pdoMock);
+
+        $stmtMock = $this->createExecutedStatementMock(1);
+
+        $pdoMock->expects($this->once())
+            ->method('prepare')
+            ->with('DELETE FROM [dbo].[users] WHERE id = :id')
+            ->willReturn($stmtMock);
+
+        $affected = $db->delete('dbo.users', 'id = :id', ['id' => 1]);
+        $this->assertSame(1, $affected);
+    }
 }

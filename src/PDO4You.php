@@ -28,6 +28,12 @@ class PDO4You
     /** @var (Closure(string, array<string|int, mixed>, float): void)|null */
     private static ?Closure $queryListener = null;
 
+    /** @var string|null ID captured from the most recent SQL Server INSERT. */
+    private ?string $lastInsertedId = null;
+
+    /** @var int|null Affected-row count captured before consuming SQL Server rowsets. */
+    private ?int $lastStatementRowCount = null;
+
     /**
      * Initializes the PDO4You instance.
      *
@@ -94,6 +100,7 @@ class PDO4You
             'mysql' => new Platform\MySqlPlatform(),
             'pgsql' => new Platform\PgSqlPlatform(),
             'sqlite' => new Platform\SqlitePlatform(),
+            'sqlsrv' => new Platform\SqlSrvPlatform(),
             default => throw new InvalidArgumentException(
                 sprintf('Unsupported or unrecognized DSN driver: "%s"', $driver)
             ),
@@ -221,9 +228,46 @@ class PDO4You
         string $sql,
         array $params = []
     ): PDOStatement {
-        $stmt = $this->prepareStatement($sql, $params);
+        $this->lastStatementRowCount = null;
 
-        return $this->executePreparedStatement($stmt, $sql, $params);
+        // SQL Server's SCOPE_IDENTITY() is scoped to the current SQL batch.
+        // Capture it in the same batch as INSERT, rather than in lastId()'s
+        // subsequent SELECT, which would be a different scope.
+        $captureSqlServerIdentity = $this->platform instanceof Platform\SqlSrvPlatform
+            && preg_match('/^(?:(?:\s+)|(?:--[^\r\n]*(?:\r?\n|$))|(?:\/\*.*?\*\/))*INSERT\b/is', $sql) === 1
+            && stripos($sql, '__pdo4you_last_insert_id') === false;
+
+        if ($captureSqlServerIdentity) {
+            $this->lastInsertedId = null;
+            $sqlToExecute = rtrim($sql, " \t\n\r\0\x0B;")
+                . ";\nSELECT CAST(SCOPE_IDENTITY() AS BIGINT) AS __pdo4you_last_insert_id";
+        } else {
+            $sqlToExecute = $sql;
+        }
+
+        $stmt = $this->prepareStatement($sqlToExecute, $params);
+        $stmt = $this->executePreparedStatement($stmt, $sql, $params);
+
+        if ($captureSqlServerIdentity) {
+            // Preserve rowCount() before advancing through the appended result set.
+            $this->lastStatementRowCount = $stmt->rowCount();
+            do {
+                if ($stmt->columnCount() > 0) {
+                    $value = $stmt->fetchColumn();
+                    if ($value !== false) {
+                        $this->lastInsertedId = $value === null ? null : (string) $value;
+                    }
+                }
+            } while ($stmt->nextRowset());
+        }
+
+        return $stmt;
+    }
+
+    /** Returns the affected-row count captured before SQL Server rowsets were consumed. */
+    private function statementRowCount(PDOStatement $stmt): int
+    {
+        return $this->lastStatementRowCount ?? $stmt->rowCount();
     }
 
     /**
@@ -382,11 +426,26 @@ class PDO4You
         array $params = []
     ): int {
         if ($params === []) {
-            return $this->executeStatement($sql)->rowCount();
+            return $this->statementRowCount($this->executeStatement($sql));
         }
 
         if (!$this->isBatchParameters($params)) {
-            return $this->executeStatement($sql, $params)->rowCount();
+            return $this->statementRowCount($this->executeStatement($sql, $params));
+        }
+
+        // Each SQL Server batch INSERT must capture its identity in the same
+        // execution scope. Reuse executeStatement() for that platform-specific case.
+        $isSqlServerInsert = $this->platform instanceof Platform\SqlSrvPlatform
+            && preg_match('/^(?:(?:\s+)|(?:--[^\r\n]*(?:\r?\n|$))|(?:\/\*.*?\*\/))*INSERT\b/is', $sql) === 1;
+
+        if ($isSqlServerInsert) {
+            $totalAffected = 0;
+            foreach ($params as $row) {
+                $totalAffected += $this->statementRowCount(
+                    $this->executeStatement($sql, (array) $row)
+                );
+            }
+            return $totalAffected;
         }
 
         $stmt = $this->prepareStatement($sql, $params);
@@ -456,7 +515,7 @@ class PDO4You
 
         $sql = "INSERT INTO {$escapedTable} ({$columnsSql}) VALUES ({$valuesSql})";
 
-        return $this->executeStatement($sql, $bindParams)->rowCount();
+        return $this->statementRowCount($this->executeStatement($sql, $bindParams));
     }
 
     /**
@@ -522,7 +581,7 @@ class PDO4You
 
         $sql = "UPDATE {$escapedTable} SET " . implode(', ', $sets) . " WHERE {$where}";
 
-        return $this->executeStatement($sql, $bindParams)->rowCount();
+        return $this->statementRowCount($this->executeStatement($sql, $bindParams));
     }
 
     /**
@@ -563,12 +622,15 @@ class PDO4You
         $parts = explode('.', $identifier);
         $driver = $this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
 
-        $quoteChar = ($driver === 'mysql') ? '`' : '"';
-
         $escapedParts = [];
         foreach ($parts as $part) {
             $this->assertValidIdentifier($part);
-            $escapedParts[] = $quoteChar . str_replace($quoteChar, $quoteChar . $quoteChar, $part) . $quoteChar;
+            if ($driver === 'sqlsrv') {
+                $escapedParts[] = '[' . $part . ']';
+            } else {
+                $quoteChar = ($driver === 'mysql') ? '`' : '"';
+                $escapedParts[] = $quoteChar . str_replace($quoteChar, $quoteChar . $quoteChar, $part) . $quoteChar;
+            }
         }
 
         return implode('.', $escapedParts);
@@ -603,15 +665,21 @@ class PDO4You
      */
     public function lastId(?string $sequence = null): string
     {
+        // SQL Server identity values are captured during the INSERT execution,
+        // because a later SCOPE_IDENTITY() call runs in a different SQL scope.
+        if ($this->platform instanceof Platform\SqlSrvPlatform && $this->lastInsertedId !== null) {
+            return $this->lastInsertedId;
+        }
+
         if ($this->platform !== null) {
             $sql = $this->platform->getLastInsertIdSql($sequence);
             $stmt = $this->executeStatement($sql);
 
             $value = $stmt->fetchColumn();
 
-            if ($value === false) {
+            if ($value === false || $value === null || $value === '') {
                 throw new QueryException(
-                    message: 'The database did not return a last inserted ID.',
+                    message: 'The database did not return a valid last inserted ID.',
                     sql: $sql,
                     params: []
                 );
