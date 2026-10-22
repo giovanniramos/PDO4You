@@ -6,19 +6,17 @@ namespace PDO4You\Tests\Integration;
 
 use PDO4You\PDO4You;
 use PHPUnit\Framework\TestCase;
+use PDOException;
 
 class PDO4YouIntegrationTest extends TestCase
 {
     public function testConnectWithSqliteDsn(): void
     {
-        // Arrange
+        // Arrange & Act
         $db = PDO4You::connect('sqlite::memory:');
 
-        // Act
         $db->exec("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)");
-
         $affected = $db->exec("INSERT INTO users (name) VALUES (?)", ['Alice']);
-
         $rows = $db->select("SELECT * FROM users");
 
         // Assert
@@ -33,7 +31,12 @@ class PDO4YouIntegrationTest extends TestCase
         // Arrange
         $host = getenv('DB_HOST') ?: '127.0.0.1';
         $dsn = "mysql:host={$host};dbname=pdo4you";
-        $db = PDO4You::connect($dsn, 'admin', 'pass');
+
+        try {
+            $db = PDO4You::connect($dsn, 'admin', 'pass');
+        } catch (PDOException $e) {
+            $this->markTestSkipped('MySQL server is not available: ' . $e->getMessage());
+        }
 
         // Act
         $db->exec("
@@ -45,7 +48,6 @@ class PDO4YouIntegrationTest extends TestCase
         ");
 
         $affected = $db->exec("INSERT INTO users (name, surname) VALUES (?, ?)", ['Bob', 'Jones']);
-
         $rows = $db->select("SELECT * FROM users WHERE name = ?", ['Bob']);
 
         // Assert

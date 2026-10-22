@@ -11,8 +11,10 @@ class PaginationUnitTest extends TestCase
 {
     public function testDefaultValues(): void
     {
+        // Arrange & Act
         $pagination = new Pagination();
 
+        // Assert
         $this->assertSame(1, $pagination->getCurrentPage());
         $this->assertSame(10, $pagination->getPerPage());
         $this->assertSame(0, $pagination->getTotal());
@@ -24,8 +26,10 @@ class PaginationUnitTest extends TestCase
 
     public function testOffsetAndLimitCalculation(): void
     {
+        // Arrange & Act
         $pagination = new Pagination(3, 15);
 
+        // Assert
         $this->assertSame(3, $pagination->getCurrentPage());
         $this->assertSame(15, $pagination->getPerPage());
         $this->assertSame(30, $pagination->getOffset());
@@ -34,15 +38,19 @@ class PaginationUnitTest extends TestCase
 
     public function testTotalPagesAndNavigation(): void
     {
+        // Arrange
         $pagination = new Pagination(2, 10);
-        $pagination->setTotal(25);
 
+        // Act
+        $pagination->setTotal(25);
+        $metadata = $pagination->getMetadata();
+
+        // Assert
         $this->assertSame(25, $pagination->getTotal());
         $this->assertSame(3, $pagination->getTotalPages());
         $this->assertTrue($pagination->hasPrevious());
         $this->assertTrue($pagination->hasNext());
 
-        $metadata = $pagination->getMetadata();
         $this->assertSame(2, $metadata['currentPage']);
         $this->assertSame(10, $metadata['perPage']);
         $this->assertSame(25, $metadata['total']);
