@@ -6,20 +6,43 @@ namespace PDO4You;
 
 /**
  * Service to calculate pagination metadata.
+ *
+ * @package PDO4You
+ * @version 6.0.0
  */
 class Pagination
 {
-    private int $currentPage;
-    private int $perPage;
-    private int $total = 0;
+    public readonly int $currentPage;
+    public readonly int $perPage;
+    private int $total;
 
+    /**
+     * Initializes the Pagination calculator.
+     *
+     * @param int $currentPage Current page number (1-indexed).
+     * @param int $perPage Number of items per page.
+     * @param int $total Total number of records available.
+     */
     public function __construct(
         int $currentPage = 1,
         int $perPage = 10,
-        ?int $limitPerPage = null
+        int $total = 0
     ) {
         $this->currentPage = max(1, $currentPage);
-        $this->perPage = max(1, $limitPerPage ?? $perPage);
+        $this->perPage = max(1, $perPage);
+        $this->total = max(0, $total);
+    }
+
+    /**
+     * Returns a new Pagination instance with the specified total record count.
+     *
+     * @param int $total The total number of records.
+     *
+     * @return self
+     */
+    public function withTotal(int $total): self
+    {
+        return new self($this->currentPage, $this->perPage, $total);
     }
 
     /**
@@ -27,25 +50,13 @@ class Pagination
      *
      * @param int $total The total number of records.
      *
-     * @return void
+     * @return self
      */
-    public function setTotal(int $total): void
+    public function setTotal(int $total): self
     {
         $this->total = max(0, $total);
-    }
 
-    /**
-     * Sets the total number of records (legacy alias).
-     *
-     * @param int $totalRecords The total number of records.
-     *
-     * @return void
-     *
-     * @deprecated Use setTotal() instead. Will be removed in v6.0.
-     */
-    public function setTotalRecords(int $totalRecords): void
-    {
-        $this->setTotal($totalRecords);
+        return $this;
     }
 
     /**
@@ -105,7 +116,7 @@ class Pagination
      */
     public function getTotalPages(): int
     {
-        if ($this->perPage <= 0 || $this->total <= 0) {
+        if ($this->total === 0) {
             return 0;
         }
 
@@ -135,21 +146,26 @@ class Pagination
     /**
      * Gets comprehensive pagination metadata.
      *
-     * @return array{currentPage: int, perPage: int, total: int, totalPages: int, offset: int, hasPrevious: bool, hasNext: bool, limitPerPage: int, totalRecords: int}
+     * @return array{
+     *     currentPage: int,
+     *     perPage: int,
+     *     total: int,
+     *     totalPages: int,
+     *     offset: int,
+     *     hasPrevious: bool,
+     *     hasNext: bool
+     * }
      */
     public function getMetadata(): array
     {
         return [
-            'currentPage'  => $this->currentPage,
-            'perPage'      => $this->perPage,
-            'total'        => $this->total,
-            'totalPages'   => $this->getTotalPages(),
-            'offset'       => $this->getOffset(),
-            'hasPrevious'  => $this->hasPrevious(),
-            'hasNext'      => $this->hasNext(),
-            // Legacy keys retained for backwards compatibility
-            'limitPerPage' => $this->perPage,
-            'totalRecords' => $this->total,
+            'currentPage' => $this->currentPage,
+            'perPage'     => $this->perPage,
+            'total'       => $this->total,
+            'totalPages'  => $this->getTotalPages(),
+            'offset'      => $this->getOffset(),
+            'hasPrevious' => $this->hasPrevious(),
+            'hasNext'     => $this->hasNext(),
         ];
     }
 }
