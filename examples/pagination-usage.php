@@ -7,7 +7,7 @@ require __DIR__ . '/../vendor/autoload.php';
 /**
  * Demonstrating pagination metadata calculation, offset, and limit queries.
  *
- * @title Pagination
+ * @title Pagination Usage
  * @order 5
  */
 

@@ -125,7 +125,7 @@ $pageTitle = $scriptPath ? 'PDO4You — ' . formatTitle((string)$selected) : $t[
             --border: #e2e8f0;
         }
 
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.6; padding: 24px; max-width: 900px; margin: auto; background-color: var(--bg); color: var(--text-main); }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.6; padding: 24px; max-width: 800px; margin: auto; background-color: var(--bg); color: var(--text-main); }
         pre { background: #0f172a; color: #f8fafc; padding: 14px; border-radius: 6px; overflow-x: auto; font-size: 0.88em; margin: 8px 0; }
         .card { background: var(--card-bg); padding: 28px; border-radius: 10px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.07); margin-bottom: 20px; border: 1px solid var(--border); }
 
