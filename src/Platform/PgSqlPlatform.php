@@ -8,7 +8,13 @@ class PgSqlPlatform implements DatabasePlatform
 {
     public function getLastInsertIdSql(?string $sequence = null): string
     {
-        $seq = $sequence ? "currval('{$sequence}')" : "lastval()";
-        return "SELECT {$seq} AS lastId";
+        if ($sequence !== null) {
+            if (!preg_match('/^[a-zA-Z0-9_]+(\.[a-zA-Z0-9_]+)?$/', $sequence)) {
+                throw new \InvalidArgumentException(sprintf('Invalid sequence identifier: "%s"', $sequence));
+            }
+            return "SELECT currval('{$sequence}') AS lastId";
+        }
+
+        return "SELECT lastval() AS lastId";
     }
 }

@@ -21,7 +21,7 @@ use PDO4You\Exception\QueryException;
  * @license http://opensource.org/licenses/MIT
  * @link https://github.com/giovanniramos/PDO4You
  * @package PDO4You
- * @version 5.4.0
+ * @version 5.5.0
  */
 class PDO4You
 {
