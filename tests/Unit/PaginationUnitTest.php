@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace PDO4You\Tests\Unit;
 
-use PHPUnit\Framework\TestCase;
 use PDO4You\Pagination;
+use PHPUnit\Framework\TestCase;
 
 class PaginationUnitTest extends TestCase
 {
@@ -24,16 +24,28 @@ class PaginationUnitTest extends TestCase
         $this->assertFalse($pagination->hasNext());
     }
 
+    public function testConstructorNormalizesOutOfBoundsValues(): void
+    {
+        // Arrange & Act
+        $pagination = new Pagination(currentPage: -5, perPage: 0, total: -10);
+
+        // Assert
+        $this->assertSame(1, $pagination->getCurrentPage());
+        $this->assertSame(1, $pagination->getPerPage());
+        $this->assertSame(0, $pagination->getTotal());
+    }
+
     public function testOffsetAndLimitCalculation(): void
     {
         // Arrange & Act
-        $pagination = new Pagination(3, 15);
+        $pagination = new Pagination(3, 15, 100);
 
         // Assert
         $this->assertSame(3, $pagination->getCurrentPage());
         $this->assertSame(15, $pagination->getPerPage());
         $this->assertSame(30, $pagination->getOffset());
         $this->assertSame(15, $pagination->getLimit());
+        $this->assertSame(7, $pagination->getTotalPages());
     }
 
     public function testTotalPagesAndNavigation(): void
@@ -51,25 +63,29 @@ class PaginationUnitTest extends TestCase
         $this->assertTrue($pagination->hasPrevious());
         $this->assertTrue($pagination->hasNext());
 
-        $this->assertSame(2, $metadata['currentPage']);
-        $this->assertSame(10, $metadata['perPage']);
-        $this->assertSame(25, $metadata['total']);
-        $this->assertSame(3, $metadata['totalPages']);
-        $this->assertSame(10, $metadata['offset']);
-        $this->assertTrue($metadata['hasPrevious']);
-        $this->assertTrue($metadata['hasNext']);
+        $this->assertSame([
+            'currentPage' => 2,
+            'perPage'     => 10,
+            'total'       => 25,
+            'totalPages'  => 3,
+            'offset'      => 10,
+            'hasPrevious' => true,
+            'hasNext'     => true,
+        ], $metadata);
     }
 
-    public function testLegacySetTotalRecordsDelegatesToSetTotal(): void
+    public function testWithTotalReturnsNewImmutableInstance(): void
     {
         // Arrange
-        $pagination = new Pagination(currentPage: 1, perPage: 10);
+        $original = new Pagination(1, 10);
 
         // Act
-        $pagination->setTotalRecords(25);
+        $updated = $original->withTotal(50);
 
         // Assert
-        $this->assertSame(25, $pagination->getTotal());
-        $this->assertSame(3, $pagination->getTotalPages());
+        $this->assertNotSame($original, $updated);
+        $this->assertSame(0, $original->getTotal());
+        $this->assertSame(50, $updated->getTotal());
+        $this->assertSame(5, $updated->getTotalPages());
     }
 }
