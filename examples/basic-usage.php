@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-require __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/../vendor/autoload.php';
 
 /**
  * Demonstrating basic connection, table creation, batch record insertion, and selection.
@@ -12,16 +12,17 @@ require __DIR__ . '/../vendor/autoload.php';
  */
 
 use PDO4You\PDO4You;
-use PDO4You\Platform\SqlitePlatform;
+use PDO4You\Exception\QueryException;
 
 try {
-    // 1. Setup & Connection: Initializing in-memory SQLite connection and platform strategy
+    // 1. Setup & Connection: Initializing in-memory SQLite connection (platform auto-detected)
     echo "<p class='step'>1. Setup: Initializing in-memory SQLite connection and platform</p>";
     $pdo = new PDO('sqlite::memory:');
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-    $db = new PDO4You($pdo, new SqlitePlatform());
-    echo "<p class='success'>✓ PDO4You instance created successfully.</p>";
+
+    $db = new PDO4You($pdo);
+    echo "<p class='success'>✓ PDO4You instance created and platform resolved automatically.</p>";
 
     // 2. Schema Definition: Create users table with automatic timestamp
     $db->exec("
@@ -36,22 +37,31 @@ try {
 
     // 3. Data Insertion: Insert multiple records using batch execution
     echo "<p class='step'>2. Operations: Insert multiple records using batch execution</p>";
-    $db->exec("INSERT INTO users (name, surname) VALUES (?, ?)", [['John', 'Doe'], ['Jane', 'Doe']]);
+    $db->exec(
+        "INSERT INTO users (name, surname) VALUES (?, ?)",
+        [
+            ['John', 'Doe'],
+            ['Jane', 'Doe'],
+        ]
+    );
 
     // 4. Last Insert ID: Retrieve the last generated ID
-    $lastId = $db->lastId();
+    $lastId = (int) $db->lastId();
     echo "<p>Last inserted ID: <strong>{$lastId}</strong></p>";
 
     // 5. Verification: Selecting the last inserted record
     echo "<p class='step'>3. Verification: Selecting the last inserted record</p>";
-    $user = $db->select("SELECT id, name, surname, created_at FROM users WHERE id = ?", [$lastId]);
+    $user = $db->select(
+        "SELECT id, name, surname, created_at FROM users WHERE id = ?",
+        [$lastId]
+    );
 
     echo "<p>Resulting record:</p>";
     echo "<pre>" . htmlspecialchars(print_r($user, true)) . "</pre>";
 
-} catch (\PDOException $e) {
+} catch (QueryException $e) {
     echo "<div class='error'>";
-    echo "<h3>Database Error:</h3>";
+    echo "<h3>Query Error (SQLSTATE: " . htmlspecialchars((string) ($e->getSqlState() ?? 'N/A')) . "):</h3>";
     echo "<pre>" . htmlspecialchars($e->getMessage()) . "</pre>";
     echo "</div>";
 } catch (\Throwable $e) {

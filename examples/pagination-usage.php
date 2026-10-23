@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-require __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/../vendor/autoload.php';
 
 /**
  * Demonstrating pagination metadata calculation, offset, and limit queries.
@@ -39,23 +39,25 @@ try {
     // 2. Pagination Configuration: Calculate offset and limits
     $currentPage = 2;
     $perPage = 5;
-    echo "<p class='step'>2. Pagination: Calculating offsets and limits for page $currentPage ($perPage items per page)</p>";
+    echo "<p class='step'>2. Pagination: Calculating offsets and limits for page {$currentPage} ({$perPage} items per page)</p>";
 
     $totalRecords = (int) $db->selectVal("SELECT COUNT(*) FROM items");
-
-    $pagination = new Pagination($currentPage, $perPage);
-    $pagination->setTotal($totalRecords);
+    $pagination = new Pagination(
+        currentPage: $currentPage,
+        perPage: $perPage,
+        total: $totalRecords
+    );
 
     $metadata = $pagination->getMetadata();
     echo "<pre>" . htmlspecialchars(print_r($metadata, true)) . "</pre>";
 
-    // 3. Paginated Query: Fetch records using limit and offset parameters
+    // 3. Paginated Query: Fetch records using integer-bound limit and offset parameters
     echo "<p class='step'>3. Query: Fetching paginated results using offset and limit</p>";
     $items = $db->select(
-        "SELECT id, title FROM items ORDER BY id LIMIT :limit OFFSET :offset",
+        "SELECT id, title FROM items ORDER BY id ASC LIMIT :limit OFFSET :offset",
         [
-            'limit' => $pagination->getLimit(),
-            'offset' => $pagination->getOffset()
+            'limit'  => $pagination->getLimit(),
+            'offset' => $pagination->getOffset(),
         ]
     );
 

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-require __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/../vendor/autoload.php';
 
 /**
- * Demonstrating secure database transactions, atomic updates, and rollback handling.
+ * Demonstrating secure database transactions, nested savepoints, and rollback handling.
  *
  * @title Transactions
  * @order 4
@@ -37,31 +37,32 @@ try {
     ");
     echo "<p>Initial state: Account 1 = 100.00 | Account 2 = 50.00</p>";
 
-    // 4. Manual Transaction Execution: Transfer funds atomically between accounts
+    // 4. Managed Transaction Execution with Nested Savepoint: Transfer funds atomically
     echo "<p class='step'>2. Performing Transaction: Transferring 30.00 from Account 1 to Account 2</p>";
 
-    $db->beginTransaction();
-
-    try {
+    $db->transaction(function (PDO4You $conn): void {
         // Debit funds from source account
-        $db->exec("UPDATE accounts SET balance = balance - 30.00 WHERE id = ?", [1]);
+        $conn->exec("UPDATE accounts SET balance = balance - 30.00 WHERE id = ?", [1]);
 
         // Credit funds to target account
-        $db->exec("UPDATE accounts SET balance = balance + 30.00 WHERE id = ?", [2]);
+        $conn->exec("UPDATE accounts SET balance = balance + 30.00 WHERE id = ?", [2]);
 
-        // Uncomment the line below to simulate an unexpected failure and trigger automatic rollback
-        // throw new \RuntimeException("Simulated transfer failure, initiating rollback!");
+        // Optional nested transaction (Savepoint): if it fails, only the savepoint rolls back
+        try {
+            $conn->transaction(function (PDO4You $nested): void {
+                // Attempt an invalid overdraft (violates CHECK balance >= 0)
+                $nested->exec("UPDATE accounts SET balance = balance - 500.00 WHERE id = ?", [1]);
+            });
+        } catch (\Throwable) {
+            echo "<p class='success'>✓ Nested savepoint rolled back safely without aborting main transfer.</p>";
+        }
+    });
 
-        $db->commit();
-        echo "<p class='success'>✓ Transaction committed successfully.</p>";
-    } catch (\Throwable $e) {
-        $db->rollBack();
-        echo "<p class='error'>Transaction rolled back due to error: " . htmlspecialchars($e->getMessage()) . "</p>";
-    }
+    echo "<p class='success'>✓ Main transaction committed successfully.</p>";
 
     // 5. Verification: Query final account balances
     echo "<p class='step'>3. Verification: Inspecting final account balances</p>";
-    $accounts = $db->select("SELECT id, printf('%.2f', balance) AS balance FROM accounts");
+    $accounts = $db->select("SELECT id, account_number, printf('%.2f', balance) AS balance FROM accounts");
 
     echo "<p>Final state:</p>";
     echo "<pre>" . htmlspecialchars(print_r($accounts, true)) . "</pre>";

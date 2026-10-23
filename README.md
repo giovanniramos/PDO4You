@@ -1,6 +1,7 @@
 # PDO4You
 
 [![PHP](https://img.shields.io/badge/PHP-8.2%2B-777BB4?logo=php&logoColor=white)](https://www.php.net/)
+[![Version](https://img.shields.io/badge/version-6.0.0-blue.svg)](https://github.com/giovanniramos/PDO4You/releases)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 *[Leia a documentação em Português-BR](README-pt-BR.md)*
@@ -9,7 +10,7 @@
 
 **PDO4You** simplifies PDO usage without adding the overhead and complexity of a full ORM.
 
-Built for **PHP 8.2+**, PDO4You keeps SQL under your control while adding an abstraction layer for common database operations, dependency injection, and platform-specific strategies.
+Built for **PHP 8.2+**, PDO4You keeps SQL under your control while adding a clean, secure abstraction layer for common database operations, dependency injection, and platform-specific strategies.
 
 > **PDO4You does not replace PDO. It works alongside it.**
 
@@ -19,15 +20,16 @@ Built for **PHP 8.2+**, PDO4You keeps SQL under your control while adding an abs
 
 * 🚀 **Lightweight** — A thin layer over PDO with minimal overhead.
 * 🧩 **Simple** — Keep writing native SQL while maintaining full control over your queries.
-* 💉 **Testable** — Full support for dependency injection (`PDO` and `DatabasePlatform`).
-* ⚡ **Fast Setup** — `connect()` factory with automatic platform resolution from the DSN.
+* 💉 **Testable** — First-class support for dependency injection (`PDO` and `DatabasePlatform`).
+* ⚡ **Fast Setup** — `connect()` factory and automatic platform detection from DSN strings or existing `PDO` instances.
 * 📦 **PSR-4** — Standard Composer-compatible autoloading.
-* 🐘 **Modern PHP** — Strict typing and PHP 8.2+ features.
-* 🔌 **Platform Strategies** — Abstraction of database-specific behavior (such as retrieving the last inserted ID) for MySQL, PostgreSQL, and SQLite.
-* 🛡️ **Native Security** — Prepared statements across all parameterized operations.
-* 🔄 **Managed Transactions** — Safe transaction handling through closures with automatic rollback.
-* 📊 **Observability** — Global listener for logging, profiling, and execution-time monitoring.
-* 🚫 **No ORM** — No entities and no mandatory complex mappings.
+* 🐘 **Modern PHP** — Strict typing, `#[\SensitiveParameter]`, `readonly` properties, and PHP 8.2+ features.
+* 🔌 **Platform Strategies** — Dialect abstraction (identifier quoting and last insert ID retrieval) for **MySQL/MariaDB**, **PostgreSQL**, **SQLite**, and **SQL Server**.
+* 🛡️ **Native Security & Typed Binding** — True prepared statements with automatic scalar type detection (`PARAM_INT`, `PARAM_BOOL`, `PARAM_NULL`, `PARAM_LOB`).
+* 🔄 **Managed Transactions & Savepoints** — Safe transaction handling through closures with automatic rollback and nested transaction support via `SAVEPOINT`.
+* 🌊 **Lazy Streaming with `cursor()`** — Memory-efficient $O(1)$ iteration over large datasets using PHP `Generator`.
+* 📊 **Observability** — Instance-scoped listeners (safe for Swoole/Octane/RoadRunner) and global callbacks for query logging and profiling.
+* 🚫 **No ORM** — No complex entities or mandatory mappings.
 
 ---
 
@@ -43,11 +45,11 @@ composer require giovanniramos/pdo4you
 
 ## ⚡ Quick Start
 
-You can initialize PDO4You in two ways: automatically using a DSN string or by injecting an existing PDO connection.
+You can initialize PDO4You in two ways: using the `connect()` DSN factory or by injecting an existing `PDO` connection.
 
-### 1. Automatic Initialization (Recommended)
+### 1. DSN Factory Initialization (Recommended)
 
-The static `connect()` method automatically resolves the proper platform driver from the DSN (`mysql`, `pgsql`, or `sqlite`):
+The static `connect()` method sets secure defaults and automatically resolves the proper platform strategy from the DSN driver (`mysql`, `pgsql`, `sqlite`, or `sqlsrv`):
 
 ```php
 <?php
@@ -61,9 +63,9 @@ $db = PDO4You::connect(
 );
 ```
 
-### 2. Manual Dependency Injection
+### 2. Dependency Injection (`PDO`)
 
-Ideal for DI (Dependency Injection) containers or when reusing existing database connections:
+Ideal for Dependency Injection (DI) containers or when reusing existing database connections. The platform strategy is automatically detected from the `PDO` driver (or can be explicitly provided):
 
 ```php
 <?php
@@ -72,63 +74,67 @@ use PDO;
 use PDO4You\PDO4You;
 use PDO4You\Platform\MySqlPlatform;
 
-// 1. Create your PDO instance
-$pdo = new PDO(
-    'mysql:host=localhost;dbname=mydb',
-    'username',
-    'password'
-);
+$pdo = new PDO('mysql:host=localhost;dbname=mydb', 'username', 'password');
 
-// 2. Instantiate the corresponding platform
-$platform = new MySqlPlatform();
+// Automatic platform detection from the PDO driver:
+$db = new PDO4You($pdo);
 
-// 3. Inject dependencies into PDO4You
-$db = new PDO4You($pdo, $platform);
+// Or explicitly injecting a platform strategy:
+$db = new PDO4You($pdo, new MySqlPlatform());
 ```
 
 ---
 
 ## 🧑‍💻 Usage
 
-### Queries (SELECT)
+### Queries (`SELECT`)
 
-PDO4You provides dedicated methods for each read operation:
+PDO4You provides dedicated methods for every read scenario:
 
-#### `select()` — Associative array or class mapping
+#### `select()` — Associative arrays or DTO hydration
 ```php
-// Returns an associative array
+// Returns an array of associative arrays
 $users = $db->select(
     'SELECT * FROM users WHERE status = ?',
     ['active']
 );
 
-// Direct mapping to class instances (FETCH_CLASS)
+// Direct hydration into class/DTO instances (PDO::FETCH_CLASS)
 $users = $db->select(
-    'SELECT * FROM users WHERE status = ?',
+    'SELECT id, name, email FROM users WHERE status = ?',
     ['active'],
-    UserDTO::class
+    UserDto::class
 );
 ```
 
-#### `selectOne()` — Fetch single row
-Fetches only the first record, avoiding loading unnecessary datasets into memory:
+#### `cursor()` — Lazy Streaming with `Generator` ($O(1)$ Memory)
+Ideal for processing large datasets or exports row-by-row without loading the entire result set into memory:
+
+```php
+foreach ($db->cursor('SELECT id, name FROM users WHERE active = ?', [true], UserDto::class) as $user) {
+    echo $user->name . PHP_EOL;
+}
+```
+
+#### `selectOne()` — Fetch a single row
+Fetches only the first record (or `null`) and immediately closes the statement cursor:
 
 ```php
 $user = $db->selectOne('SELECT * FROM users WHERE id = ?', [1]);
 
-if ($user) {
+if ($user !== null) {
     echo $user['name'];
 }
 ```
 
 #### `selectVal()` — Scalar value
-Directly returns the value of the first column (useful for counts and sums):
+Directly returns a single column value from the first row (useful for counts, sums, and lookups):
 
 ```php
-$total = $db->selectVal('SELECT COUNT(*) FROM users WHERE status = ?', ['active']);
+$total = (int) $db->selectVal('SELECT COUNT(*) FROM users WHERE status = ?', ['active']);
 ```
 
-#### `selectObj()` — Array of anonymous objects (`stdClass`)
+#### `selectObj()` — Array of objects (`stdClass` or custom class)
 ```php
 $users = $db->selectObj('SELECT name, email FROM users');
 
@@ -137,7 +143,7 @@ foreach ($users as $user) {
 }
 ```
 
-#### `selectNum()` — Numerically indexed array
+#### `selectNum()` — Numerically indexed arrays
 ```php
 $rows = $db->selectNum('SELECT id, name FROM users');
 // $rows[0][0] = id, $rows[0][1] = name
@@ -147,20 +153,22 @@ $rows = $db->selectNum('SELECT id, name FROM users');
 
 ### Fluent DML Helpers (`insert()`, `update()`, `delete()`)
 
-PDO4You provides dedicated methods for common write operations using associative arrays:
+Dedicated methods for common write operations featuring automatic dialect-aware identifier quoting (including qualified `schema.table` names) and protection against empty `WHERE` clauses:
 
 #### `insert()` — Insert a record
 ```php
 $affected = $db->insert('users', [
-    'name' => 'John',
+    'name'    => 'John',
     'surname' => 'Wick',
-    'status' => 'active'
+    'status'  => 'active',
 ]);
 
 $lastId = $db->lastId();
 ```
 
 #### `update()` — Update records
+Supports both named and positional parameters in the `WHERE` clause:
+
 ```php
 $affected = $db->update(
     'users',
@@ -181,27 +189,20 @@ $affected = $db->delete(
 
 ---
 
-### Execution (INSERT, UPDATE, DELETE)
+### Direct & Batch Execution (`exec()`)
 
-The `exec()` method handles data modification operations and returns the number of affected rows.
+The `exec()` method executes parameterized statements and returns the number of affected rows.
 
-#### Simple Execution
+#### Single Execution
 ```php
-// UPDATE
 $affected = $db->exec(
     'UPDATE users SET status = ? WHERE id = ?',
     ['inactive', 5]
 );
-
-// DELETE
-$affected = $db->exec(
-    'DELETE FROM users WHERE id = ?',
-    [10]
-);
 ```
 
 #### Batch Execution (Batch Insert / Batch Update)
-When you pass a list of arrays, PDO4You reuses the same prepared statement to execute all items efficiently:
+When passing a list of parameter arrays, PDO4You prepares the statement once and executes all parameter sets efficiently:
 
 ```php
 $totalInserted = $db->exec(
@@ -209,19 +210,43 @@ $totalInserted = $db->exec(
     [
         ['John', 'Doe'],
         ['Jane', 'Doe'],
-        ['Alice', 'Smith']
+        ['Alice', 'Smith'],
     ]
 );
 ```
 
 ---
 
-### Last Inserted ID
+### Pagination (`Pagination`)
 
-Retrieves the identifier generated by the last operation using the strategy corresponding to the active platform:
+The `Pagination` service calculates offsets, limits, and navigation metadata:
 
 ```php
-$db->exec('INSERT INTO users (name) VALUES (?)', ['John']);
+use PDO4You\Pagination;
+
+$total = (int) $db->selectVal('SELECT COUNT(*) FROM items');
+$pagination = new Pagination(currentPage: 2, perPage: 10, total: $total);
+
+$items = $db->select(
+    'SELECT id, title FROM items ORDER BY id ASC LIMIT :limit OFFSET :offset',
+    [
+        'limit'  => $pagination->getLimit(),
+        'offset' => $pagination->getOffset(),
+    ]
+);
+
+$meta = $pagination->getMetadata();
+// ['currentPage' => 2, 'perPage' => 10, 'total' => 25, 'totalPages' => 3, 'offset' => 10, 'hasPrevious' => true, 'hasNext' => true]
+```
+
+---
+
+### Last Inserted ID (`lastId()`)
+
+Retrieves the identifier generated by the last insert operation using the active platform strategy (including automatic same-batch `SCOPE_IDENTITY()` capture on SQL Server):
+
+```php
+$db->insert('users', ['name' => 'John']);
 
 $userId = $db->lastId();
 
@@ -231,49 +256,80 @@ $userId = $db->lastId();
 
 ---
 
-### Managed Transactions
+### Managed Transactions & Savepoints
 
-The `transaction()` method wraps operations in a safe transactional block. If the callback completes successfully, `commit` is triggered; if any exception occurs, an automatic `rollBack` is performed:
+The `transaction()` method wraps operations in a safe atomic block. Nested calls automatically use SQL `SAVEPOINT`s:
 
 ```php
-$db->transaction(function (PDO4You $db) {
-    $db->exec('UPDATE accounts SET balance = balance - 100 WHERE id = ?', [1]);
-    $db->exec('UPDATE accounts SET balance = balance + 100 WHERE id = ?', [2]);
+$db->transaction(function (PDO4You $conn) {
+    $conn->exec('UPDATE accounts SET balance = balance - 100 WHERE id = ?', [1]);
+    $conn->exec('UPDATE accounts SET balance = balance + 100 WHERE id = ?', [2]);
+
+    // Nested transaction (Savepoint)
+    $conn->transaction(function (PDO4You $nested) {
+        $nested->insert('audit_logs', ['action' => 'transfer']);
+    });
 });
 ```
 
-Manual controls (`beginTransaction()`, `commit()`, `rollBack()`, and `inTransaction()`) are also directly available on the instance.
+Manual transaction controls (`beginTransaction()`, `commit()`, `rollBack()`, and `inTransaction()`) are also available.
 
 ---
 
-### Observability and Logging (Query Listener)
+### Observability and Logging (`addQueryListener` / `onQuery`)
 
-Monitor and audit the execution time and parameters of every query. The listener is isolated to ensure observability failures never interfere with database execution:
+Monitor execution duration (in milliseconds) and parameters for every query. Listener exceptions are isolated so observability failures never disrupt database operations:
 
 ```php
-PDO4You::onQuery(function (string $sql, array $params, float $durationMs) {
+// Instance-scoped listener (recommended for Octane, Swoole, RoadRunner, and multi-DB apps)
+$db->addQueryListener(function (string $sql, array $params, float $durationMs) {
     if ($durationMs > 50.0) {
-        // Log slow queries
-        error_log(sprintf('[Slow Query: %.2fms] %s | Params: %s', $durationMs, $sql, json_encode($params)));
+        error_log(sprintf('[Slow Query: %.2fms] %s', $durationMs, $sql));
     }
 });
+
+// Or global static listener
+PDO4You::onQuery(function (string $sql, array $params, float $durationMs) {
+    // ...
+});
 ```
 
 ---
 
-## 🔌 Platforms
+### Structured Error Handling (`QueryException`)
 
-PDO4You uses objects based on the `PDO4You\Platform\DatabasePlatform` interface to handle database-engine-specific behavior:
+All PDO preparation and execution errors are wrapped in `PDO4You\Exception\QueryException`, preserving full diagnostic context:
 
-* `PDO4You\Platform\MySqlPlatform` — Support for MySQL and MariaDB.
-* `PDO4You\Platform\PgSqlPlatform` — Support for PostgreSQL (including *sequences*).
-* `PDO4You\Platform\SqlitePlatform` — Support for SQLite.
+```php
+use PDO4You\Exception\QueryException;
+
+try {
+    $db->insert('users', ['email' => 'duplicate@example.com']);
+} catch (QueryException $e) {
+    echo $e->getMessage();    // Detailed error message
+    echo $e->getSqlState();   // ANSI SQLSTATE code (e.g., '23000', '23505')
+    echo $e->getDriverCode(); // Driver-specific error code (e.g., 1062 on MySQL)
+    echo $e->getSql();        // The failed SQL query
+    print_r($e->getParams()); // Bound parameters
+}
+```
+
+---
+
+## 🔌 Supported Platforms
+
+PDO4You uses `PDO4You\Platform\DatabasePlatform` implementations to encapsulate engine-specific behavior:
+
+* `PDO4You\Platform\MySqlPlatform` — Support for **MySQL** and **MariaDB** (`` ` `` identifier quoting and `LAST_INSERT_ID()`).
+* `PDO4You\Platform\PgSqlPlatform` — Support for **PostgreSQL** (`"` identifier quoting, `lastval()`, and validated `currval()`).
+* `PDO4You\Platform\SqlitePlatform` — Support for **SQLite** (`"` identifier quoting and `last_insert_rowid()`).
+* `PDO4You\Platform\SqlSrvPlatform` — Support for **Microsoft SQL Server** (`[ ]` identifier quoting and same-batch `SCOPE_IDENTITY()` capture).
 
 ---
 
 ## 🏗️ Architecture
 
-PDO4You adds a thin layer over PDO, keeping SQL explicit while allowing database-specific behavior to be encapsulated through platforms.
+PDO4You adds a thin layer over PDO, keeping SQL explicit while encapsulating database-specific behavior through the *Strategy* pattern (`DatabasePlatform`).
 
 ![PDO4You Architecture](docs/images/pdo4you-architecture-en.png)
 
@@ -347,11 +403,11 @@ docker compose run --rm test
 ## 📋 Requirements
 
 * **PHP:** 8.2 or higher
-* **PDO Extensions:** `pdo` and the corresponding driver (`pdo_mysql`, `pdo_pgsql`, or `pdo_sqlite`)
+* **PDO Extensions:** `ext-pdo` and the corresponding driver (`pdo_mysql`, `pdo_pgsql`, `pdo_sqlite`, or `pdo_sqlsrv`)
 * **Composer**
 
 ---
 
 ## 📄 License
 
-PDO4You is distributed under the **MIT** license. See the `LICENSE` file for details.
+PDO4You is distributed under the **MIT** license. See the [LICENSE](LICENSE) file for details.

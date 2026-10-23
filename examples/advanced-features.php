@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-require __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/../vendor/autoload.php';
 
 /**
- * Demonstrating DTO Hydration, Batch Operations, Query Observability, and Scalar Lookups.
+ * Demonstrating DTO Hydration, Lazy Cursor, Batch Operations, Query Observability, and Scalar Lookups.
  *
  * @title Advanced Features
  * @order 6
@@ -13,28 +13,30 @@ require __DIR__ . '/../vendor/autoload.php';
 
 use PDO4You\PDO4You;
 
-// Define a Data Transfer Object (DTO) for strong-typed hydration
-class UserDto
-{
-    public int $id;
-    public string $name;
-    public string $surname;
-    public string $status;
-
-    public function getFullName(): string
+if (!class_exists(UserDto::class)) {
+    // Define a Data Transfer Object (DTO) for strong-typed hydration
+    class UserDto
     {
-        return "{$this->name} {$this->surname}";
+        public int $id;
+        public string $name;
+        public string $surname;
+        public string $status;
+
+        public function getFullName(): string
+        {
+            return "{$this->name} {$this->surname}";
+        }
     }
 }
 
 try {
-    // 1. Setup & Query Observability: Initialize connection and register query listener
-    echo "<p class='step'>1. Setup: Connecting and configuring Query Observability</p>";
+    // 1. Setup & Query Observability: Initialize connection and register instance query listener
+    echo "<p class='step'>1. Setup: Connecting and configuring Instance Query Observability</p>";
     $db = PDO4You::connect('sqlite::memory:');
     echo "<p class='success'>✓ Connected successfully via DSN (sqlite::memory:).</p>";
 
     $queriesLog = [];
-    PDO4You::onQuery(function (string $sql, array $params, float $durationMs) use (&$queriesLog) {
+    $db->addQueryListener(function (string $sql, array $params, float $durationMs) use (&$queriesLog): void {
         $queriesLog[] = sprintf("[%.4fms] %s", $durationMs, $sql);
     });
 
@@ -65,29 +67,28 @@ try {
     $totalActive = $db->selectVal("SELECT COUNT(*) FROM users WHERE status = ?", ['active']);
     echo "<p>Total active users: <strong>{$totalActive}</strong></p>";
 
-    // 5. Strong-Typed DTO Hydration: Map result sets directly to object instances
-    echo "<p class='step'>4. Hydration: Strong-Typed DTO Hydration (select / selectOne)</p>";
-    /** @var UserDto[] $users */
-    $users = $db->select("SELECT id, name, surname, status FROM users", [], UserDto::class);
+    // 5. Strong-Typed DTO Hydration & Lazy Cursor (O(1) memory)
+    echo "<p class='step'>4. Hydration: Lazy Cursor & Strong-Typed DTO Hydration (cursor / selectOne)</p>";
 
-    echo "<p>Hydrated DTO list:</p>";
     $userListOutput = [];
-    foreach ($users as $user) {
+    /** @var UserDto $user */
+    foreach ($db->cursor("SELECT id, name, surname, status FROM users", [], UserDto::class) as $user) {
         $userListOutput[] = "- ID #{$user->id}: {$user->getFullName()} [Status: {$user->status}]";
     }
+    echo "<p>Hydrated DTO list via Generator cursor():</p>";
     echo "<pre>" . htmlspecialchars(implode("\n", $userListOutput)) . "</pre>";
 
     /** @var UserDto|null $singleUser */
     $singleUser = $db->selectOne("SELECT id, name, surname, status FROM users WHERE name = ?", ['Bob'], UserDto::class);
     if ($singleUser !== null) {
-        echo "<p>Found single user DTO: <strong>{$singleUser->getFullName()}</strong></p>";
+        echo "<p>Found single user DTO: <strong>" . htmlspecialchars($singleUser->getFullName()) . "</strong></p>";
     }
 
     // 6. Managed Transactions: Atomic transaction with automatic rollback on exception
     echo "<p class='step'>5. Transactions: Managed Transaction with Automatic Rollback on Exception</p>";
     try {
-        $db->transaction(function (PDO4You $conn) {
-            $conn->exec("INSERT INTO users (name, surname, status) VALUES (?, ?, ?)", ['Diana', 'Prince', 'active']);
+        $db->transaction(function (PDO4You $conn): void {
+            $conn->insert('users', ['name' => 'Diana', 'surname' => 'Prince', 'status' => 'active']);
             throw new \RuntimeException('Simulated payment failure, rolling back transaction!');
         });
     } catch (\RuntimeException $e) {
@@ -106,7 +107,4 @@ try {
     echo "<h3>An error occurred:</h3>";
     echo "<pre>" . htmlspecialchars($e->getMessage()) . "</pre>";
     echo "</div>";
-} finally {
-    // Ensure query listener is always reset to prevent state leaks
-    PDO4You::onQuery(null);
 }
