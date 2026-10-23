@@ -10,4 +10,14 @@ class SqlSrvPlatform implements DatabasePlatform
     {
         return "SELECT CAST(SCOPE_IDENTITY() AS BIGINT) AS lastId";
     }
+
+    public function quoteIdentifierPart(string $part): string
+    {
+        return '[' . str_replace(']', ']]', $part) . ']';
+    }
+
+    public function requiresSameBatchIdentityCapture(): bool
+    {
+        return true;
+    }
 }

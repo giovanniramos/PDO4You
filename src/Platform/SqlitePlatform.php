@@ -10,4 +10,14 @@ class SqlitePlatform implements DatabasePlatform
     {
         return "SELECT LAST_INSERT_ROWID() AS lastId";
     }
+
+    public function quoteIdentifierPart(string $part): string
+    {
+        return '"' . str_replace('"', '""', $part) . '"';
+    }
+
+    public function requiresSameBatchIdentityCapture(): bool
+    {
+        return false;
+    }
 }
