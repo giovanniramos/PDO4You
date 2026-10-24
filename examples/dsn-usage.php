@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-require __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/../vendor/autoload.php';
 
 /**
  * Demonstrating connection via DSN strings with automatic platform resolution.
@@ -31,13 +31,19 @@ try {
 
     // 3. Data Insertion: Insert product records using prepared statements
     echo "<p class='step'>2. Operations: Inserting products</p>";
-    $db->exec("INSERT INTO products (name, price) VALUES (?, ?)", [['Laptop', 1200.50], ['Smartphone', 799.99]]);
+    $db->exec(
+        "INSERT INTO products (name, price) VALUES (?, ?)",
+        [
+            ['Laptop', 1200.50],
+            ['Smartphone', 799.99],
+        ]
+    );
     $lastId = $db->lastId();
-    echo "<p>Last inserted ID: <strong>{$lastId}</strong></p>";
+    echo "<p>Last inserted ID: <strong>" . htmlspecialchars($lastId) . "</strong></p>";
 
     // 4. Verification: Query products from the database
     echo "<p class='step'>3. Verification: Querying products</p>";
-    $products = $db->select("SELECT * FROM products");
+    $products = $db->select("SELECT id, name, price FROM products");
 
     echo "<p>Resulting records:</p>";
     echo "<pre>" . htmlspecialchars(print_r($products, true)) . "</pre>";

@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace PDO4You;
 
 use Closure;
+use Generator;
 use InvalidArgumentException;
 use PDO;
 use PDOException;
 use PDOStatement;
+use SensitiveParameter;
 use Throwable;
 use PDO4You\Exception\QueryException;
 
@@ -21,23 +23,42 @@ use PDO4You\Exception\QueryException;
  * @license http://opensource.org/licenses/MIT
  * @link https://github.com/giovanniramos/PDO4You
  * @package PDO4You
- * @version 5.4.0
+ * @version 6.0.0
  */
 class PDO4You
 {
     /** @var (Closure(string, array<string|int, mixed>, float): void)|null */
-    private static ?Closure $queryListener = null;
+    private static ?Closure $globalQueryListener = null;
+
+    /** @var list<Closure(string, array<string|int, mixed>, float): void> */
+    private array $queryListeners = [];
+
+    /** @var Platform\DatabasePlatform|null Active database platform strategy. */
+    private readonly ?Platform\DatabasePlatform $platform;
+
+    /** @var string|null ID captured from the most recent same-batch INSERT. */
+    private ?string $lastInsertedId = null;
+
+    /** @var int|null Affected-row count captured before consuming appended rowsets. */
+    private ?int $lastStatementRowCount = null;
+
+    /** @var int Current nesting level for managed transactions (savepoints). */
+    private int $transactionLevel = 0;
 
     /**
      * Initializes the PDO4You instance.
+     *
+     * If no platform is explicitly provided, it will be automatically resolved
+     * from the underlying PDO driver when supported.
      *
      * @param PDO $pdo The PDO connection instance.
      * @param Platform\DatabasePlatform|null $platform The database platform implementation.
      */
     public function __construct(
         private readonly PDO $pdo,
-        private readonly ?Platform\DatabasePlatform $platform = null
+        ?Platform\DatabasePlatform $platform = null
     ) {
+        $this->platform = $platform ?? $this->detectPlatformFromPdo($pdo);
     }
 
     /**
@@ -56,6 +77,7 @@ class PDO4You
     public static function connect(
         string $dsn,
         ?string $username = null,
+        #[SensitiveParameter]
         ?string $password = null,
         array $options = []
     ): self {
@@ -78,7 +100,7 @@ class PDO4You
     }
 
     /**
-     * Resolves the database platform from the DSN driver.
+     * Resolves the database platform from the DSN string.
      *
      * @param string $dsn The Data Source Name.
      *
@@ -90,10 +112,25 @@ class PDO4You
     {
         $driver = strtolower(explode(':', $dsn, 2)[0] ?? '');
 
-        return match ($driver) {
+        return self::resolvePlatformFromDriver($driver);
+    }
+
+    /**
+     * Resolves the database platform from a driver name.
+     *
+     * @param string $driver The normalized PDO driver name.
+     *
+     * @return Platform\DatabasePlatform
+     *
+     * @throws InvalidArgumentException If the driver is not supported.
+     */
+    private static function resolvePlatformFromDriver(string $driver): Platform\DatabasePlatform
+    {
+        return match (strtolower($driver)) {
             'mysql' => new Platform\MySqlPlatform(),
             'pgsql' => new Platform\PgSqlPlatform(),
             'sqlite' => new Platform\SqlitePlatform(),
+            'sqlsrv' => new Platform\SqlSrvPlatform(),
             default => throw new InvalidArgumentException(
                 sprintf('Unsupported or unrecognized DSN driver: "%s"', $driver)
             ),
@@ -101,19 +138,63 @@ class PDO4You
     }
 
     /**
-     * Registers a callback for query observability, logging, and profiling.
+     * Attempts to resolve the database platform from an existing PDO instance.
      *
-     * @param callable(string, array<string|int, mixed>, float): void|null $listener
+     * @param PDO $pdo
+     *
+     * @return Platform\DatabasePlatform|null
+     */
+    private function detectPlatformFromPdo(PDO $pdo): ?Platform\DatabasePlatform
+    {
+        try {
+            $driver = (string) $pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
+            return self::resolvePlatformFromDriver($driver);
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
+    /**
+     * Registers a global callback for query observability, logging, and profiling.
+     *
+     * @param (callable(string, array<string|int, mixed>, float): void)|null $listener
      */
     public static function onQuery(?callable $listener): void
     {
-        self::$queryListener = $listener !== null
+        self::$globalQueryListener = $listener !== null
             ? Closure::fromCallable($listener)
             : null;
     }
 
     /**
-     * Notifies the registered query listener.
+     * Registers an instance-scoped callback for query observability.
+     * Safe for long-running processes (Octane, Swoole, RoadRunner) and multi-DB setups.
+     *
+     * @param callable(string, array<string|int, mixed>, float): void $listener
+     *
+     * @return self
+     */
+    public function addQueryListener(callable $listener): self
+    {
+        $this->queryListeners[] = Closure::fromCallable($listener);
+
+        return $this;
+    }
+
+    /**
+     * Clears all instance-scoped query listeners.
+     *
+     * @return self
+     */
+    public function clearQueryListeners(): self
+    {
+        $this->queryListeners = [];
+
+        return $this;
+    }
+
+    /**
+     * Notifies registered instance and global query listeners.
      *
      * Listener failures are intentionally isolated from the database lifecycle.
      *
@@ -121,19 +202,25 @@ class PDO4You
      * @param array<string|int, mixed> $params Query parameters.
      * @param float $durationMs Execution duration in milliseconds.
      */
-    private static function notifyListener(
+    private function notifyListeners(
         string $sql,
         array $params,
         float $durationMs
     ): void {
-        if (self::$queryListener === null) {
-            return;
+        if (self::$globalQueryListener !== null) {
+            try {
+                (self::$globalQueryListener)($sql, $params, $durationMs);
+            } catch (Throwable) {
+                // Observability failures do not compromise core execution.
+            }
         }
 
-        try {
-            (self::$queryListener)($sql, $params, $durationMs);
-        } catch (Throwable) {
-            // Observability failures do not compromise core execution.
+        foreach ($this->queryListeners as $listener) {
+            try {
+                $listener($sql, $params, $durationMs);
+            } catch (Throwable) {
+                // Observability failures do not compromise core execution.
+            }
         }
     }
 
@@ -158,9 +245,43 @@ class PDO4You
                 message: 'Query preparation failed: ' . $e->getMessage(),
                 sql: $sql,
                 params: $params,
-                code: (int) $e->getCode(),
+                code: $e->getCode(),
                 previous: $e
             );
+        }
+    }
+
+    /**
+     * Binds parameters to a prepared statement using explicit scalar PDO types.
+     *
+     * This ensures native prepared statements handle integers (e.g., LIMIT/OFFSET),
+     * booleans, and nulls accurately across all database drivers.
+     *
+     * @param PDOStatement $stmt The prepared statement.
+     * @param array<string|int, mixed> $params Parameters to bind.
+     */
+    private function bindValues(PDOStatement $stmt, array $params): void
+    {
+        if ($params === []) {
+            return;
+        }
+
+        $isList = array_is_list($params);
+
+        foreach ($params as $key => $value) {
+            $parameter = $isList
+                ? ((int) $key + 1)
+                : (is_int($key) ? $key + 1 : (str_starts_with($key, ':') ? $key : ':' . $key));
+
+            $type = match (true) {
+                is_int($value) => PDO::PARAM_INT,
+                is_bool($value) => PDO::PARAM_BOOL,
+                is_null($value) => PDO::PARAM_NULL,
+                is_resource($value) => PDO::PARAM_LOB,
+                default => PDO::PARAM_STR,
+            };
+
+            $stmt->bindValue($parameter, $value, $type);
         }
     }
 
@@ -185,26 +306,53 @@ class PDO4You
         $start = microtime(true);
 
         try {
-            $stmt->execute($params);
+            $this->bindValues($stmt, $params);
+            $stmt->execute();
 
             $durationMs = (microtime(true) - $start) * 1000;
 
-            self::notifyListener($sql, $params, $durationMs);
+            $this->notifyListeners($sql, $params, $durationMs);
 
             return $stmt;
         } catch (PDOException $e) {
             $durationMs = (microtime(true) - $start) * 1000;
 
-            self::notifyListener($sql, $params, $durationMs);
+            $this->notifyListeners($sql, $params, $durationMs);
 
             throw new QueryException(
                 message: 'Query execution failed: ' . $e->getMessage(),
                 sql: $sql,
                 params: $params,
-                code: (int) $e->getCode(),
+                code: $e->getCode(),
                 previous: $e
             );
         }
+    }
+
+    /**
+     * Checks whether the given SQL string starts with an INSERT statement,
+     * ignoring leading whitespace and SQL comments without catastrophic backtracking.
+     *
+     * @param string $sql
+     *
+     * @return bool
+     */
+    private function isInsertQuery(string $sql): bool
+    {
+        return preg_match('/^(?>\s++|--[^\r\n]*+(?:\r?\n|$)|\/\*.*?\*\/)*+INSERT\b/is', $sql) === 1;
+    }
+
+    /**
+     * Checks whether an INSERT statement contains a T-SQL OUTPUT clause
+     * that produces its own result set for the caller.
+     *
+     * @param string $sql
+     *
+     * @return bool
+     */
+    private function hasOutputClause(string $sql): bool
+    {
+        return preg_match('/\bOUTPUT\s+(?:INSERTED|DELETED|\$action)\b/i', $sql) === 1;
     }
 
     /**
@@ -221,9 +369,48 @@ class PDO4You
         string $sql,
         array $params = []
     ): PDOStatement {
-        $stmt = $this->prepareStatement($sql, $params);
+        $this->lastStatementRowCount = null;
 
-        return $this->executePreparedStatement($stmt, $sql, $params);
+        $captureBatchIdentity = $this->platform !== null
+            && $this->platform->requiresSameBatchIdentityCapture()
+            && $this->isInsertQuery($sql)
+            && !$this->hasOutputClause($sql)
+            && stripos($sql, '__pdo4you_last_insert_id') === false;
+
+        if ($captureBatchIdentity) {
+            $this->lastInsertedId = null;
+            $identitySql = $this->platform->getLastInsertIdSql();
+            $sqlToExecute = rtrim($sql, " \t\n\r\0\x0B;")
+                . ";\n" . $identitySql . " -- __pdo4you_last_insert_id";
+        } else {
+            $sqlToExecute = $sql;
+        }
+
+        $stmt = $this->prepareStatement($sqlToExecute, $params);
+        $stmt = $this->executePreparedStatement($stmt, $sql, $params);
+
+        if ($captureBatchIdentity) {
+            // Preserve rowCount() before advancing through the appended result set.
+            $this->lastStatementRowCount = $stmt->rowCount();
+            do {
+                if ($stmt->columnCount() > 0) {
+                    $value = $stmt->fetchColumn();
+                    if ($value !== false) {
+                        $this->lastInsertedId = $value === null ? null : (string) $value;
+                    }
+                }
+            } while ($stmt->nextRowset());
+        }
+
+        return $stmt;
+    }
+
+    /**
+     * Returns the affected-row count captured before appended rowsets were consumed.
+     */
+    private function statementRowCount(PDOStatement $stmt): int
+    {
+        return $this->lastStatementRowCount ?? $stmt->rowCount();
     }
 
     /**
@@ -253,6 +440,43 @@ class PDO4You
     }
 
     /**
+     * Executes a SELECT query and yields rows lazily one by one using a Generator.
+     *
+     * Ideal for processing large datasets with O(1) memory consumption.
+     *
+     * @template T of object
+     *
+     * @param string $sql The SQL query to execute.
+     * @param array<string|int, mixed> $params Query parameters.
+     * @param class-string<T>|null $classMap Optional result class.
+     *
+     * @return Generator<int, T|array<string, mixed>>
+     */
+    public function cursor(
+        string $sql,
+        array $params = [],
+        ?string $classMap = null
+    ): Generator {
+        $stmt = $this->executeStatement($sql, $params);
+
+        try {
+            if ($classMap !== null) {
+                $stmt->setFetchMode(PDO::FETCH_CLASS, $classMap);
+                while (($row = $stmt->fetch()) !== false) {
+                    yield $row;
+                }
+                return;
+            }
+
+            while (($row = $stmt->fetch(PDO::FETCH_ASSOC)) !== false) {
+                yield $row;
+            }
+        } finally {
+            $stmt->closeCursor();
+        }
+    }
+
+    /**
      * Executes a SELECT query and returns the first row.
      *
      * Unlike select(), this method fetches only one row and therefore
@@ -273,16 +497,20 @@ class PDO4You
     ): mixed {
         $stmt = $this->executeStatement($sql, $params);
 
-        if ($classMap !== null) {
-            $stmt->setFetchMode(PDO::FETCH_CLASS, $classMap);
-            $result = $stmt->fetch();
+        try {
+            if ($classMap !== null) {
+                $stmt->setFetchMode(PDO::FETCH_CLASS, $classMap);
+                $result = $stmt->fetch();
+
+                return $result === false ? null : $result;
+            }
+
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
             return $result === false ? null : $result;
+        } finally {
+            $stmt->closeCursor();
         }
-
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        return $result === false ? null : $result;
     }
 
     /**
@@ -300,9 +528,14 @@ class PDO4You
         int $columnIndex = 0
     ): mixed {
         $stmt = $this->executeStatement($sql, $params);
-        $value = $stmt->fetchColumn($columnIndex);
 
-        return $value === false ? null : $value;
+        try {
+            $value = $stmt->fetchColumn($columnIndex);
+
+            return $value === false ? null : $value;
+        } finally {
+            $stmt->closeCursor();
+        }
     }
 
     /**
@@ -382,11 +615,26 @@ class PDO4You
         array $params = []
     ): int {
         if ($params === []) {
-            return $this->executeStatement($sql)->rowCount();
+            return $this->statementRowCount($this->executeStatement($sql));
         }
 
         if (!$this->isBatchParameters($params)) {
-            return $this->executeStatement($sql, $params)->rowCount();
+            return $this->statementRowCount($this->executeStatement($sql, $params));
+        }
+
+        $requiresBatchIdentityCapture = $this->platform !== null
+            && $this->platform->requiresSameBatchIdentityCapture()
+            && $this->isInsertQuery($sql)
+            && !$this->hasOutputClause($sql);
+
+        if ($requiresBatchIdentityCapture) {
+            $totalAffected = 0;
+            foreach ($params as $row) {
+                $totalAffected += $this->statementRowCount(
+                    $this->executeStatement($sql, (array) $row)
+                );
+            }
+            return $totalAffected;
         }
 
         $stmt = $this->prepareStatement($sql, $params);
@@ -456,7 +704,7 @@ class PDO4You
 
         $sql = "INSERT INTO {$escapedTable} ({$columnsSql}) VALUES ({$valuesSql})";
 
-        return $this->executeStatement($sql, $bindParams)->rowCount();
+        return $this->statementRowCount($this->executeStatement($sql, $bindParams));
     }
 
     /**
@@ -464,12 +712,12 @@ class PDO4You
      *
      * @param string $table The table name.
      * @param array<string, mixed> $data Associative array of columns to update.
-     * @param string $where The WHERE clause condition.
+     * @param string $where The WHERE clause condition (must not be empty).
      * @param array<string|int, mixed> $whereParams Parameters for the WHERE clause.
      *
      * @return int Number of affected rows.
      *
-     * @throws InvalidArgumentException If table or column names are invalid or if parameter collision occurs.
+     * @throws InvalidArgumentException If table/column names are invalid, WHERE is empty, or parameter collision occurs.
      * @throws QueryException If execution fails.
      */
     public function update(
@@ -482,8 +730,12 @@ class PDO4You
             return 0;
         }
 
+        if (trim($where) === '') {
+            throw new InvalidArgumentException('The WHERE clause cannot be empty for update operations.');
+        }
+
         $escapedTable = $this->quoteIdentifier($table);
-        $isPositional = array_is_list($whereParams);
+        $isPositional = $whereParams !== [] && array_is_list($whereParams);
 
         $sets = [];
         $bindParams = [];
@@ -522,19 +774,19 @@ class PDO4You
 
         $sql = "UPDATE {$escapedTable} SET " . implode(', ', $sets) . " WHERE {$where}";
 
-        return $this->executeStatement($sql, $bindParams)->rowCount();
+        return $this->statementRowCount($this->executeStatement($sql, $bindParams));
     }
 
     /**
      * Deletes rows from a table and returns the number of affected rows.
      *
      * @param string $table The table name.
-     * @param string $where The WHERE clause condition.
+     * @param string $where The WHERE clause condition (must not be empty).
      * @param array<string|int, mixed> $whereParams Parameters for the WHERE clause.
      *
      * @return int Number of affected rows.
      *
-     * @throws InvalidArgumentException If table name is invalid.
+     * @throws InvalidArgumentException If table name is invalid or WHERE is empty.
      * @throws QueryException If execution fails.
      */
     public function delete(
@@ -542,6 +794,10 @@ class PDO4You
         string $where,
         array $whereParams = []
     ): int {
+        if (trim($where) === '') {
+            throw new InvalidArgumentException('The WHERE clause cannot be empty for delete operations.');
+        }
+
         $escapedTable = $this->quoteIdentifier($table);
         $sql = "DELETE FROM {$escapedTable} WHERE {$where}";
 
@@ -561,14 +817,16 @@ class PDO4You
     private function quoteIdentifier(string $identifier): string
     {
         $parts = explode('.', $identifier);
-        $driver = $this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME);
-
-        $quoteChar = ($driver === 'mysql') ? '`' : '"';
-
         $escapedParts = [];
+
         foreach ($parts as $part) {
             $this->assertValidIdentifier($part);
-            $escapedParts[] = $quoteChar . str_replace($quoteChar, $quoteChar . $quoteChar, $part) . $quoteChar;
+
+            if ($this->platform !== null) {
+                $escapedParts[] = $this->platform->quoteIdentifierPart($part);
+            } else {
+                $escapedParts[] = '"' . str_replace('"', '""', $part) . '"';
+            }
         }
 
         return implode('.', $escapedParts);
@@ -597,21 +855,34 @@ class PDO4You
      *
      * @return string
      *
+     * @throws InvalidArgumentException If the sequence identifier is invalid.
      * @throws QueryException If the ID cannot be retrieved.
      *
      * @see Platform\DatabasePlatform::getLastInsertIdSql()
      */
     public function lastId(?string $sequence = null): string
     {
+        if (
+            $this->platform !== null
+            && $this->platform->requiresSameBatchIdentityCapture()
+            && $this->lastInsertedId !== null
+        ) {
+            return $this->lastInsertedId;
+        }
+
         if ($this->platform !== null) {
             $sql = $this->platform->getLastInsertIdSql($sequence);
             $stmt = $this->executeStatement($sql);
 
-            $value = $stmt->fetchColumn();
+            try {
+                $value = $stmt->fetchColumn();
+            } finally {
+                $stmt->closeCursor();
+            }
 
-            if ($value === false) {
+            if ($value === false || $value === null || $value === '') {
                 throw new QueryException(
-                    message: 'The database did not return a last inserted ID.',
+                    message: 'The database did not return a valid last inserted ID.',
                     sql: $sql,
                     params: []
                 );
@@ -627,7 +898,7 @@ class PDO4You
                 message: 'Unable to retrieve the last inserted ID: ' . $e->getMessage(),
                 sql: '',
                 params: [],
-                code: (int) $e->getCode(),
+                code: $e->getCode(),
                 previous: $e
             );
         }
@@ -640,6 +911,7 @@ class PDO4You
      *
      * @return string
      *
+     * @throws InvalidArgumentException If the sequence identifier is invalid.
      * @throws QueryException If the ID cannot be retrieved.
      */
     public function lastInsertId(?string $name = null): string
@@ -650,8 +922,8 @@ class PDO4You
     /**
      * Executes a callback inside a managed transaction.
      *
-     * The transaction is committed when the callback succeeds and rolled back
-     * when the callback throws.
+     * Supports nested calls via platform-specific SQL SAVEPOINTs. The transaction
+     * (or savepoint) is committed when the callback succeeds and rolled back when it throws.
      *
      * @template T
      *
@@ -663,18 +935,51 @@ class PDO4You
      */
     public function transaction(callable $callback): mixed
     {
-        $this->beginTransaction();
+        $isRootTransaction = $this->transactionLevel === 0 && !$this->inTransaction();
+        $savepointName = 'pdo4you_sp_' . ($this->transactionLevel + 1);
+
+        if ($isRootTransaction) {
+            $this->beginTransaction();
+        } else {
+            $savepointSql = $this->platform !== null
+                ? $this->platform->getSavepointSql($savepointName)
+                : "SAVEPOINT {$savepointName}";
+            $this->pdo->exec($savepointSql);
+        }
+
+        $this->transactionLevel++;
 
         try {
             $result = $callback($this);
 
-            $this->commit();
+            $this->transactionLevel--;
+
+            if ($isRootTransaction) {
+                $this->commit();
+            } else {
+                $releaseSql = $this->platform !== null
+                    ? $this->platform->getReleaseSavepointSql($savepointName)
+                    : "RELEASE SAVEPOINT {$savepointName}";
+
+                if ($releaseSql !== null) {
+                    $this->pdo->exec($releaseSql);
+                }
+            }
 
             return $result;
         } catch (Throwable $e) {
+            $this->transactionLevel = max(0, $this->transactionLevel - 1);
+
             try {
-                if ($this->inTransaction()) {
-                    $this->rollBack();
+                if ($isRootTransaction) {
+                    if ($this->inTransaction()) {
+                        $this->rollBack();
+                    }
+                } else {
+                    $rollbackSql = $this->platform !== null
+                        ? $this->platform->getRollbackSavepointSql($savepointName)
+                        : "ROLLBACK TO SAVEPOINT {$savepointName}";
+                    $this->pdo->exec($rollbackSql);
                 }
             } catch (Throwable) {
                 // Preserve the original exception when rollback itself fails.

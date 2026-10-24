@@ -6,107 +6,108 @@ require_once __DIR__ . '/../vendor/autoload.php';
 
 $currentDir = __DIR__;
 
-// Helper function to extract the @order metadata from the file header
-function getExampleOrder(string $filePath): int {
-    $content = file_get_contents($filePath, false, null, 0, 1024);
-    if ($content !== false && preg_match('/@order\s+(\d+)/i', $content, $matches)) {
-        return (int)$matches[1];
+/**
+ * Extracts @order and @title annotations from a file in a single disk read.
+ *
+ * @param string $filePath
+ * @param string $filename
+ * @return array{order: int, title: string}
+ */
+function parseExampleMetadata(string $filePath, string $filename): array
+{
+    $content = is_file($filePath) ? file_get_contents($filePath, false, null, 0, 1024) : false;
+
+    $order = 999;
+    if ($content !== false && preg_match('/@order\s+(\d+)/i', $content, $orderMatches)) {
+        $order = (int) $orderMatches[1];
     }
-    return 999;
+
+    if ($content !== false && preg_match('/@title\s+([^\r\n*]+)/i', $content, $titleMatches)) {
+        $title = trim($titleMatches[1]);
+    } else {
+        $name = pathinfo($filename, PATHINFO_FILENAME);
+        $title = ucwords(str_replace(['-', '_'], ' ', $name));
+    }
+
+    return [
+        'order' => $order,
+        'title' => $title,
+    ];
 }
 
 // Filter valid PHP scripts excluding index and subdirectories
-$files = array_values(array_filter(scandir($currentDir) ?: [], function (string $file) use ($currentDir): bool {
+$rawFiles = array_values(array_filter(scandir($currentDir) ?: [], static function (string $file) use ($currentDir): bool {
     $filePath = $currentDir . DIRECTORY_SEPARATOR . $file;
     return is_file($filePath)
         && pathinfo($file, PATHINFO_EXTENSION) === 'php'
         && $file !== 'index.php';
 }));
 
-// Sort files dynamically based on the @order annotation inside each script
-usort($files, function (string $a, string $b) use ($currentDir): int {
-    $orderA = getExampleOrder($currentDir . DIRECTORY_SEPARATOR . $a);
-    $orderB = getExampleOrder($currentDir . DIRECTORY_SEPARATOR . $b);
+// Build metadata cache in a single pass (O(N) disk reads instead of O(N log N))
+/** @var array<string, array{order: int, title: string}> $examplesMeta */
+$examplesMeta = [];
+foreach ($rawFiles as $file) {
+    $examplesMeta[$file] = parseExampleMetadata($currentDir . DIRECTORY_SEPARATOR . $file, $file);
+}
 
-    if ($orderA === $orderB) {
-        return strcmp($a, $b);
-    }
-    return $orderA <=> $orderB;
+// Sort files dynamically based on cached @order annotation
+$files = $rawFiles;
+usort($files, static function (string $a, string $b) use ($examplesMeta): int {
+    $orderA = $examplesMeta[$a]['order'];
+    $orderB = $examplesMeta[$b]['order'];
+
+    return $orderA === $orderB ? strcmp($a, $b) : ($orderA <=> $orderB);
 });
 
 // Simple i18n system
 $availableLangs = ['en', 'pt', 'es'];
-$lang = filter_input(INPUT_GET, 'lang', FILTER_DEFAULT) ?? 'en';
-if (!in_array($lang, $availableLangs, true)) {
-    $lang = 'en';
-}
+$langInput = filter_input(INPUT_GET, 'lang', FILTER_DEFAULT);
+$lang = is_string($langInput) && in_array($langInput, $availableLangs, true) ? $langInput : 'en';
 
 $i18n = [
     'en' => [
-        'title' => 'PDO4You — Examples Hub',
-        'home' => 'Overview',
-        'select_hint' => 'Select a demonstration from the menu above to execute and view the output in real-time.',
-        'php_version' => 'PHP Version',
-        'pdo_drivers' => 'Available PDO Drivers',
+        'title'           => 'PDO4You — Examples Hub',
+        'home'            => 'Overview',
+        'select_hint'     => 'Select a demonstration from the menu above to execute and view the output in real-time.',
+        'php_version'     => 'PHP Version',
+        'pdo_drivers'     => 'Available PDO Drivers',
         'available_demos' => 'Available Demos',
-        'view_source' => 'View Source Code',
-        'run' => 'Run Demo'
+        'view_source'     => 'View Source Code',
+        'run'             => 'Run Demo',
     ],
     'pt' => [
-        'title' => 'PDO4You — Central de Exemplos',
-        'home' => 'Visão Geral',
-        'select_hint' => 'Selecione uma demonstração no menu acima para executar e visualizar a saída em tempo real.',
-        'php_version' => 'Versão do PHP',
-        'pdo_drivers' => 'Drivers PDO Instalados',
+        'title'           => 'PDO4You — Central de Exemplos',
+        'home'            => 'Visão Geral',
+        'select_hint'     => 'Selecione uma demonstração no menu acima para executar e visualizar a saída em tempo real.',
+        'php_version'     => 'Versão do PHP',
+        'pdo_drivers'     => 'Drivers PDO Instalados',
         'available_demos' => 'Demonstrações Disponíveis',
-        'view_source' => 'Ver Código-Fonte',
-        'run' => 'Executar Exemplo'
+        'view_source'     => 'Ver Código-Fonte',
+        'run'             => 'Executar Exemplo',
     ],
     'es' => [
-        'title' => 'PDO4You — Centro de Ejemplos',
-        'home' => 'Visión General',
-        'select_hint' => 'Seleccione una demostración en el menú superior para ejecutar y ver el resultado en tiempo real.',
-        'php_version' => 'Versión de PHP',
-        'pdo_drivers' => 'Controladores PDO Disponibles',
+        'title'           => 'PDO4You — Centro de Ejemplos',
+        'home'            => 'Visión General',
+        'select_hint'     => 'Seleccione una demostración en el menú superior para ejecutar y ver el resultado en tiempo real.',
+        'php_version'     => 'Versión de PHP',
+        'pdo_drivers'     => 'Controladores PDO Disponibles',
         'available_demos' => 'Demostraciones Disponibles',
-        'view_source' => 'Ver Código Fuente',
-        'run' => 'Ejecutar Ejemplo'
-    ]
+        'view_source'     => 'Ver Código Fuente',
+        'run'             => 'Ejecutar Ejemplo',
+    ],
 ];
 
 $t = $i18n[$lang];
 
 // Route sanitization and validation
-$selected = filter_input(INPUT_GET, 'demo', FILTER_DEFAULT);
-$scriptPath = ($selected && in_array($selected, $files, true))
-    ? $currentDir . DIRECTORY_SEPARATOR . $selected
-    : null;
-
-// Helper function to extract the @title metadata from the file header
-function getExampleTitle(string $filePath): ?string {
-    $content = file_get_contents($filePath, false, null, 0, 1024);
-    if ($content !== false && preg_match('/@title\s+([^\r\n*]+)/i', $content, $matches)) {
-        return trim($matches[1]);
-    }
-    return null;
-}
-
-// Helper function to format filenames into friendly labels or extract @title annotation
-function formatTitle(string $filename): string {
-    global $currentDir;
-    $filePath = $currentDir . DIRECTORY_SEPARATOR . $filename;
-    if (file_exists($filePath)) {
-        $customTitle = getExampleTitle($filePath);
-        if ($customTitle !== null) {
-            return $customTitle;
-        }
-    }
-    $name = pathinfo($filename, PATHINFO_FILENAME);
-    return ucwords(str_replace(['-', '_'], ' ', $name));
-}
+$selectedInput = filter_input(INPUT_GET, 'demo', FILTER_DEFAULT);
+$selected = is_string($selectedInput) && isset($examplesMeta[$selectedInput]) ? $selectedInput : null;
+$scriptPath = $selected !== null ? $currentDir . DIRECTORY_SEPARATOR . $selected : null;
 
 // Dynamic page title
-$pageTitle = $scriptPath ? 'PDO4You — ' . formatTitle((string)$selected) : $t['title'];
+$pageTitle = $selected !== null
+    ? 'PDO4You — ' . $examplesMeta[$selected]['title']
+    : $t['title'];
 ?>
 <!DOCTYPE html>
 <html lang="<?= htmlspecialchars($lang) ?>">
@@ -125,7 +126,7 @@ $pageTitle = $scriptPath ? 'PDO4You — ' . formatTitle((string)$selected) : $t[
             --border: #e2e8f0;
         }
 
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.6; padding: 24px; max-width: 900px; margin: auto; background-color: var(--bg); color: var(--text-main); }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.6; padding: 24px; max-width: 800px; margin: auto; background-color: var(--bg); color: var(--text-main); }
         pre { background: #0f172a; color: #f8fafc; padding: 14px; border-radius: 6px; overflow-x: auto; font-size: 0.88em; margin: 8px 0; }
         .card { background: var(--card-bg); padding: 28px; border-radius: 10px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.07); margin-bottom: 20px; border: 1px solid var(--border); }
 
@@ -168,35 +169,39 @@ $pageTitle = $scriptPath ? 'PDO4You — ' . formatTitle((string)$selected) : $t[
             <div class="lang-switch">
                 <?php foreach ($availableLangs as $l): ?>
                     <a href="?<?= http_build_query(array_filter(['demo' => $selected, 'lang' => $l])) ?>" class="<?= $lang === $l ? 'active' : '' ?>">
-                        <?= $l ?>
+                        <?= htmlspecialchars($l) ?>
                     </a>
                 <?php endforeach; ?>
             </div>
         </div>
 
         <nav class="nav-links">
-            <a href="?lang=<?= $lang ?>" class="<?= $selected === null ? 'active' : '' ?>">
+            <a href="?lang=<?= urlencode($lang) ?>" class="<?= $selected === null ? 'active' : '' ?>">
                 🏠 <?= htmlspecialchars($t['home']) ?>
             </a>
             <?php foreach ($files as $file): ?>
-                <a href="?demo=<?= urlencode($file) ?>&lang=<?= $lang ?>" class="<?= $selected === $file ? 'active' : '' ?>">
-                    <?= htmlspecialchars(formatTitle($file)) ?>
+                <a href="?demo=<?= urlencode($file) ?>&lang=<?= urlencode($lang) ?>" class="<?= $selected === $file ? 'active' : '' ?>">
+                    <?= htmlspecialchars($examplesMeta[$file]['title']) ?>
                 </a>
             <?php endforeach; ?>
         </nav>
 
         <hr class="divider">
 
-        <?php if ($scriptPath && file_exists($scriptPath)): ?>
-            <!-- Script Execution Output -->
+        <?php if ($scriptPath !== null && is_file($scriptPath)): ?>
+            <!-- Isolated Script Execution Output -->
             <div class="execution-output">
-                <?php require $scriptPath; ?>
+                <?php
+                (static function (string $__scriptFile): void {
+                    require $__scriptFile;
+                })($scriptPath);
+                ?>
             </div>
 
             <!-- Source Code Inspector -->
             <details class="source-viewer">
-                <summary>🔍 <?= htmlspecialchars($t['view_source']) ?> (<?= htmlspecialchars($selected) ?>)</summary>
-                <pre><?= htmlspecialchars((string)file_get_contents($scriptPath)) ?></pre>
+                <summary>🔍 <?= htmlspecialchars($t['view_source']) ?> (<?= htmlspecialchars((string) $selected) ?>)</summary>
+                <pre><?= htmlspecialchars((string) file_get_contents($scriptPath)) ?></pre>
             </details>
         <?php else: ?>
             <!-- Initial Dashboard / Overview -->
@@ -205,7 +210,7 @@ $pageTitle = $scriptPath ? 'PDO4You — ' . formatTitle((string)$selected) : $t[
             <div class="grid">
                 <div class="stat-box">
                     <small><?= htmlspecialchars($t['php_version']) ?></small>
-                    <strong><?= PHP_VERSION ?></strong>
+                    <strong><?= htmlspecialchars(PHP_VERSION) ?></strong>
                 </div>
                 <div class="stat-box">
                     <small><?= htmlspecialchars($t['pdo_drivers']) ?></small>
@@ -222,10 +227,10 @@ $pageTitle = $scriptPath ? 'PDO4You — ' . formatTitle((string)$selected) : $t[
                 <?php foreach ($files as $file): ?>
                     <div class="stat-box" style="display: flex; flex-direction: column; justify-content: space-between;">
                         <div>
-                            <strong><?= htmlspecialchars(formatTitle($file)) ?></strong>
+                            <strong><?= htmlspecialchars($examplesMeta[$file]['title']) ?></strong>
                             <p style="font-size: 0.8rem; color: var(--text-muted); margin: 4px 0 10px 0;"><?= htmlspecialchars($file) ?></p>
                         </div>
-                        <a href="?demo=<?= urlencode($file) ?>&lang=<?= $lang ?>" style="color: var(--primary); text-decoration: none; font-size: 0.85rem; font-weight: 600;">
+                        <a href="?demo=<?= urlencode($file) ?>&lang=<?= urlencode($lang) ?>" style="color: var(--primary); text-decoration: none; font-size: 0.85rem; font-weight: 600;">
                             <?= htmlspecialchars($t['run']) ?> &rarr;
                         </a>
                     </div>
