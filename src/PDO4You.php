@@ -343,6 +343,19 @@ class PDO4You
     }
 
     /**
+     * Checks whether an INSERT statement contains a T-SQL OUTPUT clause
+     * that produces its own result set for the caller.
+     *
+     * @param string $sql
+     *
+     * @return bool
+     */
+    private function hasOutputClause(string $sql): bool
+    {
+        return preg_match('/\bOUTPUT\s+(?:INSERTED|DELETED|\$action)\b/i', $sql) === 1;
+    }
+
+    /**
      * Executes a prepared SQL statement.
      *
      * @param string $sql The SQL statement.
@@ -361,6 +374,7 @@ class PDO4You
         $captureBatchIdentity = $this->platform !== null
             && $this->platform->requiresSameBatchIdentityCapture()
             && $this->isInsertQuery($sql)
+            && !$this->hasOutputClause($sql)
             && stripos($sql, '__pdo4you_last_insert_id') === false;
 
         if ($captureBatchIdentity) {
@@ -610,7 +624,8 @@ class PDO4You
 
         $requiresBatchIdentityCapture = $this->platform !== null
             && $this->platform->requiresSameBatchIdentityCapture()
-            && $this->isInsertQuery($sql);
+            && $this->isInsertQuery($sql)
+            && !$this->hasOutputClause($sql);
 
         if ($requiresBatchIdentityCapture) {
             $totalAffected = 0;
@@ -907,8 +922,8 @@ class PDO4You
     /**
      * Executes a callback inside a managed transaction.
      *
-     * Supports nested calls via SQL SAVEPOINTs. The transaction (or savepoint)
-     * is committed when the callback succeeds and rolled back when it throws.
+     * Supports nested calls via platform-specific SQL SAVEPOINTs. The transaction
+     * (or savepoint) is committed when the callback succeeds and rolled back when it throws.
      *
      * @template T
      *
@@ -926,7 +941,10 @@ class PDO4You
         if ($isRootTransaction) {
             $this->beginTransaction();
         } else {
-            $this->pdo->exec("SAVEPOINT {$savepointName}");
+            $savepointSql = $this->platform !== null
+                ? $this->platform->getSavepointSql($savepointName)
+                : "SAVEPOINT {$savepointName}";
+            $this->pdo->exec($savepointSql);
         }
 
         $this->transactionLevel++;
@@ -939,7 +957,13 @@ class PDO4You
             if ($isRootTransaction) {
                 $this->commit();
             } else {
-                $this->pdo->exec("RELEASE SAVEPOINT {$savepointName}");
+                $releaseSql = $this->platform !== null
+                    ? $this->platform->getReleaseSavepointSql($savepointName)
+                    : "RELEASE SAVEPOINT {$savepointName}";
+
+                if ($releaseSql !== null) {
+                    $this->pdo->exec($releaseSql);
+                }
             }
 
             return $result;
@@ -952,7 +976,10 @@ class PDO4You
                         $this->rollBack();
                     }
                 } else {
-                    $this->pdo->exec("ROLLBACK TO SAVEPOINT {$savepointName}");
+                    $rollbackSql = $this->platform !== null
+                        ? $this->platform->getRollbackSavepointSql($savepointName)
+                        : "ROLLBACK TO SAVEPOINT {$savepointName}";
+                    $this->pdo->exec($rollbackSql);
                 }
             } catch (Throwable) {
                 // Preserve the original exception when rollback itself fails.

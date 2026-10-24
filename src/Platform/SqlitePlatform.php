@@ -20,4 +20,19 @@ class SqlitePlatform implements DatabasePlatform
     {
         return false;
     }
+
+    public function getSavepointSql(string $savepoint): string
+    {
+        return "SAVEPOINT {$savepoint}";
+    }
+
+    public function getReleaseSavepointSql(string $savepoint): ?string
+    {
+        return "RELEASE SAVEPOINT {$savepoint}";
+    }
+
+    public function getRollbackSavepointSql(string $savepoint): string
+    {
+        return "ROLLBACK TO SAVEPOINT {$savepoint}";
+    }
 }

@@ -20,4 +20,20 @@ class SqlSrvPlatform implements DatabasePlatform
     {
         return true;
     }
+
+    public function getSavepointSql(string $savepoint): string
+    {
+        return "SAVE TRANSACTION {$savepoint}";
+    }
+
+    public function getReleaseSavepointSql(string $savepoint): ?string
+    {
+        // SQL Server does not support or require an explicit RELEASE SAVEPOINT statement.
+        return null;
+    }
+
+    public function getRollbackSavepointSql(string $savepoint): string
+    {
+        return "ROLLBACK TRANSACTION {$savepoint}";
+    }
 }

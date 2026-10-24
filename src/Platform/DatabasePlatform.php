@@ -39,4 +39,19 @@ interface DatabasePlatform
      * @return bool
      */
     public function requiresSameBatchIdentityCapture(): bool;
+
+    /**
+     * Returns the SQL statement to create a transaction savepoint.
+     */
+    public function getSavepointSql(string $savepoint): string;
+
+    /**
+     * Returns the SQL statement to release a savepoint, or null if not supported/needed by the platform.
+     */
+    public function getReleaseSavepointSql(string $savepoint): ?string;
+
+    /**
+     * Returns the SQL statement to roll back to a transaction savepoint.
+     */
+    public function getRollbackSavepointSql(string $savepoint): string;
 }
