@@ -333,61 +333,14 @@ class PDO4You
     }
 
     /**
-     * Checks whether the given SQL string is an INSERT statement (including CTE-led
-     * statements such as `WITH cte AS (...) INSERT ...`), ignoring leading whitespace,
-     * semicolons, and SQL comments without catastrophic backtracking.
+     * Strips SQL comments, string literals, quoted identifiers, and balanced
+     * parenthesized blocks, leaving only the top-level SQL statement skeleton.
      *
      * @param string $sql
      *
-     * @return bool
+     * @return string
      */
-    private function isInsertQuery(string $sql): bool
-    {
-        $pattern = '/^
-            (?&trivia)
-            (?:
-                WITH\b
-                (?&trivia)
-                (?&ident)
-                (?&trivia)
-                (?:(?&parens)(?&trivia))?
-                AS\b
-                (?&trivia)
-                (?&parens)
-                (?&trivia)
-                (?:
-                    ,
-                    (?&trivia)
-                    (?&ident)
-                    (?&trivia)
-                    (?:(?&parens)(?&trivia))?
-                    AS\b
-                    (?&trivia)
-                    (?&parens)
-                    (?&trivia)
-                )*+
-            )?
-            INSERT\b
-            (?(DEFINE)
-                (?<trivia>(?>\s++|;+|--[^\r\n]*+(?:\r?\n|$)|\/\*.*?\*\/)*+)
-                (?<ident>(?>\[(?:]]|[^\]])*+\]|"(?:""|[^"])*+"|[a-zA-Z_@#][a-zA-Z0-9_@#$]*+))
-                (?<parens>\((?:(?>[^()\'"\[\]\-\/]+)|\'(?:\'\'|[^\'])*+\'|"(?:""|[^"])*+"|\[(?:]]|[^\]])*+\]|--[^\r\n]*+(?:\r?\n|$)|\/\*.*?\*\/|-(?!-)|\/(?!\*)|(?&parens))*+\))
-            )
-        /isx';
-
-        return preg_match($pattern, $sql) === 1;
-    }
-
-    /**
-     * Checks whether an INSERT statement contains a top-level T-SQL OUTPUT clause
-     * that returns a result set directly to the caller (excluding OUTPUT ... INTO
-     * and ignoring strings, comments, quoted identifiers, and parenthesized blocks).
-     *
-     * @param string $sql
-     *
-     * @return bool
-     */
-    private function hasOutputClause(string $sql): bool
+    private function extractTopLevelSql(string $sql): string
     {
         $stripPattern = '/
             (?&parens)
@@ -401,7 +354,38 @@ class PDO4You
             )
         /isx';
 
-        $topLevelSql = preg_replace($stripPattern, ' ', $sql) ?? $sql;
+        return preg_replace($stripPattern, ' ', $sql) ?? $sql;
+    }
+
+    /**
+     * Checks whether the SQL batch contains a top-level INSERT statement
+     * (including batches preceded by comments, CTEs, DECLARE, or SET statements).
+     *
+     * @param string $sql
+     *
+     * @return bool
+     */
+    private function isInsertQuery(string $sql): bool
+    {
+        $topLevelSql = $this->extractTopLevelSql($sql);
+
+        return preg_match(
+            '/(?:^|[;\s])\b(?<!\bFOR\s)(?<!\bAFTER\s)(?<!\bOF\s)INSERT\b/is',
+            $topLevelSql
+        ) === 1;
+    }
+
+    /**
+     * Checks whether an INSERT statement contains a top-level T-SQL OUTPUT clause
+     * that returns a result set directly to the caller (excluding OUTPUT ... INTO).
+     *
+     * @param string $sql
+     *
+     * @return bool
+     */
+    private function hasOutputClause(string $sql): bool
+    {
+        $topLevelSql = $this->extractTopLevelSql($sql);
 
         return preg_match(
             '/\bINSERT\b[^;]*?\bOUTPUT\b(?![^;]*?\bINTO\b)[^;]*?\b(?:VALUES|SELECT|DEFAULT|EXEC|EXECUTE)\b/is',
@@ -433,6 +417,11 @@ class PDO4You
                 $value = $stmt->fetchColumn();
                 if ($value !== false) {
                     $this->lastInsertedId = $value === null ? $this->lastInsertedId : (string) $value;
+                }
+            } elseif ($this->lastStatementRowCount === null || $this->lastStatementRowCount <= 0) {
+                $rowCount = $stmt->rowCount();
+                if ($rowCount > 0) {
+                    $this->lastStatementRowCount = $rowCount;
                 }
             }
         }
