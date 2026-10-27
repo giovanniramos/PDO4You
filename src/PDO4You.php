@@ -379,8 +379,9 @@ class PDO4You
     }
 
     /**
-     * Checks whether an INSERT statement contains a T-SQL OUTPUT clause
-     * that produces its own result set for the caller.
+     * Checks whether an INSERT statement contains a top-level T-SQL OUTPUT clause
+     * that returns a result set directly to the caller (excluding OUTPUT ... INTO
+     * and ignoring strings, comments, quoted identifiers, and parenthesized blocks).
      *
      * @param string $sql
      *
@@ -388,7 +389,24 @@ class PDO4You
      */
     private function hasOutputClause(string $sql): bool
     {
-        return preg_match('/\bOUTPUT\b/i', $sql) === 1;
+        $stripPattern = '/
+            (?&parens)
+            | \'(?:\'\'|[^\'])*+\'
+            | "(?:""|[^"])*+"
+            | \[(?:]]|[^\]])*+\]
+            | --[^\r\n]*+
+            | \/\*.*?\*\/
+            (?(DEFINE)
+                (?<parens>\((?:(?>[^()\'"\[\]\-\/]+)|\'(?:\'\'|[^\'])*+\'|"(?:""|[^"])*+"|\[(?:]]|[^\]])*+\]|--[^\r\n]*+|\/\*.*?\*\/|-(?!-)|\/(?!\*)|(?&parens))*+\))
+            )
+        /isx';
+
+        $topLevelSql = preg_replace($stripPattern, ' ', $sql) ?? $sql;
+
+        return preg_match(
+            '/\bINSERT\b[^;]*?\bOUTPUT\b(?![^;]*?\bINTO\b)[^;]*?\b(?:VALUES|SELECT|DEFAULT|EXEC|EXECUTE)\b/is',
+            $topLevelSql
+        ) === 1;
     }
 
     /**
@@ -458,7 +476,7 @@ class PDO4You
             // Preserve rowCount() before advancing through the appended result set.
             $this->lastStatementRowCount = $stmt->rowCount();
 
-            if ($this->hasOutputClause($sql)) {
+            if ($this->hasOutputClause($sql) && $stmt->columnCount() > 0) {
                 // Defer advancing to the appended identity rowset so the caller can read OUTPUT rows first.
                 $this->pendingIdentityStatement = $stmt;
             } else {
