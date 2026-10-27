@@ -5,11 +5,14 @@ declare(strict_types=1);
 /**
  * PDO4You PSR-4 Autoloader (Composer + Standalone Fallback).
  *
- * Uses Composer's autoloader when available, or falls back to a native
- * PSR-4 autoloader so PDO4You works out-of-the-box without Composer.
+ * Uses Composer's autoloader when available, and falls back to a native
+ * PSR-4 autoloader if Composer is absent or does not map the PDO4You namespace.
  */
 if (is_file(__DIR__ . '/vendor/autoload.php')) {
     require_once __DIR__ . '/vendor/autoload.php';
+}
+
+if (class_exists(\PDO4You\PDO4You::class)) {
     return;
 }
 

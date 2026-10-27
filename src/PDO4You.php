@@ -333,8 +333,9 @@ class PDO4You
     }
 
     /**
-     * Checks whether the given SQL string starts with an INSERT statement,
-     * ignoring leading whitespace and SQL comments without catastrophic backtracking.
+     * Checks whether the given SQL string is an INSERT statement (including CTE-led
+     * statements such as `WITH cte AS (...) INSERT ...`), ignoring leading whitespace,
+     * semicolons, and SQL comments without catastrophic backtracking.
      *
      * @param string $sql
      *
@@ -342,7 +343,39 @@ class PDO4You
      */
     private function isInsertQuery(string $sql): bool
     {
-        return preg_match('/^(?>\s++|--[^\r\n]*+(?:\r?\n|$)|\/\*.*?\*\/)*+INSERT\b/is', $sql) === 1;
+        $pattern = '/^
+            (?&trivia)
+            (?:
+                WITH\b
+                (?&trivia)
+                (?&ident)
+                (?&trivia)
+                (?:(?&parens)(?&trivia))?
+                AS\b
+                (?&trivia)
+                (?&parens)
+                (?&trivia)
+                (?:
+                    ,
+                    (?&trivia)
+                    (?&ident)
+                    (?&trivia)
+                    (?:(?&parens)(?&trivia))?
+                    AS\b
+                    (?&trivia)
+                    (?&parens)
+                    (?&trivia)
+                )*+
+            )?
+            INSERT\b
+            (?(DEFINE)
+                (?<trivia>(?>\s++|;+|--[^\r\n]*+(?:\r?\n|$)|\/\*.*?\*\/)*+)
+                (?<ident>(?>\[(?:]]|[^\]])*+\]|"(?:""|[^"])*+"|[a-zA-Z_@#][a-zA-Z0-9_@#$]*+))
+                (?<parens>\((?:(?>[^()\'"\[\]\-\/]+)|\'(?:\'\'|[^\'])*+\'|"(?:""|[^"])*+"|\[(?:]]|[^\]])*+\]|--[^\r\n]*+(?:\r?\n|$)|\/\*.*?\*\/|-(?!-)|\/(?!\*)|(?&parens))*+\))
+            )
+        /isx';
+
+        return preg_match($pattern, $sql) === 1;
     }
 
     /**
