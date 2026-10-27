@@ -4,6 +4,7 @@ services:
     tty: true
     volumes:
       - .:/app
+      - /app/vendor
     environment:
       DB_MYSQL_HOST: mysql
       DB_MYSQL_USER: admin
