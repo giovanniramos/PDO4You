@@ -18,13 +18,13 @@ Built for **PHP 8.2+**, PDO4You keeps SQL under your control while adding a clea
 
 ## ✨ Features
 
-* 🚀 **Lightweight** — A thin layer over PDO with minimal overhead.
+* 🚀 **Lightweight & Zero Dependencies** — A thin layer over PDO with zero external runtime dependencies.
 * 🧩 **Simple** — Keep writing native SQL while maintaining full control over your queries.
 * 💉 **Testable** — First-class support for dependency injection (`PDO` and `DatabasePlatform`).
 * ⚡ **Fast Setup** — `connect()` factory and automatic platform detection from DSN strings or existing `PDO` instances.
-* 📦 **PSR-4** — Standard Composer-compatible autoloading.
+* 📦 **PSR-4 & Standalone Ready** — Works seamlessly with Composer or standalone via the built-in `autoload.php`.
 * 🐘 **Modern PHP** — Strict typing, `#[\SensitiveParameter]`, `readonly` properties, and PHP 8.2+ features.
-* 🔌 **Platform Strategies** — Dialect abstraction (identifier quoting and last insert ID retrieval) for **MySQL/MariaDB**, **PostgreSQL**, **SQLite**, and **SQL Server**.
+* 🔌 **Platform Strategies** — Dialect abstraction (identifier quoting, savepoints, and last insert ID retrieval) for **MySQL/MariaDB**, **PostgreSQL**, **SQLite**, and **SQL Server**.
 * 🛡️ **Native Security & Typed Binding** — True prepared statements with automatic scalar type detection (`PARAM_INT`, `PARAM_BOOL`, `PARAM_NULL`, `PARAM_LOB`).
 * 🔄 **Managed Transactions & Savepoints** — Safe transaction handling through closures with automatic rollback and nested transaction support via `SAVEPOINT`.
 * 🌊 **Lazy Streaming with `cursor()`** — Memory-efficient $O(1)$ iteration over large datasets using PHP `Generator`.
@@ -35,10 +35,34 @@ Built for **PHP 8.2+**, PDO4You keeps SQL under your control while adding a clea
 
 ## 📦 Installation
 
-Install PDO4You via Composer:
+### Option 1: Via Composer (Recommended)
+
+If you use [Composer](https://getcomposer.org/) to manage your project dependencies, install PDO4You with:
 
 ```bash
 composer require giovanniramos/pdo4you
+```
+
+> 💡 **Tips for Composer users:**
+> * **Don't have Composer installed yet?** Follow the official [Composer Installation Guide](https://getcomposer.org/doc/00-intro.md) (or download it at [getcomposer.org/download](https://getcomposer.org/download/)), or simply use **Option 2** below.
+> * **Missing `zip` extension error?** Composer requires PHP's `zip` extension (`extension=zip` enabled in your `php.ini`) or an `unzip`/`7z` utility to extract packages (especially on fresh Windows/Laragon/XAMPP PHP installations).
+
+### Option 2: Standalone (Without Composer)
+
+Because PDO4You has **zero external runtime dependencies**, you can download the [ZIP archive](https://github.com/giovanniramos/PDO4You/archive/refs/heads/master.zip) or clone the repository and require the built-in PSR-4 `autoload.php` file directly—no Composer required:
+
+```bash
+git clone https://github.com/giovanniramos/PDO4You.git
+```
+
+```php
+<?php
+
+require_once __DIR__ . '/path/to/PDO4You/autoload.php';
+
+use PDO4You\PDO4You;
+
+$db = PDO4You::connect('sqlite::memory:');
 ```
 
 ---
@@ -258,7 +282,7 @@ $userId = $db->lastId();
 
 ### Managed Transactions & Savepoints
 
-The `transaction()` method wraps operations in a safe atomic block. Nested calls automatically use SQL `SAVEPOINT`s:
+The `transaction()` method wraps operations in a safe atomic block. Nested calls automatically use platform-specific SQL savepoints (`SAVEPOINT` / `SAVE TRANSACTION`):
 
 ```php
 $db->transaction(function (PDO4You $conn) {
@@ -320,10 +344,10 @@ try {
 
 PDO4You uses `PDO4You\Platform\DatabasePlatform` implementations to encapsulate engine-specific behavior:
 
-* `PDO4You\Platform\MySqlPlatform` — Support for **MySQL** and **MariaDB** (`` ` `` identifier quoting and `LAST_INSERT_ID()`).
-* `PDO4You\Platform\PgSqlPlatform` — Support for **PostgreSQL** (`"` identifier quoting, `lastval()`, and validated `currval()`).
-* `PDO4You\Platform\SqlitePlatform` — Support for **SQLite** (`"` identifier quoting and `last_insert_rowid()`).
-* `PDO4You\Platform\SqlSrvPlatform` — Support for **Microsoft SQL Server** (`[ ]` identifier quoting and same-batch `SCOPE_IDENTITY()` capture).
+* `PDO4You\Platform\MySqlPlatform` — Support for **MySQL** and **MariaDB** (`` ` `` identifier quoting, `SAVEPOINT`, and `LAST_INSERT_ID()`).
+* `PDO4You\Platform\PgSqlPlatform` — Support for **PostgreSQL** (`"` identifier quoting, `SAVEPOINT`, `lastval()`, and validated `currval()`).
+* `PDO4You\Platform\SqlitePlatform` — Support for **SQLite** (`"` identifier quoting, `SAVEPOINT`, and `last_insert_rowid()`).
+* `PDO4You\Platform\SqlSrvPlatform` — Support for **Microsoft SQL Server** (`[ ]` identifier quoting, `SAVE TRANSACTION`, and same-batch `SCOPE_IDENTITY()` capture).
 
 ---
 
@@ -347,19 +371,21 @@ PDO already provides an excellent native API for database access, while full ORM
 
 ## ⚡ Quick Test
 
-After installing the dependencies, you can quickly verify that PDO4You is working using the script included in the project root:
+You can immediately test PDO4You from the command line (even without Composer installed) using the script included in the project root:
 
 ```bash
 php quick-test.php
 ```
 
+> 📌 **Note:** The quick test and built-in examples use an in-memory SQLite database (`sqlite::memory:`) and require the **`pdo_sqlite`** PHP extension to be enabled in your `php.ini`.
+
 ---
 
 ## 🧪 Examples
 
-The project includes a suite of practical usage examples.
+The project includes an interactive suite of practical usage examples.
 
-To view the examples through a web interface, start PHP's built-in server:
+To run the examples in your browser (works out-of-the-box with or without Composer), start PHP's built-in web server:
 
 ```bash
 php -S localhost:8000 -t examples
@@ -371,13 +397,13 @@ Then open the following URL in your browser:
 http://localhost:8000
 ```
 
-The examples use an in-memory SQLite database by default, allowing you to experiment with the library without configuring a database server.
+The core examples use an in-memory SQLite database (`pdo_sqlite`) by default, allowing you to experiment with the library without configuring an external database server.
 
 ---
 
-## 🛠️ Development
+## 🛠️ Development & Running Tests
 
-Clone the repository and install the dependencies:
+To run the automated PHPUnit test suite, install the development dependencies via Composer (requires `extension=zip` enabled in `php.ini`):
 
 ```bash
 git clone https://github.com/giovanniramos/PDO4You.git
@@ -385,13 +411,13 @@ cd PDO4You
 composer install
 ```
 
-Run the tests with PHPUnit:
+Run the tests locally with PHPUnit:
 
 ```bash
 ./vendor/bin/phpunit tests
 ```
 
-To run the tests in an isolated Docker environment:
+Or run the full unit and integration test suites (SQLite, MySQL, and PostgreSQL) inside an isolated Docker environment:
 
 ```bash
 docker compose build -q --no-cache
@@ -402,9 +428,9 @@ docker compose run --rm test
 
 ## 📋 Requirements
 
-* **PHP:** 8.2 or higher
+* **PHP:** [8.2 or higher](https://www.php.net/downloads)
 * **PDO Extensions:** `ext-pdo` and the corresponding driver (`pdo_mysql`, `pdo_pgsql`, `pdo_sqlite`, or `pdo_sqlsrv`)
-* **Composer**
+* **Composer:** [getcomposer.org](https://getcomposer.org/download/) *(Optional — recommended for package management and running PHPUnit tests; requires `ext-zip` enabled in `php.ini`)*
 
 ---
 

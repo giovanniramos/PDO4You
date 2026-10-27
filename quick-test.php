@@ -3,10 +3,15 @@
 declare(strict_types=1);
 
 // Load Composer autoloader
-require_once __DIR__ . '/vendor/autoload.php';
+require_once __DIR__ . '/autoload.php';
 
 use PDO4You\Pagination;
 use PDO4You\PDO4You;
+
+if (!extension_loaded('pdo_sqlite')) {
+    fwrite(STDERR, "✗ Error: The 'pdo_sqlite' extension is required to run quick-test.php (enable 'extension=pdo_sqlite' in your php.ini).\n");
+    exit(1);
+}
 
 try {
     // 1. Initialize SQLite in-memory connection via DSN factory (auto-resolves SqlitePlatform)
