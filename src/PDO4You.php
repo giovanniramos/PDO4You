@@ -39,6 +39,9 @@ class PDO4You
     /** @var string|null ID captured from the most recent same-batch INSERT. */
     private ?string $lastInsertedId = null;
 
+    /** @var PDOStatement|null Statement holding an unconsumed appended identity rowset (e.g., INSERT ... OUTPUT). */
+    private ?PDOStatement $pendingIdentityStatement = null;
+
     /** @var int|null Affected-row count captured before consuming appended rowsets. */
     private ?int $lastStatementRowCount = null;
 
@@ -352,7 +355,36 @@ class PDO4You
      */
     private function hasOutputClause(string $sql): bool
     {
-        return preg_match('/\bOUTPUT\s+(?:INSERTED|DELETED|\$action)\b/i', $sql) === 1;
+        return preg_match('/\bOUTPUT\b/i', $sql) === 1;
+    }
+
+    /**
+     * Consumes the appended identity rowset to capture the last inserted ID.
+     *
+     * @param PDOStatement $stmt
+     * @param bool $includeCurrentRowset Whether to also inspect the currently active rowset.
+     */
+    private function consumeIdentityRowsets(PDOStatement $stmt, bool $includeCurrentRowset = false): void
+    {
+        if ($this->pendingIdentityStatement === $stmt) {
+            $this->pendingIdentityStatement = null;
+        }
+
+        if ($includeCurrentRowset && $stmt->columnCount() > 0) {
+            $value = $stmt->fetchColumn();
+            if ($value !== false && $value !== null) {
+                $this->lastInsertedId = (string) $value;
+            }
+        }
+
+        while ($stmt->nextRowset()) {
+            if ($stmt->columnCount() > 0) {
+                $value = $stmt->fetchColumn();
+                if ($value !== false) {
+                    $this->lastInsertedId = $value === null ? $this->lastInsertedId : (string) $value;
+                }
+            }
+        }
     }
 
     /**
@@ -374,11 +406,11 @@ class PDO4You
         $captureBatchIdentity = $this->platform !== null
             && $this->platform->requiresSameBatchIdentityCapture()
             && $this->isInsertQuery($sql)
-            && !$this->hasOutputClause($sql)
             && stripos($sql, '__pdo4you_last_insert_id') === false;
 
         if ($captureBatchIdentity) {
             $this->lastInsertedId = null;
+            $this->pendingIdentityStatement = null;
             $identitySql = $this->platform->getLastInsertIdSql();
             $sqlToExecute = rtrim($sql, " \t\n\r\0\x0B;")
                 . ";\n" . $identitySql . " -- __pdo4you_last_insert_id";
@@ -392,14 +424,13 @@ class PDO4You
         if ($captureBatchIdentity) {
             // Preserve rowCount() before advancing through the appended result set.
             $this->lastStatementRowCount = $stmt->rowCount();
-            do {
-                if ($stmt->columnCount() > 0) {
-                    $value = $stmt->fetchColumn();
-                    if ($value !== false) {
-                        $this->lastInsertedId = $value === null ? null : (string) $value;
-                    }
-                }
-            } while ($stmt->nextRowset());
+
+            if ($this->hasOutputClause($sql)) {
+                // Defer advancing to the appended identity rowset so the caller can read OUTPUT rows first.
+                $this->pendingIdentityStatement = $stmt;
+            } else {
+                $this->consumeIdentityRowsets($stmt, includeCurrentRowset: true);
+            }
         }
 
         return $stmt;
@@ -410,6 +441,10 @@ class PDO4You
      */
     private function statementRowCount(PDOStatement $stmt): int
     {
+        if ($this->pendingIdentityStatement === $stmt) {
+            $this->consumeIdentityRowsets($stmt, includeCurrentRowset: true);
+        }
+
         return $this->lastStatementRowCount ?? $stmt->rowCount();
     }
 
@@ -434,9 +469,15 @@ class PDO4You
     ): array {
         $stmt = $this->executeStatement($sql, $params);
 
-        return $classMap !== null
-            ? $stmt->fetchAll(PDO::FETCH_CLASS, $classMap)
-            : $stmt->fetchAll(PDO::FETCH_ASSOC);
+        try {
+            return $classMap !== null
+                ? $stmt->fetchAll(PDO::FETCH_CLASS, $classMap)
+                : $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } finally {
+            if ($this->pendingIdentityStatement === $stmt) {
+                $this->consumeIdentityRowsets($stmt);
+            }
+        }
     }
 
     /**
@@ -472,6 +513,9 @@ class PDO4You
                 yield $row;
             }
         } finally {
+            if ($this->pendingIdentityStatement === $stmt) {
+                $this->consumeIdentityRowsets($stmt);
+            }
             $stmt->closeCursor();
         }
     }
@@ -509,6 +553,9 @@ class PDO4You
 
             return $result === false ? null : $result;
         } finally {
+            if ($this->pendingIdentityStatement === $stmt) {
+                $this->consumeIdentityRowsets($stmt);
+            }
             $stmt->closeCursor();
         }
     }
@@ -534,6 +581,9 @@ class PDO4You
 
             return $value === false ? null : $value;
         } finally {
+            if ($this->pendingIdentityStatement === $stmt) {
+                $this->consumeIdentityRowsets($stmt);
+            }
             $stmt->closeCursor();
         }
     }
@@ -556,9 +606,15 @@ class PDO4You
     ): array {
         $stmt = $this->executeStatement($sql, $params);
 
-        return $classMap !== null
-            ? $stmt->fetchAll(PDO::FETCH_CLASS, $classMap)
-            : $stmt->fetchAll(PDO::FETCH_OBJ);
+        try {
+            return $classMap !== null
+                ? $stmt->fetchAll(PDO::FETCH_CLASS, $classMap)
+                : $stmt->fetchAll(PDO::FETCH_OBJ);
+        } finally {
+            if ($this->pendingIdentityStatement === $stmt) {
+                $this->consumeIdentityRowsets($stmt);
+            }
+        }
     }
 
     /**
@@ -575,7 +631,13 @@ class PDO4You
     ): array {
         $stmt = $this->executeStatement($sql, $params);
 
-        return $stmt->fetchAll(PDO::FETCH_NUM);
+        try {
+            return $stmt->fetchAll(PDO::FETCH_NUM);
+        } finally {
+            if ($this->pendingIdentityStatement === $stmt) {
+                $this->consumeIdentityRowsets($stmt);
+            }
+        }
     }
 
     /**
@@ -624,8 +686,7 @@ class PDO4You
 
         $requiresBatchIdentityCapture = $this->platform !== null
             && $this->platform->requiresSameBatchIdentityCapture()
-            && $this->isInsertQuery($sql)
-            && !$this->hasOutputClause($sql);
+            && $this->isInsertQuery($sql);
 
         if ($requiresBatchIdentityCapture) {
             $totalAffected = 0;
@@ -862,6 +923,10 @@ class PDO4You
      */
     public function lastId(?string $sequence = null): string
     {
+        if ($this->pendingIdentityStatement !== null) {
+            $this->consumeIdentityRowsets($this->pendingIdentityStatement, includeCurrentRowset: true);
+        }
+
         if (
             $this->platform !== null
             && $this->platform->requiresSameBatchIdentityCapture()
@@ -952,8 +1017,6 @@ class PDO4You
         try {
             $result = $callback($this);
 
-            $this->transactionLevel--;
-
             if ($isRootTransaction) {
                 $this->commit();
             } else {
@@ -968,8 +1031,6 @@ class PDO4You
 
             return $result;
         } catch (Throwable $e) {
-            $this->transactionLevel = max(0, $this->transactionLevel - 1);
-
             try {
                 if ($isRootTransaction) {
                     if ($this->inTransaction()) {
@@ -986,6 +1047,8 @@ class PDO4You
             }
 
             throw $e;
+        } finally {
+            $this->transactionLevel = max(0, $this->transactionLevel - 1);
         }
     }
 
