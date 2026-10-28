@@ -26,8 +26,8 @@ Construído para **PHP 8.2+**, o PDO4You mantém o SQL sob seu controle enquanto
 * 🐘 **PHP Moderno** — tipagem estrita, `#[\SensitiveParameter]`, `readonly` e recursos do PHP 8.2+.
 * 🔌 **Estratégias por Plataforma** — abstração de dialetos (escape de identificadores, savepoints e captura de último ID) para **MySQL/MariaDB**, **PostgreSQL**, **SQLite** e **SQL Server**.
 * 🛡️ **Segurança e Tipagem Nativa** — *prepared statements* reais com detecção automática de tipos escalares (`PARAM_INT`, `PARAM_BOOL`, `PARAM_NULL`, `PARAM_LOB`).
-* 🔄 **Transações e Savepoints** — controle transacional seguro via closures com *rollback* automático e suporte a transações aninhadas via `SAVEPOINT`.
-* 🌊 **Streaming com `cursor()`** — iteração *lazy* de grandes volumes de dados usando `Generator` com consumo de memória $O(1)$.
+* 🔄 **Transações e Savepoints** — controle transacional seguro via closures com *rollback* automático e suporte a transações aninhadas de acordo com o dialeto do banco.
+* 🌊 **Iteração *Lazy* com `cursor()`** — leitura linha a linha usando `Generator` sem materializar o array completo de resultados na memória do PHP.
 * 📊 **Observabilidade** — listeners por instância (seguro para Swoole/Octane/RoadRunner) e global para logging e profiling.
 * 🚫 **Sem ORM** — sem entidades complexas ou mapeamentos obrigatórios.
 
@@ -131,8 +131,8 @@ $users = $db->select(
 );
 ```
 
-#### `cursor()` — Streaming *Lazy* com `Generator` (Memória $O(1)$)
-Ideal para processar grandes lotes de registros ou exportações sem carregar todo o resultado na memória RAM:
+#### `cursor()` — Iteração *Lazy* com `Generator`
+Ideal para percorrer grandes volumes de registros linha a linha sem construir o array completo de resultados na memória do PHP (o buffering de rede do driver segue a configuração da sua conexão `PDO`, como `PDO::MYSQL_ATTR_USE_BUFFERED_QUERY`):
 
 ```php
 foreach ($db->cursor('SELECT id, name FROM users WHERE active = ?', [true], UserDto::class) as $user) {
@@ -267,7 +267,9 @@ $meta = $pagination->getMetadata();
 
 ### Último ID Inserido (`lastId()`)
 
-Obtém o identificador gerado na última inserção utilizando a estratégia nativa da plataforma ativa (incluindo captura automática no mesmo lote de escopo para `SCOPE_IDENTITY()` no SQL Server):
+Obtém o identificador gerado na última inserção utilizando a estratégia nativa da plataforma ativa.
+
+No **SQL Server (`sqlsrv`)**, o `PDO4You` captura automaticamente o `SCOPE_IDENTITY()` no mesmo lote de execução (incluindo instruções precedidas por CTEs `WITH ... INSERT` e lotes com `DECLARE`/`SET`), além de preservar de forma transparente os conjuntos de resultados e a contagem de linhas afetadas em cláusulas `INSERT ... OUTPUT` ou lotes `INSERT ...; SELECT/EXEC`, mesmo quando `MultipleActiveResultSets` (MARS) está desativado:
 
 ```php
 $db->insert('users', ['name' => 'John']);
@@ -282,7 +284,7 @@ $userId = $db->lastId();
 
 ### Transações Gerenciadas e Savepoints
 
-O método `transaction()` encapsula operações em um bloco atômico seguro. Chamadas aninhadas utilizam savepoints nativos da plataforma automaticamente (`SAVEPOINT` / `SAVE TRANSACTION`):
+O método `transaction()` encapsula operações em um bloco atômico seguro. Chamadas aninhadas utilizam savepoints nativos da plataforma automaticamente (`SAVEPOINT` / `RELEASE SAVEPOINT` / `ROLLBACK TO SAVEPOINT` no MySQL, PostgreSQL e SQLite; `SAVE TRANSACTION` / `ROLLBACK TRANSACTION` no SQL Server):
 
 ```php
 $db->transaction(function (PDO4You $conn) {
@@ -347,7 +349,7 @@ O PDO4You utiliza implementações da interface `PDO4You\Platform\DatabasePlatfo
 * `PDO4You\Platform\MySqlPlatform` — Suporte para **MySQL** e **MariaDB** (identificadores com `` ` ``, `SAVEPOINT` e `LAST_INSERT_ID()`).
 * `PDO4You\Platform\PgSqlPlatform` — Suporte para **PostgreSQL** (identificadores com `"`, `SAVEPOINT`, `lastval()` e `currval()` validado).
 * `PDO4You\Platform\SqlitePlatform` — Suporte para **SQLite** (identificadores com `"`, `SAVEPOINT` e `last_insert_rowid()`).
-* `PDO4You\Platform\SqlSrvPlatform` — Suporte para **Microsoft SQL Server** (identificadores com `[ ]`, `SAVE TRANSACTION` e captura automática de `SCOPE_IDENTITY()` no mesmo lote).
+* `PDO4You\Platform\SqlSrvPlatform` — Suporte para **Microsoft SQL Server** (identificadores com `[ ]`, `SAVE TRANSACTION` / `ROLLBACK TRANSACTION` e captura de `SCOPE_IDENTITY()` no mesmo lote com preservação de `OUTPUT` e múltiplos result sets).
 
 ---
 
