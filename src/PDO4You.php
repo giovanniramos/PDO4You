@@ -376,25 +376,39 @@ class PDO4You
     }
 
     /**
-     * Checks whether an INSERT statement contains a top-level T-SQL OUTPUT clause
-     * that returns a result set directly to the caller (excluding OUTPUT ... INTO).
+     * Checks whether an INSERT batch also produces caller-facing result sets,
+     * either via a top-level T-SQL OUTPUT clause (excluding OUTPUT ... INTO)
+     * or via a standalone SELECT / EXEC statement in the same batch.
      *
      * @param string $sql
      *
      * @return bool
      */
-    private function hasOutputClause(string $sql): bool
+    private function hasCallerResultSetSql(string $sql): bool
     {
         $topLevelSql = $this->extractTopLevelSql($sql);
 
+        // 1. Top-level INSERT ... OUTPUT (excluding OUTPUT ... INTO)
+        if (
+            preg_match(
+                '/\bINSERT\b[^;]*?\bOUTPUT\b(?![^;]*?\bINTO\b)[^;]*?\b(?:VALUES|SELECT|DEFAULT|EXEC|EXECUTE)\b/is',
+                $topLevelSql
+            ) === 1
+        ) {
+            return true;
+        }
+
+        // 2. Multi-statement batch containing a standalone SELECT (before INSERT, after semicolon,
+        //    after VALUES/DEFAULT VALUES, or a second SELECT after INSERT ... SELECT)
         return preg_match(
-            '/\bINSERT\b[^;]*?\bOUTPUT\b(?![^;]*?\bINTO\b)[^;]*?\b(?:VALUES|SELECT|DEFAULT|EXEC|EXECUTE)\b/is',
+            '/(?:;\s*+(?:WITH\b[^;]*?\b)?SELECT\b|\bSELECT\b.*?\bINSERT\b|\b(?:VALUES|DEFAULT\s++VALUES)\b.*?\bSELECT\b|\bINSERT\b.*?\bSELECT\b.*?\bSELECT\b)/is',
             $topLevelSql
         ) === 1;
     }
 
     /**
-     * Consumes the appended identity rowset to capture the last inserted ID.
+     * Consumes the appended identity rowset to capture the last inserted ID
+     * when the batch does not contain caller-facing result sets.
      *
      * @param PDOStatement $stmt
      * @param bool $includeCurrentRowset Whether to also inspect the currently active rowset.
@@ -424,21 +438,111 @@ class PDO4You
     }
 
     /**
-     * Creates a buffered PDOStatement that replays pre-fetched OUTPUT rows
-     * after the underlying statement's appended identity rowset has been drained.
+     * Consumes all rowsets of a multi-resultset INSERT batch (such as `INSERT ... OUTPUT`
+     * or `INSERT ...; SELECT ...`), extracts the trailing appended `SCOPE_IDENTITY()`
+     * rowset, closes the native cursor to avoid MARS pending-result errors, and returns
+     * a buffered PDOStatement preserving all caller-facing rowsets.
      *
-     * @param list<array<string, mixed>> $rows
-     * @param int $rowCount
-     * @param int $columnCount
+     * @param PDOStatement $stmt
+     *
+     * @return PDOStatement
+     */
+    private function consumeAndBufferBatchRowsets(PDOStatement $stmt): PDOStatement
+    {
+        /** @var list<array{columns: int, rowCount: int, rows: list<array<string, mixed>>}> $collectedRowsets */
+        $collectedRowsets = [];
+        $lastColumnRowsetIndex = null;
+
+        do {
+            $colCount = $stmt->columnCount();
+            $rowCount = $stmt->rowCount();
+
+            if ($rowCount > 0 && ($this->lastStatementRowCount === null || $this->lastStatementRowCount <= 0)) {
+                $this->lastStatementRowCount = $rowCount;
+            }
+
+            $rows = [];
+            if ($colCount > 0) {
+                while (($row = $stmt->fetch(PDO::FETCH_ASSOC)) !== false) {
+                    if (is_array($row)) {
+                        $rows[] = $row;
+                    }
+                }
+
+                if ($rows === []) {
+                    $all = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                    if (is_array($all) && $all !== []) {
+                        $rows = $all;
+                    }
+                }
+
+                $lastColumnRowsetIndex = count($collectedRowsets);
+            }
+
+            $collectedRowsets[] = [
+                'columns'  => $colCount,
+                'rowCount' => $rowCount,
+                'rows'     => $rows,
+            ];
+        } while ($stmt->nextRowset());
+
+        // Extract and remove the trailing appended SCOPE_IDENTITY() rowset.
+        if ($lastColumnRowsetIndex !== null) {
+            $identityRowset = $collectedRowsets[$lastColumnRowsetIndex];
+            unset($collectedRowsets[$lastColumnRowsetIndex]);
+            $collectedRowsets = array_values($collectedRowsets);
+
+            if (isset($identityRowset['rows'][0]) && $identityRowset['rows'][0] !== []) {
+                $val = reset($identityRowset['rows'][0]);
+                if ($val !== false && $val !== null) {
+                    $this->lastInsertedId = (string) $val;
+                }
+            }
+        }
+
+        // Fallback to the first scalar of the first caller rowset if SCOPE_IDENTITY() was null (e.g. OUTPUT inserted.id on non-IDENTITY PK).
+        if ($this->lastInsertedId === null) {
+            foreach ($collectedRowsets as $rs) {
+                if ($rs['columns'] > 0 && isset($rs['rows'][0]) && $rs['rows'][0] !== []) {
+                    $firstVal = reset($rs['rows'][0]);
+                    if ($firstVal !== false && $firstVal !== null) {
+                        $this->lastInsertedId = (string) $firstVal;
+                    }
+                    break;
+                }
+            }
+        }
+
+        $stmt->closeCursor();
+
+        if ($collectedRowsets === []) {
+            return $stmt;
+        }
+
+        $effectiveRowCount = ($this->lastStatementRowCount !== null && $this->lastStatementRowCount > 0)
+            ? $this->lastStatementRowCount
+            : count($collectedRowsets[0]['rows']);
+        $this->lastStatementRowCount = $effectiveRowCount;
+
+        return $this->createBufferedOutputStatement($collectedRowsets, $effectiveRowCount);
+    }
+
+    /**
+     * Creates a buffered PDOStatement that replays pre-fetched caller rowsets
+     * (supporting both direct fetch and `nextRowset()` navigation) after the
+     * underlying statement's appended identity rowset has been drained.
+     *
+     * @param list<array{columns: int, rowCount: int, rows: list<array<string, mixed>>}> $rowsets
+     * @param int $fallbackRowCount
      *
      * @return PDOStatement
      */
     private function createBufferedOutputStatement(
-        array $rows,
-        int $rowCount,
-        int $columnCount
+        array $rowsets,
+        int $fallbackRowCount
     ): PDOStatement {
-        return new class ($rows, $rowCount, $columnCount) extends PDOStatement {
+        return new class ($rowsets, $fallbackRowCount) extends PDOStatement {
+            private int $rowsetIndex = 0;
             private int $cursor = 0;
             private int $defaultFetchMode = PDO::FETCH_ASSOC;
             private ?string $fetchClass = null;
@@ -446,13 +550,34 @@ class PDO4You
             private array $fetchConstructorArgs = [];
 
             /**
-             * @param list<array<string, mixed>> $rows
+             * @param list<array{columns: int, rowCount: int, rows: list<array<string, mixed>>}> $rowsets
              */
             public function __construct(
-                private readonly array $rows,
-                private readonly int $bufferedRowCount,
-                private readonly int $bufferedColumnCount
+                private readonly array $rowsets,
+                private readonly int $fallbackRowCount
             ) {
+            }
+
+            /**
+             * Advances to the first rowset containing columns when a fetch operation
+             * is invoked directly without a prior nextRowset() call.
+             */
+            private function ensureActiveResultRowset(): void
+            {
+                if (
+                    isset($this->rowsets[$this->rowsetIndex])
+                    && $this->rowsets[$this->rowsetIndex]['columns'] === 0
+                    && $this->cursor === 0
+                ) {
+                    $count = count($this->rowsets);
+                    for ($i = $this->rowsetIndex + 1; $i < $count; $i++) {
+                        if ($this->rowsets[$i]['columns'] > 0) {
+                            $this->rowsetIndex = $i;
+                            $this->cursor = 0;
+                            break;
+                        }
+                    }
+                }
             }
 
             public function setFetchMode(int $mode, mixed ...$args): bool
@@ -471,11 +596,14 @@ class PDO4You
                 int $cursorOrientation = PDO::FETCH_ORI_NEXT,
                 int $cursorOffset = 0
             ): mixed {
-                if (!isset($this->rows[$this->cursor])) {
+                $this->ensureActiveResultRowset();
+
+                $rows = $this->rowsets[$this->rowsetIndex]['rows'] ?? [];
+                if (!isset($rows[$this->cursor])) {
                     return false;
                 }
 
-                $row = $this->rows[$this->cursor++];
+                $row = $rows[$this->cursor++];
                 $effectiveMode = $mode === PDO::FETCH_DEFAULT ? $this->defaultFetchMode : $mode;
 
                 return $this->formatRow($row, $effectiveMode, $this->fetchClass, $this->fetchConstructorArgs);
@@ -483,6 +611,8 @@ class PDO4You
 
             public function fetchAll(int $mode = PDO::FETCH_DEFAULT, mixed ...$args): array
             {
+                $this->ensureActiveResultRowset();
+
                 $effectiveMode = $mode === PDO::FETCH_DEFAULT ? $this->defaultFetchMode : $mode;
                 $className = $this->fetchClass;
                 $ctorArgs = $this->fetchConstructorArgs;
@@ -495,9 +625,10 @@ class PDO4You
                     $colIndex = $args[0];
                 }
 
+                $rows = $this->rowsets[$this->rowsetIndex]['rows'] ?? [];
                 $results = [];
-                while (isset($this->rows[$this->cursor])) {
-                    $row = $this->rows[$this->cursor++];
+                while (isset($rows[$this->cursor])) {
+                    $row = $rows[$this->cursor++];
                     $results[] = $effectiveMode === PDO::FETCH_COLUMN
                         ? (array_values($row)[$colIndex] ?? null)
                         : $this->formatRow($row, $effectiveMode, $className, $ctorArgs);
@@ -508,39 +639,60 @@ class PDO4You
 
             public function fetchColumn(int $column = 0): mixed
             {
-                if (!isset($this->rows[$this->cursor])) {
+                $this->ensureActiveResultRowset();
+
+                $rows = $this->rowsets[$this->rowsetIndex]['rows'] ?? [];
+                if (!isset($rows[$this->cursor])) {
                     return false;
                 }
 
-                $values = array_values($this->rows[$this->cursor++]);
+                $values = array_values($rows[$this->cursor++]);
 
                 return array_key_exists($column, $values) ? $values[$column] : false;
             }
 
             public function fetchObject(?string $class = 'stdClass', array $constructorArgs = []): object|false
             {
-                if (!isset($this->rows[$this->cursor])) {
+                $this->ensureActiveResultRowset();
+
+                $rows = $this->rowsets[$this->rowsetIndex]['rows'] ?? [];
+                if (!isset($rows[$this->cursor])) {
                     return false;
                 }
 
-                $row = $this->rows[$this->cursor++];
+                $row = $rows[$this->cursor++];
 
                 return $this->hydrateObject($row, $class ?? stdClass::class, $constructorArgs);
             }
 
+            public function nextRowset(): bool
+            {
+                if (!isset($this->rowsets[$this->rowsetIndex + 1])) {
+                    return false;
+                }
+
+                $this->rowsetIndex++;
+                $this->cursor = 0;
+
+                return true;
+            }
+
             public function rowCount(): int
             {
-                return $this->bufferedRowCount;
+                $current = $this->rowsets[$this->rowsetIndex]['rowCount'] ?? 0;
+
+                return $current > 0 ? $current : $this->fallbackRowCount;
             }
 
             public function columnCount(): int
             {
-                return $this->bufferedColumnCount;
+                return $this->rowsets[$this->rowsetIndex]['columns'] ?? 0;
             }
 
             public function closeCursor(): bool
             {
-                $this->cursor = count($this->rows);
+                $rows = $this->rowsets[$this->rowsetIndex]['rows'] ?? [];
+                $this->cursor = count($rows);
 
                 return true;
             }
@@ -631,42 +783,8 @@ class PDO4You
             // Preserve rowCount() before advancing through the appended result set.
             $this->lastStatementRowCount = $stmt->rowCount();
 
-            if ($this->hasOutputClause($sql) && $stmt->columnCount() > 0) {
-                $columnCount = $stmt->columnCount();
-                $outputRows = [];
-
-                while (($row = $stmt->fetch(PDO::FETCH_ASSOC)) !== false) {
-                    if (is_array($row)) {
-                        $outputRows[] = $row;
-                    }
-                }
-
-                if ($outputRows === []) {
-                    $all = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                    if (is_array($all) && $all !== []) {
-                        $outputRows = $all;
-                    }
-                }
-
-                // Immediately drain the appended SCOPE_IDENTITY() rowset so no pending
-                // result sets remain active on connections with MARS disabled.
-                $this->consumeIdentityRowsets($stmt, includeCurrentRowset: false);
-
-                if ($this->lastInsertedId === null && isset($outputRows[0]) && $outputRows[0] !== []) {
-                    $firstVal = reset($outputRows[0]);
-                    if ($firstVal !== false && $firstVal !== null) {
-                        $this->lastInsertedId = (string) $firstVal;
-                    }
-                }
-
-                $stmt->closeCursor();
-
-                $effectiveRowCount = ($this->lastStatementRowCount !== null && $this->lastStatementRowCount > 0)
-                    ? $this->lastStatementRowCount
-                    : count($outputRows);
-                $this->lastStatementRowCount = $effectiveRowCount;
-
-                return $this->createBufferedOutputStatement($outputRows, $effectiveRowCount, $columnCount);
+            if ($this->hasCallerResultSetSql($sql)) {
+                return $this->consumeAndBufferBatchRowsets($stmt);
             }
 
             $this->consumeIdentityRowsets($stmt, includeCurrentRowset: true);
