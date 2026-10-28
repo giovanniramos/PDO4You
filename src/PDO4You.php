@@ -358,8 +358,9 @@ class PDO4You
     }
 
     /**
-     * Checks whether the SQL batch contains a top-level INSERT statement
-     * (including batches preceded by comments, CTEs, DECLARE, or SET statements).
+     * Checks whether the SQL batch contains a top-level executable INSERT statement
+     * (including batches preceded by comments, CTEs, DECLARE, or SET statements,
+     * while excluding routine/trigger/view DDL definitions whose bodies contain INSERTs).
      *
      * @param string $sql
      *
@@ -368,6 +369,15 @@ class PDO4You
     private function isInsertQuery(string $sql): bool
     {
         $topLevelSql = $this->extractTopLevelSql($sql);
+
+        if (
+            preg_match(
+                '/^\s*+(?:CREATE|ALTER)\s++(?:OR\s++ALTER\s++)?(?:PROC(?:EDURE)?|TRIGGER|FUNCTION|VIEW)\b/is',
+                $topLevelSql
+            ) === 1
+        ) {
+            return false;
+        }
 
         return preg_match(
             '/(?:^|[;\s])\b(?<!\bFOR\s)(?<!\bAFTER\s)(?<!\bOF\s)INSERT\b/is',
