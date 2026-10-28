@@ -1,8 +1,20 @@
 {
     "name": "giovanniramos/pdo4you",
     "type": "library",
-    "description": "Modern lightweight database wrapper using PDO",
-    "keywords": ["database", "pdo", "mysql", "postgresql", "sqlite"],
+    "description": "A modern, lightweight, and testable database abstraction layer built on top of PDO.",
+    "keywords": [
+        "database",
+        "pdo",
+        "dbal",
+        "sql",
+        "mysql",
+        "mariadb",
+        "postgresql",
+        "sqlite",
+        "sqlsrv",
+        "sqlserver"
+    ],
+    "homepage": "https://github.com/giovanniramos/PDO4You",
     "license": "MIT",
     "authors": [
         {
@@ -11,12 +23,22 @@
             "role": "Developer"
         }
     ],
+    "support": {
+        "issues": "https://github.com/giovanniramos/PDO4You/issues",
+        "source": "https://github.com/giovanniramos/PDO4You"
+    },
     "require": {
         "php": ">=8.2",
         "ext-pdo": "*"
     },
     "require-dev": {
-        "phpunit/phpunit": "^10.0"
+        "phpunit/phpunit": "^10.5 || ^11.0"
+    },
+    "suggest": {
+        "ext-pdo_mysql": "Required to use MySQL or MariaDB databases",
+        "ext-pdo_pgsql": "Required to use PostgreSQL databases",
+        "ext-pdo_sqlite": "Required to use SQLite databases",
+        "ext-pdo_sqlsrv": "Required to use Microsoft SQL Server databases"
     },
     "autoload": {
         "psr-4": {
@@ -29,19 +51,29 @@
         }
     },
     "config": {
-        "sort-packages": true,
-        "allow-plugins": {
-            "phpunit/phpunit": true
-        }
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true
     },
     "scripts": {
+        "demo": "php -S localhost:8000 -t examples",
         "docker-build": "docker compose build -q --no-cache",
         "docker-test": "docker compose run --rm test",
-        "test": [
+        "test": "phpunit",
+        "test:unit": "phpunit --testsuite Unit",
+        "test:integration": "phpunit --testsuite Integration",
+        "test:docker": [
             "@php -r \"echo chr(27).'[2J'.chr(27).'[H';\"",
-            "echo Executando os testes no Docker, aguarde...",
+            "echo Running tests in Docker, please wait...",
             "@docker-build",
             "@docker-test"
         ]
+    },
+    "scripts-descriptions": {
+        "demo": "Start the built-in PHP web server for the interactive Examples Hub",
+        "test": "Run all PHPUnit tests locally",
+        "test:unit": "Run only unit tests locally",
+        "test:integration": "Run only integration tests locally",
+        "test:docker": "Build and run the test suite inside Docker containers"
     }
 }

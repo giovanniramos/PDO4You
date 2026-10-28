@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-require __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/../autoload.php';
 
 /**
  * Demonstrating fluent DML methods (insert, update, delete) and managed transactions.
@@ -37,9 +37,9 @@ try {
         'name'    => 'John',
         'surname' => 'Wick',
         'email'   => 'john.wick@continental.com',
-        'status'  => 'active'
+        'status'  => 'active',
     ]);
-    $lastId = $db->lastId();
+    $lastId = (int) $db->lastId();
     echo "<p>Inserted rows: <strong>{$affectedInsert}</strong> | Last Insert ID: <strong>{$lastId}</strong></p>";
 
     // 3. Update Helper
@@ -57,39 +57,38 @@ try {
 
     // 4. Delete Helper
     echo "<p class='step'>4. DML Operation: delete() method</p>";
-    // Insert another record to delete
     $db->insert('users', [
         'name'    => 'Cassian',
         'surname' => 'Bodyguard',
         'email'   => 'cassian@roma.com',
-        'status'  => 'pending'
+        'status'  => 'pending',
     ]);
-    $targetId = $db->lastId();
+    $targetId = (int) $db->lastId();
 
     $affectedDelete = $db->delete('users', 'id = :id', ['id' => $targetId]);
     echo "<p>Deleted rows: <strong>{$affectedDelete}</strong> (Target ID: {$targetId})</p>";
 
     // 5. Atomic and secure transaction with DML Helpers
     echo "<p class='step'>5. Transactions: Managed Transaction using insert() and update()</p>";
-    $transactionResult = $db->transaction(function (PDO4You $conn) {
+    $transactionResult = $db->transaction(function (PDO4You $conn): string {
         $conn->insert('users', [
             'name'    => 'Winston',
             'surname' => 'Scott',
             'email'   => 'winston@continental.com',
-            'status'  => 'active'
+            'status'  => 'active',
         ]);
 
         $conn->insert('users', [
             'name'    => 'Charon',
             'surname' => 'Concierge',
             'email'   => 'charon@continental.com',
-            'status'  => 'active'
+            'status'  => 'active',
         ]);
 
         return $conn->lastId();
     });
 
-    echo "<p>Last inserted user ID in transaction: <strong>{$transactionResult}</strong></p>";
+    echo "<p>Last inserted user ID in transaction: <strong>" . htmlspecialchars($transactionResult) . "</strong></p>";
 
 } catch (\Throwable $e) {
     echo "<div class='error'>";
