@@ -377,10 +377,9 @@ class PDO4You
 
     /**
      * Consumes all rowsets of an INSERT batch, extracts the trailing appended
-     * `SCOPE_IDENTITY()` rowset, and if the batch produced any caller-facing
-     * result sets (such as `INSERT ... OUTPUT`, `INSERT ...; SELECT ...`, or
-     * `INSERT ...; EXEC ...`), closes the native cursor and returns a buffered
-     * PDOStatement preserving all caller rowsets.
+     * `SCOPE_IDENTITY()` rowset, closes the native cursor to prevent MARS
+     * pending-result errors, and returns a buffered PDOStatement that preserves
+     * both the INSERT's affected-row count and any caller-facing result sets.
      *
      * @param PDOStatement $stmt
      *
@@ -449,29 +448,24 @@ class PDO4You
             }
         }
 
-        $hasCallerColumnRowsets = false;
-        foreach ($collectedRowsets as $rs) {
-            if ($rs['columns'] > 0) {
-                $hasCallerColumnRowsets = true;
-                if ($this->lastInsertedId === null && isset($rs['rows'][0]) && $rs['rows'][0] !== []) {
+        if ($this->lastInsertedId === null) {
+            foreach ($collectedRowsets as $rs) {
+                if ($rs['columns'] > 0 && isset($rs['rows'][0]) && $rs['rows'][0] !== []) {
                     $firstVal = reset($rs['rows'][0]);
                     if ($firstVal !== false && $firstVal !== null) {
                         $this->lastInsertedId = (string) $firstVal;
                     }
+                    break;
                 }
-                break;
             }
-        }
-
-        if (!$hasCallerColumnRowsets) {
-            return $stmt;
         }
 
         $stmt->closeCursor();
 
+        $firstRowsetRows = isset($collectedRowsets[0]) ? count($collectedRowsets[0]['rows']) : 0;
         $effectiveRowCount = ($this->lastStatementRowCount !== null && $this->lastStatementRowCount > 0)
             ? $this->lastStatementRowCount
-            : count($collectedRowsets[0]['rows']);
+            : $firstRowsetRows;
         $this->lastStatementRowCount = $effectiveRowCount;
 
         return $this->createBufferedOutputStatement($collectedRowsets, $effectiveRowCount);
@@ -479,8 +473,9 @@ class PDO4You
 
     /**
      * Creates a buffered PDOStatement that replays pre-fetched caller rowsets
-     * (supporting both direct fetch and `nextRowset()` navigation) after the
-     * underlying statement's appended identity rowset has been drained.
+     * (supporting both direct fetch and `nextRowset()` navigation) and preserves
+     * the affected-row count after the underlying statement's appended identity
+     * rowset has been drained.
      *
      * @param list<array{columns: int, rowCount: int, rows: list<array<string, mixed>>}> $rowsets
      * @param int $fallbackRowCount
