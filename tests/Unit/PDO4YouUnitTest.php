@@ -545,7 +545,7 @@ class PDO4YouUnitTest extends TestCase
         $stmtMock = $this->createMock(PDOStatement::class);
 
         $expectedSql = "INSERT INTO [users] ([name]) VALUES (:_pdo4you_ins_0_name);\n"
-            . "SELECT SCOPE_IDENTITY() AS lastId -- __pdo4you_last_insert_id";
+            . "SELECT SCOPE_IDENTITY() AS lastId";
 
         $pdoMock->expects($this->once())
             ->method('prepare')
