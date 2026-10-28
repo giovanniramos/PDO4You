@@ -1012,6 +1012,7 @@ class PDO4You
      *
      * @return int Total number of affected rows.
      *
+     * @throws InvalidArgumentException If batch parameter sets have inconsistent keys/counts.
      * @throws QueryException If preparation or execution fails.
      */
     public function exec(
@@ -1025,6 +1026,8 @@ class PDO4You
         if (!$this->isBatchParameters($params)) {
             return $this->statementRowCount($this->executeStatement($sql, $params));
         }
+
+        $this->assertConsistentBatchParameters($params);
 
         $requiresBatchIdentityCapture = $this->platform !== null
             && $this->platform->requiresSameBatchIdentityCapture()
@@ -1066,6 +1069,52 @@ class PDO4You
         $first = reset($params);
 
         return is_array($first) && array_is_list($params);
+    }
+
+    /**
+     * Validates that all parameter sets in a batch are arrays with identical
+     * placeholder keys/positions so a reused prepared statement never retains
+     * stale bound values from a previous row.
+     *
+     * @param array<int|string, mixed> $params
+     *
+     * @throws InvalidArgumentException If any row is not an array or has mismatched keys.
+     */
+    private function assertConsistentBatchParameters(array $params): void
+    {
+        $expectedKeys = null;
+
+        foreach ($params as $index => $row) {
+            if (!is_array($row)) {
+                throw new InvalidArgumentException(
+                    sprintf('Batch parameter set at index %s must be an array.', (string) $index)
+                );
+            }
+
+            $isList = array_is_list($row);
+            $normalizedKeys = [];
+
+            foreach (array_keys($row) as $pos => $key) {
+                $normalizedKeys[] = $isList
+                    ? $pos + 1
+                    : (is_int($key) ? $key + 1 : ':' . ltrim($key, ':'));
+            }
+
+            if (!$isList) {
+                sort($normalizedKeys);
+            }
+
+            if ($expectedKeys === null) {
+                $expectedKeys = $normalizedKeys;
+            } elseif ($normalizedKeys !== $expectedKeys) {
+                throw new InvalidArgumentException(
+                    sprintf(
+                        'Batch parameter set at index %s does not match the placeholder structure of the first row.',
+                        (string) $index
+                    )
+                );
+            }
+        }
     }
 
     /**
