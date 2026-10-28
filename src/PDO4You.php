@@ -12,6 +12,7 @@ use Iterator;
 use PDO;
 use PDOException;
 use PDOStatement;
+use ReflectionClass;
 use SensitiveParameter;
 use stdClass;
 use Throwable;
@@ -554,7 +555,7 @@ class PDO4You
             public function setFetchMode(int $mode, mixed ...$args): bool
             {
                 $this->defaultFetchMode = $mode;
-                if ($mode === PDO::FETCH_CLASS) {
+                if (($mode & ~PDO::FETCH_PROPS_LATE) === PDO::FETCH_CLASS) {
                     $this->fetchClass = isset($args[0]) && is_string($args[0]) ? $args[0] : stdClass::class;
                     $this->fetchConstructorArgs = isset($args[1]) && is_array($args[1]) ? $args[1] : [];
                 }
@@ -585,14 +586,15 @@ class PDO4You
                 $this->ensureActiveResultRowset();
 
                 $effectiveMode = $mode === PDO::FETCH_DEFAULT ? $this->defaultFetchMode : $mode;
+                $baseMode = $effectiveMode & ~PDO::FETCH_PROPS_LATE;
                 $className = $this->fetchClass;
                 $ctorArgs = $this->fetchConstructorArgs;
                 $colIndex = 0;
 
-                if ($effectiveMode === PDO::FETCH_CLASS && isset($args[0]) && is_string($args[0])) {
+                if ($baseMode === PDO::FETCH_CLASS && isset($args[0]) && is_string($args[0])) {
                     $className = $args[0];
                     $ctorArgs = isset($args[1]) && is_array($args[1]) ? $args[1] : [];
-                } elseif ($effectiveMode === PDO::FETCH_COLUMN && isset($args[0]) && is_int($args[0])) {
+                } elseif ($baseMode === PDO::FETCH_COLUMN && isset($args[0]) && is_int($args[0])) {
                     $colIndex = $args[0];
                 }
 
@@ -600,7 +602,7 @@ class PDO4You
                 $results = [];
                 while (isset($rows[$this->cursor])) {
                     $row = $rows[$this->cursor++];
-                    $results[] = $effectiveMode === PDO::FETCH_COLUMN
+                    $results[] = $baseMode === PDO::FETCH_COLUMN
                         ? (array_values($row)[$colIndex] ?? null)
                         : $this->formatRow($row, $effectiveMode, $className, $ctorArgs);
                 }
@@ -633,7 +635,7 @@ class PDO4You
 
                 $row = $rows[$this->cursor++];
 
-                return $this->hydrateObject($row, $class ?? stdClass::class, $constructorArgs);
+                return $this->hydrateObject($row, $class ?? stdClass::class, $constructorArgs, false);
             }
 
             public function nextRowset(): bool
@@ -688,31 +690,75 @@ class PDO4You
                 ?string $className,
                 array $ctorArgs
             ): mixed {
-                return match ($mode) {
+                $propsLate = ($mode & PDO::FETCH_PROPS_LATE) !== 0;
+                $baseMode = $mode & ~PDO::FETCH_PROPS_LATE;
+
+                return match ($baseMode) {
                     PDO::FETCH_NUM => array_values($row),
                     PDO::FETCH_BOTH => $row + array_values($row),
                     PDO::FETCH_OBJ => (object) $row,
                     PDO::FETCH_COLUMN => array_values($row)[0] ?? null,
-                    PDO::FETCH_CLASS => $this->hydrateObject($row, $className ?? stdClass::class, $ctorArgs),
+                    PDO::FETCH_CLASS => $this->hydrateObject($row, $className ?? stdClass::class, $ctorArgs, $propsLate),
                     default => $row,
                 };
             }
 
             /**
+             * Hydrates an object following native PDO semantics (assigning properties
+             * before invoking the constructor unless PDO::FETCH_PROPS_LATE is enabled).
+             *
              * @param array<string, mixed> $row
              * @param array<int, mixed> $ctorArgs
              */
-            private function hydrateObject(array $row, string $className, array $ctorArgs): object
-            {
-                $instance = $ctorArgs === []
-                    ? new $className()
-                    : new $className(...$ctorArgs);
-
-                foreach ($row as $key => $value) {
-                    $instance->{$key} = $value;
+            private function hydrateObject(
+                array $row,
+                string $className,
+                array $ctorArgs,
+                bool $propsLate = false
+            ): object {
+                if ($className === stdClass::class || !class_exists($className)) {
+                    return (object) $row;
                 }
 
+                $ref = new ReflectionClass($className);
+                $constructor = $ref->getConstructor();
+
+                if ($propsLate || $constructor === null) {
+                    $instance = $ctorArgs === []
+                        ? $ref->newInstance()
+                        : $ref->newInstanceArgs($ctorArgs);
+                    $this->assignObjectProperties($ref, $instance, $row);
+
+                    return $instance;
+                }
+
+                $instance = $ref->newInstanceWithoutConstructor();
+                $this->assignObjectProperties($ref, $instance, $row);
+                $constructor->invokeArgs($instance, $ctorArgs);
+
                 return $instance;
+            }
+
+            /**
+             * @param ReflectionClass<object> $ref
+             * @param array<string, mixed> $row
+             */
+            private function assignObjectProperties(
+                ReflectionClass $ref,
+                object $instance,
+                array $row
+            ): void {
+                foreach ($row as $key => $value) {
+                    if ($ref->hasProperty($key)) {
+                        $prop = $ref->getProperty($key);
+                        if (!$prop->isStatic()) {
+                            $prop->setValue($instance, $value);
+                            continue;
+                        }
+                    }
+
+                    $instance->{$key} = $value;
+                }
             }
         };
     }
