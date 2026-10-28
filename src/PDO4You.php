@@ -452,20 +452,8 @@ class PDO4You
 
             if (isset($identityRowset['rows'][0]) && $identityRowset['rows'][0] !== []) {
                 $val = reset($identityRowset['rows'][0]);
-                if ($val !== false && $val !== null) {
+                if ($val !== false && $val !== null && $val !== '') {
                     $this->lastInsertedId = (string) $val;
-                }
-            }
-        }
-
-        if ($this->lastInsertedId === null) {
-            foreach ($collectedRowsets as $rs) {
-                if ($rs['columns'] > 0 && isset($rs['rows'][0]) && $rs['rows'][0] !== []) {
-                    $firstVal = reset($rs['rows'][0]);
-                    if ($firstVal !== false && $firstVal !== null) {
-                        $this->lastInsertedId = (string) $firstVal;
-                    }
-                    break;
                 }
             }
         }
