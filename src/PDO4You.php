@@ -409,15 +409,19 @@ class PDO4You
     /**
      * Consumes all rowsets of an INSERT batch, extracts the trailing appended
      * `SCOPE_IDENTITY()` rowset, closes the native cursor to prevent MARS
-     * pending-result errors, and returns a buffered PDOStatement that preserves
-     * both the INSERT's affected-row count and any caller-facing result sets.
+     * pending-result errors, and either drains rows with O(1) memory (when
+     * `$retainResultSets` is false, e.g., in `exec()` / `insert()`) or returns
+     * a buffered PDOStatement preserving caller-facing result sets.
      *
      * @param PDOStatement $stmt
+     * @param bool $retainResultSets Whether to buffer caller-facing rows in memory.
      *
      * @return PDOStatement
      */
-    private function consumeAndBufferBatchRowsets(PDOStatement $stmt): PDOStatement
-    {
+    private function consumeAndBufferBatchRowsets(
+        PDOStatement $stmt,
+        bool $retainResultSets = true
+    ): PDOStatement {
         /** @var list<array{columns: int, rowCount: int, colNames: list<string>, rows: list<array<string|int, mixed>>}> $collectedRowsets */
         $collectedRowsets = [];
         $lastColumnRowsetIndex = null;
@@ -435,42 +439,72 @@ class PDO4You
 
             $colNames = [];
             $rows = [];
+            $drainedCount = 0;
 
             if ($colCount > 0) {
-                for ($i = 0; $i < $colCount; $i++) {
-                    try {
-                        $meta = $stmt->getColumnMeta($i);
-                        if (is_array($meta) && isset($meta['name']) && is_string($meta['name'])) {
-                            $colNames[$i] = $meta['name'];
+                if ($retainResultSets) {
+                    for ($i = 0; $i < $colCount; $i++) {
+                        try {
+                            $meta = $stmt->getColumnMeta($i);
+                            if (is_array($meta) && isset($meta['name']) && is_string($meta['name'])) {
+                                $colNames[$i] = $meta['name'];
+                            }
+                        } catch (Throwable) {
+                            break;
                         }
-                    } catch (Throwable) {
-                        break;
                     }
-                }
 
-                // Fetch with FETCH_BOTH so both positional indices (including duplicate
-                // column names) and associative keys are preserved.
-                while (is_array($row = $stmt->fetch(PDO::FETCH_BOTH))) {
-                    $rows[] = $row;
-                }
+                    // Fetch with FETCH_BOTH so both positional indices (including duplicate
+                    // column names) and associative keys are preserved.
+                    while (is_array($row = $stmt->fetch(PDO::FETCH_BOTH))) {
+                        $rows[] = $row;
+                    }
 
-                if ($rows === []) {
-                    $all = $stmt->fetchAll(PDO::FETCH_BOTH);
-                    if (is_array($all) && $all !== []) {
-                        $rows = $all;
+                    if ($rows === []) {
+                        $all = $stmt->fetchAll(PDO::FETCH_BOTH);
+                        if (is_array($all) && $all !== []) {
+                            $rows = $all;
+                        } else {
+                            $allAssoc = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                            if (is_array($allAssoc) && $allAssoc !== []) {
+                                $rows = $allAssoc;
+                            } else {
+                                $scalar = $stmt->fetchColumn();
+                                if ($scalar !== false && $scalar !== null) {
+                                    $rows[] = [0 => $scalar, 'lastId' => $scalar];
+                                }
+                            }
+                        }
+                    }
+
+                    $drainedCount = count($rows);
+                } else {
+                    // When called from exec() or insert(), retain at most the first row
+                    // (in case this is the 1-row SCOPE_IDENTITY() rowset) and drain the
+                    // remaining rows without buffering them in memory.
+                    $firstRow = $stmt->fetch(PDO::FETCH_BOTH);
+                    if (is_array($firstRow)) {
+                        $rows[] = $firstRow;
+                        $drainedCount = 1;
+                        while (is_array($stmt->fetch(PDO::FETCH_NUM))) {
+                            $drainedCount++;
+                        }
                     } else {
                         $allAssoc = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         if (is_array($allAssoc) && $allAssoc !== []) {
-                            $rows = $allAssoc;
+                            $rows[] = $allAssoc[0];
+                            $drainedCount = count($allAssoc);
                         } else {
                             $scalar = $stmt->fetchColumn();
                             if ($scalar !== false && $scalar !== null) {
                                 $rows[] = [0 => $scalar, 'lastId' => $scalar];
+                                $drainedCount = 1;
                             }
                         }
                     }
                 }
 
+                $rowCount = $drainedCount;
                 $lastColumnRowsetIndex = count($collectedRowsets);
             }
 
@@ -498,11 +532,20 @@ class PDO4You
 
         $stmt->closeCursor();
 
-        $firstRowsetRows = isset($collectedRowsets[0]) ? count($collectedRowsets[0]['rows']) : 0;
-        $effectiveRowCount = ($this->lastStatementRowCount !== null && $this->lastStatementRowCount >= 0)
-            ? $this->lastStatementRowCount
-            : $firstRowsetRows;
+        if ($this->lastStatementRowCount === null) {
+            foreach ($collectedRowsets as $rs) {
+                if ($rs['rowCount'] > 0) {
+                    $this->lastStatementRowCount = $rs['rowCount'];
+                }
+            }
+        }
+
+        $effectiveRowCount = $this->lastStatementRowCount ?? 0;
         $this->lastStatementRowCount = $effectiveRowCount;
+
+        if (!$retainResultSets) {
+            return $stmt;
+        }
 
         return $this->createBufferedOutputStatement(
             $collectedRowsets,
@@ -982,6 +1025,24 @@ class PDO4You
         string $sql,
         array $params = []
     ): PDOStatement {
+        return $this->runStatement($sql, $params, retainResultSets: true);
+    }
+
+    /**
+     * Internal statement runner that optionally drains result sets without buffering
+     * them in memory when invoked from row-count-only paths (`exec()` / `insert()`).
+     *
+     * @param string $sql
+     * @param array<string|int, mixed> $params
+     * @param bool $retainResultSets
+     *
+     * @return PDOStatement
+     */
+    private function runStatement(
+        string $sql,
+        array $params = [],
+        bool $retainResultSets = true
+    ): PDOStatement {
         $this->lastStatementRowCount = null;
 
         $captureBatchIdentity = $this->platform !== null
@@ -1002,7 +1063,7 @@ class PDO4You
         $stmt = $this->executePreparedStatement($stmt, $sql, $params);
 
         if ($captureBatchIdentity) {
-            return $this->consumeAndBufferBatchRowsets($stmt);
+            return $this->consumeAndBufferBatchRowsets($stmt, $retainResultSets);
         }
 
         return $stmt;
@@ -1222,11 +1283,11 @@ class PDO4You
         array $params = []
     ): int {
         if ($params === []) {
-            return $this->statementRowCount($this->executeStatement($sql));
+            return $this->statementRowCount($this->runStatement($sql, [], retainResultSets: false));
         }
 
         if (!$this->isBatchParameters($params)) {
-            return $this->statementRowCount($this->executeStatement($sql, $params));
+            return $this->statementRowCount($this->runStatement($sql, $params, retainResultSets: false));
         }
 
         $this->assertConsistentBatchParameters($params);
@@ -1239,7 +1300,7 @@ class PDO4You
             $totalAffected = 0;
             foreach ($params as $row) {
                 $totalAffected += $this->statementRowCount(
-                    $this->executeStatement($sql, (array) $row)
+                    $this->runStatement($sql, (array) $row, retainResultSets: false)
                 );
             }
             return $totalAffected;
@@ -1358,7 +1419,7 @@ class PDO4You
 
         $sql = "INSERT INTO {$escapedTable} ({$columnsSql}) VALUES ({$valuesSql})";
 
-        return $this->statementRowCount($this->executeStatement($sql, $bindParams));
+        return $this->statementRowCount($this->runStatement($sql, $bindParams, retainResultSets: false));
     }
 
     /**
@@ -1428,7 +1489,7 @@ class PDO4You
 
         $sql = "UPDATE {$escapedTable} SET " . implode(', ', $sets) . " WHERE {$where}";
 
-        return $this->statementRowCount($this->executeStatement($sql, $bindParams));
+        return $this->statementRowCount($this->runStatement($sql, $bindParams, retainResultSets: false));
     }
 
     /**
@@ -1455,7 +1516,7 @@ class PDO4You
         $escapedTable = $this->quoteIdentifier($table);
         $sql = "DELETE FROM {$escapedTable} WHERE {$where}";
 
-        return $this->executeStatement($sql, $whereParams)->rowCount();
+        return $this->runStatement($sql, $whereParams, retainResultSets: false)->rowCount();
     }
 
     /**
