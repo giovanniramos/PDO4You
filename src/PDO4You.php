@@ -418,7 +418,7 @@ class PDO4You
      */
     private function consumeAndBufferBatchRowsets(PDOStatement $stmt): PDOStatement
     {
-        /** @var list<array{columns: int, rowCount: int, rows: list<array<string, mixed>>}> $collectedRowsets */
+        /** @var list<array{columns: int, rowCount: int, colNames: list<string>, rows: list<array<string|int, mixed>>}> $collectedRowsets */
         $collectedRowsets = [];
         $lastColumnRowsetIndex = null;
 
@@ -437,20 +437,40 @@ class PDO4You
                 }
             }
 
+            $colNames = [];
             $rows = [];
+
             if ($colCount > 0) {
-                while (is_array($row = $stmt->fetch(PDO::FETCH_ASSOC))) {
+                for ($i = 0; $i < $colCount; $i++) {
+                    try {
+                        $meta = $stmt->getColumnMeta($i);
+                        if (is_array($meta) && isset($meta['name']) && is_string($meta['name'])) {
+                            $colNames[$i] = $meta['name'];
+                        }
+                    } catch (Throwable) {
+                        break;
+                    }
+                }
+
+                // Fetch with FETCH_BOTH so both positional indices (including duplicate
+                // column names) and associative keys are preserved.
+                while (is_array($row = $stmt->fetch(PDO::FETCH_BOTH))) {
                     $rows[] = $row;
                 }
 
                 if ($rows === []) {
-                    $all = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                    $all = $stmt->fetchAll(PDO::FETCH_BOTH);
                     if (is_array($all) && $all !== []) {
                         $rows = $all;
                     } else {
-                        $scalar = $stmt->fetchColumn();
-                        if ($scalar !== false && $scalar !== null) {
-                            $rows[] = ['lastId' => $scalar];
+                        $allAssoc = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                        if (is_array($allAssoc) && $allAssoc !== []) {
+                            $rows = $allAssoc;
+                        } else {
+                            $scalar = $stmt->fetchColumn();
+                            if ($scalar !== false && $scalar !== null) {
+                                $rows[] = [0 => $scalar, 'lastId' => $scalar];
+                            }
                         }
                     }
                 }
@@ -461,6 +481,7 @@ class PDO4You
             $collectedRowsets[] = [
                 'columns'  => $colCount,
                 'rowCount' => $rowCount,
+                'colNames' => $colNames,
                 'rows'     => $rows,
             ];
         } while ($stmt->nextRowset());
@@ -497,10 +518,10 @@ class PDO4You
     /**
      * Creates a buffered PDOStatement that replays pre-fetched caller rowsets
      * (supporting both direct fetch and `nextRowset()` navigation) and preserves
-     * the affected-row count after the underlying statement's appended identity
-     * rowset has been drained.
+     * positional/duplicate columns as well as the affected-row count after the
+     * underlying statement's appended identity rowset has been drained.
      *
-     * @param list<array{columns: int, rowCount: int, rows: list<array<string, mixed>>}> $rowsets
+     * @param list<array{columns: int, rowCount: int, colNames: list<string>, rows: list<array<string|int, mixed>>}> $rowsets
      * @param int $fallbackRowCount
      * @param int $initialFetchMode
      *
@@ -520,7 +541,7 @@ class PDO4You
             private array $fetchConstructorArgs = [];
 
             /**
-             * @param list<array{columns: int, rowCount: int, rows: list<array<string, mixed>>}> $rowsets
+             * @param list<array{columns: int, rowCount: int, colNames: list<string>, rows: list<array<string|int, mixed>>}> $rowsets
              */
             public function __construct(
                 private readonly array $rowsets,
@@ -575,10 +596,11 @@ class PDO4You
                     return false;
                 }
 
+                $colNames = $this->rowsets[$this->rowsetIndex]['colNames'] ?? [];
                 $row = $rows[$this->cursor++];
                 $effectiveMode = $mode === PDO::FETCH_DEFAULT ? $this->defaultFetchMode : $mode;
 
-                return $this->formatRow($row, $effectiveMode, $this->fetchClass, $this->fetchConstructorArgs);
+                return $this->formatRow($row, $colNames, $effectiveMode, $this->fetchClass, $this->fetchConstructorArgs);
             }
 
             public function fetchAll(int $mode = PDO::FETCH_DEFAULT, mixed ...$args): array
@@ -599,12 +621,17 @@ class PDO4You
                 }
 
                 $rows = $this->rowsets[$this->rowsetIndex]['rows'] ?? [];
+                $colNames = $this->rowsets[$this->rowsetIndex]['colNames'] ?? [];
                 $results = [];
+
                 while (isset($rows[$this->cursor])) {
                     $row = $rows[$this->cursor++];
-                    $results[] = $baseMode === PDO::FETCH_COLUMN
-                        ? (array_values($row)[$colIndex] ?? null)
-                        : $this->formatRow($row, $effectiveMode, $className, $ctorArgs);
+                    if ($baseMode === PDO::FETCH_COLUMN) {
+                        $positional = $this->extractPositionalRow($row);
+                        $results[] = $positional[$colIndex] ?? null;
+                    } else {
+                        $results[] = $this->formatRow($row, $colNames, $effectiveMode, $className, $ctorArgs);
+                    }
                 }
 
                 return $results;
@@ -619,7 +646,7 @@ class PDO4You
                     return false;
                 }
 
-                $values = array_values($rows[$this->cursor++]);
+                $values = $this->extractPositionalRow($rows[$this->cursor++]);
 
                 return array_key_exists($column, $values) ? $values[$column] : false;
             }
@@ -633,9 +660,9 @@ class PDO4You
                     return false;
                 }
 
-                $row = $rows[$this->cursor++];
+                $assoc = $this->extractAssocRow($rows[$this->cursor++]);
 
-                return $this->hydrateObject($row, $class ?? stdClass::class, $constructorArgs, false);
+                return $this->hydrateObject($assoc, $class ?? stdClass::class, $constructorArgs, false);
             }
 
             public function nextRowset(): bool
@@ -681,11 +708,90 @@ class PDO4You
             }
 
             /**
-             * @param array<string, mixed> $row
+             * Extracts ordered 0-indexed positional column values from a buffered row.
+             *
+             * @param array<string|int, mixed> $row
+             *
+             * @return list<mixed>
+             */
+            private function extractPositionalRow(array $row): array
+            {
+                $positional = [];
+                foreach ($row as $key => $value) {
+                    if (is_int($key)) {
+                        $positional[] = $value;
+                    }
+                }
+
+                return $positional !== [] ? $positional : array_values($row);
+            }
+
+            /**
+             * Extracts associative (string-keyed) column values from a buffered row.
+             *
+             * @param array<string|int, mixed> $row
+             *
+             * @return array<string, mixed>
+             */
+            private function extractAssocRow(array $row): array
+            {
+                $assoc = [];
+                foreach ($row as $key => $value) {
+                    if (is_string($key)) {
+                        $assoc[$key] = $value;
+                    }
+                }
+
+                if ($assoc !== []) {
+                    return $assoc;
+                }
+
+                foreach ($row as $key => $value) {
+                    $assoc[(string) $key] = $value;
+                }
+
+                return $assoc;
+            }
+
+            /**
+             * Formats a buffered row according to PDO::FETCH_NAMED semantics,
+             * preserving duplicate column names as array lists.
+             *
+             * @param array<string|int, mixed> $row
+             * @param list<string> $colNames
+             *
+             * @return array<string, mixed>
+             */
+            private function extractNamedRow(array $row, array $colNames): array
+            {
+                $positional = $this->extractPositionalRow($row);
+                if ($colNames === [] || count($colNames) !== count($positional)) {
+                    return $this->extractAssocRow($row);
+                }
+
+                $named = [];
+                foreach ($colNames as $idx => $name) {
+                    $val = $positional[$idx] ?? null;
+                    if (!array_key_exists($name, $named)) {
+                        $named[$name] = $val;
+                    } elseif (is_array($named[$name])) {
+                        $named[$name][] = $val;
+                    } else {
+                        $named[$name] = [$named[$name], $val];
+                    }
+                }
+
+                return $named;
+            }
+
+            /**
+             * @param array<string|int, mixed> $row
+             * @param list<string> $colNames
              * @param array<int, mixed> $ctorArgs
              */
             private function formatRow(
                 array $row,
+                array $colNames,
                 int $mode,
                 ?string $className,
                 array $ctorArgs
@@ -694,12 +800,18 @@ class PDO4You
                 $baseMode = $mode & ~PDO::FETCH_PROPS_LATE;
 
                 return match ($baseMode) {
-                    PDO::FETCH_NUM => array_values($row),
-                    PDO::FETCH_BOTH => $row + array_values($row),
-                    PDO::FETCH_OBJ => (object) $row,
-                    PDO::FETCH_COLUMN => array_values($row)[0] ?? null,
-                    PDO::FETCH_CLASS => $this->hydrateObject($row, $className ?? stdClass::class, $ctorArgs, $propsLate),
-                    default => $row,
+                    PDO::FETCH_NUM => $this->extractPositionalRow($row),
+                    PDO::FETCH_BOTH => $this->extractAssocRow($row) + $this->extractPositionalRow($row),
+                    PDO::FETCH_NAMED => $this->extractNamedRow($row, $colNames),
+                    PDO::FETCH_OBJ => (object) $this->extractAssocRow($row),
+                    PDO::FETCH_COLUMN => $this->extractPositionalRow($row)[0] ?? null,
+                    PDO::FETCH_CLASS => $this->hydrateObject(
+                        $this->extractAssocRow($row),
+                        $className ?? stdClass::class,
+                        $ctorArgs,
+                        $propsLate
+                    ),
+                    default => $this->extractAssocRow($row),
                 };
             }
 

@@ -8,7 +8,7 @@ class SqlSrvPlatform implements DatabasePlatform
 {
     public function getLastInsertIdSql(?string $sequence = null): string
     {
-        return "SELECT CAST(SCOPE_IDENTITY() AS BIGINT) AS lastId";
+        return "SELECT SCOPE_IDENTITY() AS lastId";
     }
 
     public function quoteIdentifierPart(string $part): string

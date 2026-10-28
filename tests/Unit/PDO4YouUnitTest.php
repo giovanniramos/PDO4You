@@ -511,7 +511,7 @@ class PDO4YouUnitTest extends TestCase
     public function testSqlSrvPlatformLastInsertIdSql(): void
     {
         $platform = new SqlSrvPlatform();
-        $this->assertSame('SELECT CAST(SCOPE_IDENTITY() AS BIGINT) AS lastId', $platform->getLastInsertIdSql());
+        $this->assertSame('SELECT SCOPE_IDENTITY() AS lastId', $platform->getLastInsertIdSql());
     }
 
     public function testQuoteIdentifierForSqlSrvDriver(): void
@@ -545,7 +545,7 @@ class PDO4YouUnitTest extends TestCase
         $stmtMock = $this->createMock(PDOStatement::class);
 
         $expectedSql = "INSERT INTO [users] ([name]) VALUES (:_pdo4you_ins_0_name);\n"
-            . "SELECT CAST(SCOPE_IDENTITY() AS BIGINT) AS lastId -- __pdo4you_last_insert_id";
+            . "SELECT SCOPE_IDENTITY() AS lastId -- __pdo4you_last_insert_id";
 
         $pdoMock->expects($this->once())
             ->method('prepare')
