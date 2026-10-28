@@ -376,72 +376,11 @@ class PDO4You
     }
 
     /**
-     * Checks whether an INSERT batch also produces caller-facing result sets,
-     * either via a top-level T-SQL OUTPUT clause (excluding OUTPUT ... INTO)
-     * or via a standalone SELECT / EXEC statement in the same batch.
-     *
-     * @param string $sql
-     *
-     * @return bool
-     */
-    private function hasCallerResultSetSql(string $sql): bool
-    {
-        $topLevelSql = $this->extractTopLevelSql($sql);
-
-        // 1. Top-level INSERT ... OUTPUT (excluding OUTPUT ... INTO)
-        if (
-            preg_match(
-                '/\bINSERT\b[^;]*?\bOUTPUT\b(?![^;]*?\bINTO\b)[^;]*?\b(?:VALUES|SELECT|DEFAULT|EXEC|EXECUTE)\b/is',
-                $topLevelSql
-            ) === 1
-        ) {
-            return true;
-        }
-
-        // 2. Multi-statement batch containing a standalone SELECT (before INSERT, after semicolon,
-        //    after VALUES/DEFAULT VALUES, or a second SELECT after INSERT ... SELECT)
-        return preg_match(
-            '/(?:;\s*+(?:WITH\b[^;]*?\b)?SELECT\b|\bSELECT\b.*?\bINSERT\b|\b(?:VALUES|DEFAULT\s++VALUES)\b.*?\bSELECT\b|\bINSERT\b.*?\bSELECT\b.*?\bSELECT\b)/is',
-            $topLevelSql
-        ) === 1;
-    }
-
-    /**
-     * Consumes the appended identity rowset to capture the last inserted ID
-     * when the batch does not contain caller-facing result sets.
-     *
-     * @param PDOStatement $stmt
-     * @param bool $includeCurrentRowset Whether to also inspect the currently active rowset.
-     */
-    private function consumeIdentityRowsets(PDOStatement $stmt, bool $includeCurrentRowset = false): void
-    {
-        if ($includeCurrentRowset && $stmt->columnCount() > 0) {
-            $value = $stmt->fetchColumn();
-            if ($value !== false && $value !== null) {
-                $this->lastInsertedId = (string) $value;
-            }
-        }
-
-        while ($stmt->nextRowset()) {
-            if ($stmt->columnCount() > 0) {
-                $value = $stmt->fetchColumn();
-                if ($value !== false) {
-                    $this->lastInsertedId = $value === null ? $this->lastInsertedId : (string) $value;
-                }
-            } elseif ($this->lastStatementRowCount === null || $this->lastStatementRowCount <= 0) {
-                $rowCount = $stmt->rowCount();
-                if ($rowCount > 0) {
-                    $this->lastStatementRowCount = $rowCount;
-                }
-            }
-        }
-    }
-
-    /**
-     * Consumes all rowsets of a multi-resultset INSERT batch (such as `INSERT ... OUTPUT`
-     * or `INSERT ...; SELECT ...`), extracts the trailing appended `SCOPE_IDENTITY()`
-     * rowset, closes the native cursor to avoid MARS pending-result errors, and returns
-     * a buffered PDOStatement preserving all caller-facing rowsets.
+     * Consumes all rowsets of an INSERT batch, extracts the trailing appended
+     * `SCOPE_IDENTITY()` rowset, and if the batch produced any caller-facing
+     * result sets (such as `INSERT ... OUTPUT`, `INSERT ...; SELECT ...`, or
+     * `INSERT ...; EXEC ...`), closes the native cursor and returns a buffered
+     * PDOStatement preserving all caller rowsets.
      *
      * @param PDOStatement $stmt
      *
@@ -455,24 +394,34 @@ class PDO4You
 
         do {
             $colCount = $stmt->columnCount();
-            $rowCount = $stmt->rowCount();
+            $rowCount = 0;
 
-            if ($rowCount > 0 && ($this->lastStatementRowCount === null || $this->lastStatementRowCount <= 0)) {
-                $this->lastStatementRowCount = $rowCount;
+            if ($colCount === 0) {
+                if ($this->lastStatementRowCount === null || $this->lastStatementRowCount <= 0) {
+                    $rowCount = $stmt->rowCount();
+                    if ($rowCount > 0) {
+                        $this->lastStatementRowCount = $rowCount;
+                    }
+                } else {
+                    $rowCount = $this->lastStatementRowCount;
+                }
             }
 
             $rows = [];
             if ($colCount > 0) {
-                while (($row = $stmt->fetch(PDO::FETCH_ASSOC)) !== false) {
-                    if (is_array($row)) {
-                        $rows[] = $row;
-                    }
+                while (is_array($row = $stmt->fetch(PDO::FETCH_ASSOC))) {
+                    $rows[] = $row;
                 }
 
                 if ($rows === []) {
                     $all = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     if (is_array($all) && $all !== []) {
                         $rows = $all;
+                    } else {
+                        $scalar = $stmt->fetchColumn();
+                        if ($scalar !== false && $scalar !== null) {
+                            $rows[] = ['lastId' => $scalar];
+                        }
                     }
                 }
 
@@ -500,24 +449,25 @@ class PDO4You
             }
         }
 
-        // Fallback to the first scalar of the first caller rowset if SCOPE_IDENTITY() was null (e.g. OUTPUT inserted.id on non-IDENTITY PK).
-        if ($this->lastInsertedId === null) {
-            foreach ($collectedRowsets as $rs) {
-                if ($rs['columns'] > 0 && isset($rs['rows'][0]) && $rs['rows'][0] !== []) {
+        $hasCallerColumnRowsets = false;
+        foreach ($collectedRowsets as $rs) {
+            if ($rs['columns'] > 0) {
+                $hasCallerColumnRowsets = true;
+                if ($this->lastInsertedId === null && isset($rs['rows'][0]) && $rs['rows'][0] !== []) {
                     $firstVal = reset($rs['rows'][0]);
                     if ($firstVal !== false && $firstVal !== null) {
                         $this->lastInsertedId = (string) $firstVal;
                     }
-                    break;
                 }
+                break;
             }
         }
 
-        $stmt->closeCursor();
-
-        if ($collectedRowsets === []) {
+        if (!$hasCallerColumnRowsets) {
             return $stmt;
         }
+
+        $stmt->closeCursor();
 
         $effectiveRowCount = ($this->lastStatementRowCount !== null && $this->lastStatementRowCount > 0)
             ? $this->lastStatementRowCount
@@ -783,11 +733,7 @@ class PDO4You
             // Preserve rowCount() before advancing through the appended result set.
             $this->lastStatementRowCount = $stmt->rowCount();
 
-            if ($this->hasCallerResultSetSql($sql)) {
-                return $this->consumeAndBufferBatchRowsets($stmt);
-            }
-
-            $this->consumeIdentityRowsets($stmt, includeCurrentRowset: true);
+            return $this->consumeAndBufferBatchRowsets($stmt);
         }
 
         return $stmt;
