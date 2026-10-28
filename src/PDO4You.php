@@ -1047,14 +1047,12 @@ class PDO4You
 
         $captureBatchIdentity = $this->platform !== null
             && $this->platform->requiresSameBatchIdentityCapture()
-            && $this->isInsertQuery($sql)
-            && stripos($sql, '__pdo4you_last_insert_id') === false;
+            && $this->isInsertQuery($sql);
 
         if ($captureBatchIdentity) {
             $this->lastInsertedId = null;
             $identitySql = $this->platform->getLastInsertIdSql();
-            $sqlToExecute = rtrim($sql, " \t\n\r\0\x0B;")
-                . ";\n" . $identitySql . " -- __pdo4you_last_insert_id";
+            $sqlToExecute = rtrim($sql, " \t\n\r\0\x0B;") . ";\n" . $identitySql;
         } else {
             $sqlToExecute = $sql;
         }
