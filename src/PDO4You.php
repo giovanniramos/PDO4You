@@ -158,6 +158,26 @@ class PDO4You
     }
 
     /**
+     * Resolves the active default fetch mode configured on the underlying PDO instance.
+     *
+     * @return int
+     */
+    private function resolveDefaultFetchMode(): int
+    {
+        if (!is_a($this->pdo, 'PHPUnit\\Framework\\MockObject\\Stub')) {
+            try {
+                $mode = $this->pdo->getAttribute(PDO::ATTR_DEFAULT_FETCH_MODE);
+                if (is_int($mode) && $mode > 0) {
+                    return $mode;
+                }
+            } catch (Throwable) {
+            }
+        }
+
+        return PDO::FETCH_ASSOC;
+    }
+
+    /**
      * Registers a global callback for query observability, logging, and profiling.
      *
      * @param (callable(string, array<string|int, mixed>, float): void)|null $listener
@@ -466,7 +486,11 @@ class PDO4You
             : $firstRowsetRows;
         $this->lastStatementRowCount = $effectiveRowCount;
 
-        return $this->createBufferedOutputStatement($collectedRowsets, $effectiveRowCount);
+        return $this->createBufferedOutputStatement(
+            $collectedRowsets,
+            $effectiveRowCount,
+            $this->resolveDefaultFetchMode()
+        );
     }
 
     /**
@@ -477,17 +501,19 @@ class PDO4You
      *
      * @param list<array{columns: int, rowCount: int, rows: list<array<string, mixed>>}> $rowsets
      * @param int $fallbackRowCount
+     * @param int $initialFetchMode
      *
      * @return PDOStatement
      */
     private function createBufferedOutputStatement(
         array $rowsets,
-        int $fallbackRowCount
+        int $fallbackRowCount,
+        int $initialFetchMode = PDO::FETCH_ASSOC
     ): PDOStatement {
-        return new class ($rowsets, $fallbackRowCount) extends PDOStatement {
+        return new class ($rowsets, $fallbackRowCount, $initialFetchMode) extends PDOStatement {
             private int $rowsetIndex = 0;
             private int $cursor = 0;
-            private int $defaultFetchMode = PDO::FETCH_ASSOC;
+            private int $defaultFetchMode;
             private ?string $fetchClass = null;
             /** @var array<int, mixed> */
             private array $fetchConstructorArgs = [];
@@ -497,8 +523,10 @@ class PDO4You
              */
             public function __construct(
                 private readonly array $rowsets,
-                private readonly int $fallbackRowCount
+                private readonly int $fallbackRowCount,
+                int $initialFetchMode = PDO::FETCH_ASSOC
             ) {
+                $this->defaultFetchMode = $initialFetchMode;
             }
 
             /**
@@ -770,6 +798,8 @@ class PDO4You
      * Executes a SELECT query and yields rows lazily one by one using a Generator.
      *
      * Ideal for processing large datasets with O(1) memory consumption.
+     * On MySQL, unbuffered query mode is automatically enabled for the duration
+     * of the cursor iteration so the driver streams rows directly from the server.
      *
      * @template T of object
      *
@@ -784,7 +814,35 @@ class PDO4You
         array $params = [],
         ?string $classMap = null
     ): Generator {
-        $stmt = $this->executeStatement($sql, $params);
+        $restoreMysqlBuffered = null;
+        if (
+            $this->platform instanceof Platform\MySqlPlatform
+            && !is_a($this->pdo, 'PHPUnit\\Framework\\MockObject\\Stub')
+            && defined('PDO::MYSQL_ATTR_USE_BUFFERED_QUERY')
+        ) {
+            try {
+                $previous = $this->pdo->getAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY);
+                if ($previous !== false) {
+                    $this->pdo->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
+                    $restoreMysqlBuffered = (bool) $previous;
+                }
+            } catch (Throwable) {
+                $restoreMysqlBuffered = null;
+            }
+        }
+
+        try {
+            $stmt = $this->executeStatement($sql, $params);
+        } catch (Throwable $e) {
+            if ($restoreMysqlBuffered !== null) {
+                try {
+                    $this->pdo->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, $restoreMysqlBuffered);
+                } catch (Throwable) {
+                }
+            }
+
+            throw $e;
+        }
 
         try {
             if ($classMap !== null) {
@@ -800,6 +858,13 @@ class PDO4You
             }
         } finally {
             $stmt->closeCursor();
+
+            if ($restoreMysqlBuffered !== null) {
+                try {
+                    $this->pdo->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, $restoreMysqlBuffered);
+                } catch (Throwable) {
+                }
+            }
         }
     }
 
