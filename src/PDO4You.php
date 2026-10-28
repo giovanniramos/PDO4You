@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 namespace PDO4You;
 
+use ArrayIterator;
 use Closure;
 use Generator;
 use InvalidArgumentException;
+use Iterator;
 use PDO;
 use PDOException;
 use PDOStatement;
 use SensitiveParameter;
+use stdClass;
 use Throwable;
 use PDO4You\Exception\QueryException;
 
@@ -38,9 +41,6 @@ class PDO4You
 
     /** @var string|null ID captured from the most recent same-batch INSERT. */
     private ?string $lastInsertedId = null;
-
-    /** @var PDOStatement|null Statement holding an unconsumed appended identity rowset (e.g., INSERT ... OUTPUT). */
-    private ?PDOStatement $pendingIdentityStatement = null;
 
     /** @var int|null Affected-row count captured before consuming appended rowsets. */
     private ?int $lastStatementRowCount = null;
@@ -401,10 +401,6 @@ class PDO4You
      */
     private function consumeIdentityRowsets(PDOStatement $stmt, bool $includeCurrentRowset = false): void
     {
-        if ($this->pendingIdentityStatement === $stmt) {
-            $this->pendingIdentityStatement = null;
-        }
-
         if ($includeCurrentRowset && $stmt->columnCount() > 0) {
             $value = $stmt->fetchColumn();
             if ($value !== false && $value !== null) {
@@ -425,6 +421,177 @@ class PDO4You
                 }
             }
         }
+    }
+
+    /**
+     * Creates a buffered PDOStatement that replays pre-fetched OUTPUT rows
+     * after the underlying statement's appended identity rowset has been drained.
+     *
+     * @param list<array<string, mixed>> $rows
+     * @param int $rowCount
+     * @param int $columnCount
+     *
+     * @return PDOStatement
+     */
+    private function createBufferedOutputStatement(
+        array $rows,
+        int $rowCount,
+        int $columnCount
+    ): PDOStatement {
+        return new class ($rows, $rowCount, $columnCount) extends PDOStatement {
+            private int $cursor = 0;
+            private int $defaultFetchMode = PDO::FETCH_ASSOC;
+            private ?string $fetchClass = null;
+            /** @var array<int, mixed> */
+            private array $fetchConstructorArgs = [];
+
+            /**
+             * @param list<array<string, mixed>> $rows
+             */
+            public function __construct(
+                private readonly array $rows,
+                private readonly int $bufferedRowCount,
+                private readonly int $bufferedColumnCount
+            ) {
+            }
+
+            public function setFetchMode(int $mode, mixed ...$args): bool
+            {
+                $this->defaultFetchMode = $mode;
+                if ($mode === PDO::FETCH_CLASS) {
+                    $this->fetchClass = isset($args[0]) && is_string($args[0]) ? $args[0] : stdClass::class;
+                    $this->fetchConstructorArgs = isset($args[1]) && is_array($args[1]) ? $args[1] : [];
+                }
+
+                return true;
+            }
+
+            public function fetch(
+                int $mode = PDO::FETCH_DEFAULT,
+                int $cursorOrientation = PDO::FETCH_ORI_NEXT,
+                int $cursorOffset = 0
+            ): mixed {
+                if (!isset($this->rows[$this->cursor])) {
+                    return false;
+                }
+
+                $row = $this->rows[$this->cursor++];
+                $effectiveMode = $mode === PDO::FETCH_DEFAULT ? $this->defaultFetchMode : $mode;
+
+                return $this->formatRow($row, $effectiveMode, $this->fetchClass, $this->fetchConstructorArgs);
+            }
+
+            public function fetchAll(int $mode = PDO::FETCH_DEFAULT, mixed ...$args): array
+            {
+                $effectiveMode = $mode === PDO::FETCH_DEFAULT ? $this->defaultFetchMode : $mode;
+                $className = $this->fetchClass;
+                $ctorArgs = $this->fetchConstructorArgs;
+                $colIndex = 0;
+
+                if ($effectiveMode === PDO::FETCH_CLASS && isset($args[0]) && is_string($args[0])) {
+                    $className = $args[0];
+                    $ctorArgs = isset($args[1]) && is_array($args[1]) ? $args[1] : [];
+                } elseif ($effectiveMode === PDO::FETCH_COLUMN && isset($args[0]) && is_int($args[0])) {
+                    $colIndex = $args[0];
+                }
+
+                $results = [];
+                while (isset($this->rows[$this->cursor])) {
+                    $row = $this->rows[$this->cursor++];
+                    $results[] = $effectiveMode === PDO::FETCH_COLUMN
+                        ? (array_values($row)[$colIndex] ?? null)
+                        : $this->formatRow($row, $effectiveMode, $className, $ctorArgs);
+                }
+
+                return $results;
+            }
+
+            public function fetchColumn(int $column = 0): mixed
+            {
+                if (!isset($this->rows[$this->cursor])) {
+                    return false;
+                }
+
+                $values = array_values($this->rows[$this->cursor++]);
+
+                return array_key_exists($column, $values) ? $values[$column] : false;
+            }
+
+            public function fetchObject(?string $class = 'stdClass', array $constructorArgs = []): object|false
+            {
+                if (!isset($this->rows[$this->cursor])) {
+                    return false;
+                }
+
+                $row = $this->rows[$this->cursor++];
+
+                return $this->hydrateObject($row, $class ?? stdClass::class, $constructorArgs);
+            }
+
+            public function rowCount(): int
+            {
+                return $this->bufferedRowCount;
+            }
+
+            public function columnCount(): int
+            {
+                return $this->bufferedColumnCount;
+            }
+
+            public function closeCursor(): bool
+            {
+                $this->cursor = count($this->rows);
+
+                return true;
+            }
+
+            public function getIterator(): Iterator
+            {
+                $items = [];
+                while (($row = $this->fetch()) !== false) {
+                    $items[] = $row;
+                }
+
+                return new ArrayIterator($items);
+            }
+
+            /**
+             * @param array<string, mixed> $row
+             * @param array<int, mixed> $ctorArgs
+             */
+            private function formatRow(
+                array $row,
+                int $mode,
+                ?string $className,
+                array $ctorArgs
+            ): mixed {
+                return match ($mode) {
+                    PDO::FETCH_NUM => array_values($row),
+                    PDO::FETCH_BOTH => $row + array_values($row),
+                    PDO::FETCH_OBJ => (object) $row,
+                    PDO::FETCH_COLUMN => array_values($row)[0] ?? null,
+                    PDO::FETCH_CLASS => $this->hydrateObject($row, $className ?? stdClass::class, $ctorArgs),
+                    default => $row,
+                };
+            }
+
+            /**
+             * @param array<string, mixed> $row
+             * @param array<int, mixed> $ctorArgs
+             */
+            private function hydrateObject(array $row, string $className, array $ctorArgs): object
+            {
+                $instance = $ctorArgs === []
+                    ? new $className()
+                    : new $className(...$ctorArgs);
+
+                foreach ($row as $key => $value) {
+                    $instance->{$key} = $value;
+                }
+
+                return $instance;
+            }
+        };
     }
 
     /**
@@ -450,7 +617,6 @@ class PDO4You
 
         if ($captureBatchIdentity) {
             $this->lastInsertedId = null;
-            $this->pendingIdentityStatement = null;
             $identitySql = $this->platform->getLastInsertIdSql();
             $sqlToExecute = rtrim($sql, " \t\n\r\0\x0B;")
                 . ";\n" . $identitySql . " -- __pdo4you_last_insert_id";
@@ -466,11 +632,44 @@ class PDO4You
             $this->lastStatementRowCount = $stmt->rowCount();
 
             if ($this->hasOutputClause($sql) && $stmt->columnCount() > 0) {
-                // Defer advancing to the appended identity rowset so the caller can read OUTPUT rows first.
-                $this->pendingIdentityStatement = $stmt;
-            } else {
-                $this->consumeIdentityRowsets($stmt, includeCurrentRowset: true);
+                $columnCount = $stmt->columnCount();
+                $outputRows = [];
+
+                while (($row = $stmt->fetch(PDO::FETCH_ASSOC)) !== false) {
+                    if (is_array($row)) {
+                        $outputRows[] = $row;
+                    }
+                }
+
+                if ($outputRows === []) {
+                    $all = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                    if (is_array($all) && $all !== []) {
+                        $outputRows = $all;
+                    }
+                }
+
+                // Immediately drain the appended SCOPE_IDENTITY() rowset so no pending
+                // result sets remain active on connections with MARS disabled.
+                $this->consumeIdentityRowsets($stmt, includeCurrentRowset: false);
+
+                if ($this->lastInsertedId === null && isset($outputRows[0]) && $outputRows[0] !== []) {
+                    $firstVal = reset($outputRows[0]);
+                    if ($firstVal !== false && $firstVal !== null) {
+                        $this->lastInsertedId = (string) $firstVal;
+                    }
+                }
+
+                $stmt->closeCursor();
+
+                $effectiveRowCount = ($this->lastStatementRowCount !== null && $this->lastStatementRowCount > 0)
+                    ? $this->lastStatementRowCount
+                    : count($outputRows);
+                $this->lastStatementRowCount = $effectiveRowCount;
+
+                return $this->createBufferedOutputStatement($outputRows, $effectiveRowCount, $columnCount);
             }
+
+            $this->consumeIdentityRowsets($stmt, includeCurrentRowset: true);
         }
 
         return $stmt;
@@ -481,10 +680,6 @@ class PDO4You
      */
     private function statementRowCount(PDOStatement $stmt): int
     {
-        if ($this->pendingIdentityStatement === $stmt) {
-            $this->consumeIdentityRowsets($stmt, includeCurrentRowset: true);
-        }
-
         return $this->lastStatementRowCount ?? $stmt->rowCount();
     }
 
@@ -509,15 +704,9 @@ class PDO4You
     ): array {
         $stmt = $this->executeStatement($sql, $params);
 
-        try {
-            return $classMap !== null
-                ? $stmt->fetchAll(PDO::FETCH_CLASS, $classMap)
-                : $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } finally {
-            if ($this->pendingIdentityStatement === $stmt) {
-                $this->consumeIdentityRowsets($stmt);
-            }
-        }
+        return $classMap !== null
+            ? $stmt->fetchAll(PDO::FETCH_CLASS, $classMap)
+            : $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     /**
@@ -553,9 +742,6 @@ class PDO4You
                 yield $row;
             }
         } finally {
-            if ($this->pendingIdentityStatement === $stmt) {
-                $this->consumeIdentityRowsets($stmt);
-            }
             $stmt->closeCursor();
         }
     }
@@ -593,9 +779,6 @@ class PDO4You
 
             return $result === false ? null : $result;
         } finally {
-            if ($this->pendingIdentityStatement === $stmt) {
-                $this->consumeIdentityRowsets($stmt);
-            }
             $stmt->closeCursor();
         }
     }
@@ -621,9 +804,6 @@ class PDO4You
 
             return $value === false ? null : $value;
         } finally {
-            if ($this->pendingIdentityStatement === $stmt) {
-                $this->consumeIdentityRowsets($stmt);
-            }
             $stmt->closeCursor();
         }
     }
@@ -646,15 +826,9 @@ class PDO4You
     ): array {
         $stmt = $this->executeStatement($sql, $params);
 
-        try {
-            return $classMap !== null
-                ? $stmt->fetchAll(PDO::FETCH_CLASS, $classMap)
-                : $stmt->fetchAll(PDO::FETCH_OBJ);
-        } finally {
-            if ($this->pendingIdentityStatement === $stmt) {
-                $this->consumeIdentityRowsets($stmt);
-            }
-        }
+        return $classMap !== null
+            ? $stmt->fetchAll(PDO::FETCH_CLASS, $classMap)
+            : $stmt->fetchAll(PDO::FETCH_OBJ);
     }
 
     /**
@@ -671,13 +845,7 @@ class PDO4You
     ): array {
         $stmt = $this->executeStatement($sql, $params);
 
-        try {
-            return $stmt->fetchAll(PDO::FETCH_NUM);
-        } finally {
-            if ($this->pendingIdentityStatement === $stmt) {
-                $this->consumeIdentityRowsets($stmt);
-            }
-        }
+        return $stmt->fetchAll(PDO::FETCH_NUM);
     }
 
     /**
@@ -963,10 +1131,6 @@ class PDO4You
      */
     public function lastId(?string $sequence = null): string
     {
-        if ($this->pendingIdentityStatement !== null) {
-            $this->consumeIdentityRowsets($this->pendingIdentityStatement, includeCurrentRowset: true);
-        }
-
         if (
             $this->platform !== null
             && $this->platform->requiresSameBatchIdentityCapture()
