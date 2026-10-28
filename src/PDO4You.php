@@ -427,13 +427,9 @@ class PDO4You
             $rowCount = 0;
 
             if ($colCount === 0) {
-                if ($this->lastStatementRowCount === null || $this->lastStatementRowCount <= 0) {
-                    $rowCount = $stmt->rowCount();
-                    if ($rowCount > 0) {
-                        $this->lastStatementRowCount = $rowCount;
-                    }
-                } else {
-                    $rowCount = $this->lastStatementRowCount;
+                $rowCount = $stmt->rowCount();
+                if ($rowCount >= 0) {
+                    $this->lastStatementRowCount = $rowCount;
                 }
             }
 
@@ -503,7 +499,7 @@ class PDO4You
         $stmt->closeCursor();
 
         $firstRowsetRows = isset($collectedRowsets[0]) ? count($collectedRowsets[0]['rows']) : 0;
-        $effectiveRowCount = ($this->lastStatementRowCount !== null && $this->lastStatementRowCount > 0)
+        $effectiveRowCount = ($this->lastStatementRowCount !== null && $this->lastStatementRowCount >= 0)
             ? $this->lastStatementRowCount
             : $firstRowsetRows;
         $this->lastStatementRowCount = $effectiveRowCount;
@@ -576,7 +572,8 @@ class PDO4You
             public function setFetchMode(int $mode, mixed ...$args): bool
             {
                 $this->defaultFetchMode = $mode;
-                if (($mode & ~PDO::FETCH_PROPS_LATE) === PDO::FETCH_CLASS) {
+                $baseMode = $mode & ~(PDO::FETCH_PROPS_LATE | PDO::FETCH_GROUP | PDO::FETCH_UNIQUE | PDO::FETCH_CLASSTYPE);
+                if ($baseMode === PDO::FETCH_CLASS) {
                     $this->fetchClass = isset($args[0]) && is_string($args[0]) ? $args[0] : stdClass::class;
                     $this->fetchConstructorArgs = isset($args[1]) && is_array($args[1]) ? $args[1] : [];
                 }
@@ -608,16 +605,22 @@ class PDO4You
                 $this->ensureActiveResultRowset();
 
                 $effectiveMode = $mode === PDO::FETCH_DEFAULT ? $this->defaultFetchMode : $mode;
-                $baseMode = $effectiveMode & ~PDO::FETCH_PROPS_LATE;
+                $isGroup = ($effectiveMode & PDO::FETCH_GROUP) !== 0;
+                $isUnique = ($effectiveMode & PDO::FETCH_UNIQUE) !== 0;
+                $baseMode = $effectiveMode & ~(PDO::FETCH_PROPS_LATE | PDO::FETCH_GROUP | PDO::FETCH_UNIQUE | PDO::FETCH_CLASSTYPE);
+
                 $className = $this->fetchClass;
                 $ctorArgs = $this->fetchConstructorArgs;
                 $colIndex = 0;
+                $funcCallback = null;
 
                 if ($baseMode === PDO::FETCH_CLASS && isset($args[0]) && is_string($args[0])) {
                     $className = $args[0];
                     $ctorArgs = isset($args[1]) && is_array($args[1]) ? $args[1] : [];
                 } elseif ($baseMode === PDO::FETCH_COLUMN && isset($args[0]) && is_int($args[0])) {
                     $colIndex = $args[0];
+                } elseif ($baseMode === PDO::FETCH_FUNC && isset($args[0]) && is_callable($args[0])) {
+                    $funcCallback = $args[0];
                 }
 
                 $rows = $this->rowsets[$this->rowsetIndex]['rows'] ?? [];
@@ -626,6 +629,43 @@ class PDO4You
 
                 while (isset($rows[$this->cursor])) {
                     $row = $rows[$this->cursor++];
+
+                    if ($baseMode === PDO::FETCH_KEY_PAIR) {
+                        $positional = $this->extractPositionalRow($row);
+                        if (count($positional) !== 2) {
+                            throw new PDOException(
+                                'SQLSTATE[HY000]: General error: PDO::FETCH_KEY_PAIR fetch mode requires the result set to contain exactly 2 columns.'
+                            );
+                        }
+                        $results[$positional[0]] = $positional[1];
+                        continue;
+                    }
+
+                    if ($baseMode === PDO::FETCH_FUNC && $funcCallback !== null) {
+                        $positional = $this->extractPositionalRow($row);
+                        $results[] = $funcCallback(...$positional);
+                        continue;
+                    }
+
+                    if ($isGroup || $isUnique) {
+                        $positional = $this->extractPositionalRow($row);
+                        $firstKey = (string) ($positional[0] ?? '');
+                        $remainingRow = $this->stripFirstColumn($row, $colNames);
+                        $remainingColNames = array_slice($colNames, 1);
+                        $itemMode = $effectiveMode & ~(PDO::FETCH_GROUP | PDO::FETCH_UNIQUE);
+
+                        $item = $baseMode === PDO::FETCH_COLUMN
+                            ? ($this->extractPositionalRow($remainingRow)[$colIndex] ?? null)
+                            : $this->formatRow($remainingRow, $remainingColNames, $itemMode, $className, $ctorArgs);
+
+                        if ($isUnique) {
+                            $results[$firstKey] = $item;
+                        } else {
+                            $results[$firstKey][] = $item;
+                        }
+                        continue;
+                    }
+
                     if ($baseMode === PDO::FETCH_COLUMN) {
                         $positional = $this->extractPositionalRow($row);
                         $results[] = $positional[$colIndex] ?? null;
@@ -754,6 +794,35 @@ class PDO4You
             }
 
             /**
+             * Removes the first column from a buffered row for FETCH_GROUP / FETCH_UNIQUE.
+             *
+             * @param array<string|int, mixed> $row
+             * @param list<string> $colNames
+             *
+             * @return array<string|int, mixed>
+             */
+            private function stripFirstColumn(array $row, array $colNames): array
+            {
+                $positional = array_slice($this->extractPositionalRow($row), 1);
+                $assoc = $this->extractAssocRow($row);
+
+                if (isset($colNames[0])) {
+                    $firstName = $colNames[0];
+                    $remainingNames = array_slice($colNames, 1);
+                    if (!in_array($firstName, $remainingNames, true)) {
+                        unset($assoc[$firstName]);
+                    }
+                } elseif ($assoc !== []) {
+                    $firstKey = array_key_first($assoc);
+                    if ($firstKey !== null) {
+                        unset($assoc[$firstKey]);
+                    }
+                }
+
+                return $assoc + $positional;
+            }
+
+            /**
              * Formats a buffered row according to PDO::FETCH_NAMED semantics,
              * preserving duplicate column names as array lists.
              *
@@ -797,20 +866,44 @@ class PDO4You
                 array $ctorArgs
             ): mixed {
                 $propsLate = ($mode & PDO::FETCH_PROPS_LATE) !== 0;
-                $baseMode = $mode & ~PDO::FETCH_PROPS_LATE;
+                $classType = ($mode & PDO::FETCH_CLASSTYPE) !== 0;
+                $baseMode = $mode & ~(PDO::FETCH_PROPS_LATE | PDO::FETCH_CLASSTYPE | PDO::FETCH_GROUP | PDO::FETCH_UNIQUE);
 
                 return match ($baseMode) {
                     PDO::FETCH_NUM => $this->extractPositionalRow($row),
                     PDO::FETCH_BOTH => $this->extractAssocRow($row) + $this->extractPositionalRow($row),
                     PDO::FETCH_NAMED => $this->extractNamedRow($row, $colNames),
+                    PDO::FETCH_KEY_PAIR => (function () use ($row): array {
+                        $positional = $this->extractPositionalRow($row);
+                        if (count($positional) !== 2) {
+                            throw new PDOException(
+                                'SQLSTATE[HY000]: General error: PDO::FETCH_KEY_PAIR fetch mode requires the result set to contain exactly 2 columns.'
+                            );
+                        }
+                        return [$positional[0] => $positional[1]];
+                    })(),
                     PDO::FETCH_OBJ => (object) $this->extractAssocRow($row),
                     PDO::FETCH_COLUMN => $this->extractPositionalRow($row)[0] ?? null,
-                    PDO::FETCH_CLASS => $this->hydrateObject(
-                        $this->extractAssocRow($row),
-                        $className ?? stdClass::class,
-                        $ctorArgs,
-                        $propsLate
-                    ),
+                    PDO::FETCH_CLASS => (function () use ($row, $colNames, $className, $ctorArgs, $propsLate, $classType): object {
+                        $targetRow = $row;
+                        $targetClass = $className ?? stdClass::class;
+
+                        if ($classType) {
+                            $positional = $this->extractPositionalRow($row);
+                            $dynamicClass = isset($positional[0]) && is_string($positional[0]) && $positional[0] !== ''
+                                ? $positional[0]
+                                : $targetClass;
+                            $targetClass = $dynamicClass;
+                            $targetRow = $this->stripFirstColumn($row, $colNames);
+                        }
+
+                        return $this->hydrateObject(
+                            $this->extractAssocRow($targetRow),
+                            $targetClass,
+                            $ctorArgs,
+                            $propsLate
+                        );
+                    })(),
                     default => $this->extractAssocRow($row),
                 };
             }
@@ -909,9 +1002,6 @@ class PDO4You
         $stmt = $this->executePreparedStatement($stmt, $sql, $params);
 
         if ($captureBatchIdentity) {
-            // Preserve rowCount() before advancing through the appended result set.
-            $this->lastStatementRowCount = $stmt->rowCount();
-
             return $this->consumeAndBufferBatchRowsets($stmt);
         }
 
