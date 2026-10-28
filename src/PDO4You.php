@@ -843,9 +843,10 @@ class PDO4You
     /**
      * Executes a SELECT query and yields rows lazily one by one using a Generator.
      *
-     * Ideal for processing large datasets with O(1) memory consumption.
-     * On MySQL, unbuffered query mode is automatically enabled for the duration
-     * of the cursor iteration so the driver streams rows directly from the server.
+     * Unlike select(), this method fetches one row at a time rather than building
+     * the full result array in PHP userland memory. Note that underlying PDO driver
+     * result buffering still depends on the active driver configuration (for example,
+     * PDO::MYSQL_ATTR_USE_BUFFERED_QUERY on MySQL).
      *
      * @template T of object
      *
@@ -860,35 +861,7 @@ class PDO4You
         array $params = [],
         ?string $classMap = null
     ): Generator {
-        $restoreMysqlBuffered = null;
-        if (
-            $this->platform instanceof Platform\MySqlPlatform
-            && !is_a($this->pdo, 'PHPUnit\\Framework\\MockObject\\Stub')
-            && defined('PDO::MYSQL_ATTR_USE_BUFFERED_QUERY')
-        ) {
-            try {
-                $previous = $this->pdo->getAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY);
-                if ($previous !== false) {
-                    $this->pdo->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
-                    $restoreMysqlBuffered = (bool) $previous;
-                }
-            } catch (Throwable) {
-                $restoreMysqlBuffered = null;
-            }
-        }
-
-        try {
-            $stmt = $this->executeStatement($sql, $params);
-        } catch (Throwable $e) {
-            if ($restoreMysqlBuffered !== null) {
-                try {
-                    $this->pdo->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, $restoreMysqlBuffered);
-                } catch (Throwable) {
-                }
-            }
-
-            throw $e;
-        }
+        $stmt = $this->executeStatement($sql, $params);
 
         try {
             if ($classMap !== null) {
@@ -904,13 +877,6 @@ class PDO4You
             }
         } finally {
             $stmt->closeCursor();
-
-            if ($restoreMysqlBuffered !== null) {
-                try {
-                    $this->pdo->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, $restoreMysqlBuffered);
-                } catch (Throwable) {
-                }
-            }
         }
     }
 
